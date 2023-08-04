@@ -24,6 +24,19 @@ export class AppController {
     ).then(r => r.data);
   }
 
+  @Post("callbackCoins")
+  async callbackCoins(@Body() body, @Headers() headers): Promise<any> {
+    return axios.post(
+      "https://onconfirmedcoins-mdx7upthia-uc.a.run.app",
+      body,
+      {
+        headers: {
+          "x-signature": headers["x-signature"],
+        },
+      }
+    ).then(r => r.data);
+  }
+
   @Post("createPaymentAddress")
   async create(@Body() body) {
     return axios.post(
