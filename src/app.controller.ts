@@ -21,7 +21,7 @@ export class AppController {
           "x-signature": headers["x-signature"],
         },
       }
-    );
+    ).then(r => r.data);
   }
 
   @Post("createPaymentAddress")
@@ -29,6 +29,6 @@ export class AppController {
     return axios.post(
       "https://createpaymentaddress-mdx7upthia-uc.a.run.app",
       body
-    );
+    ).then(r => r.data);
   }
 }
