@@ -44,4 +44,9 @@ export class AppController {
       body
     ).then(r => r.data);
   }
+
+  @Get("getFees")
+  async getFees(){
+    return axios.get("https://getfees-mdx7upthia-uc.a.run.app").then(r => r.data())
+  }
 }
