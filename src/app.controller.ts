@@ -47,6 +47,6 @@ export class AppController {
 
   @Get("getFees")
   async getFees(){
-    return axios.get("https://getfees-mdx7upthia-uc.a.run.app").then(r => r.data())
+    return axios.get("https://getfees-mdx7upthia-uc.a.run.app").then(r => r.data)
   }
 }
