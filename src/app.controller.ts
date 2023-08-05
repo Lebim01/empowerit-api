@@ -13,40 +13,48 @@ export class AppController {
 
   @Post("callbackPayment")
   async callbackPayment(@Body() body, @Headers() headers): Promise<any> {
-    return axios.post(
-      "https://onconfirmedtransaction-mdx7upthia-uc.a.run.app",
-      body,
-      {
+    return axios
+      .post("https://onconfirmedtransaction-mdx7upthia-uc.a.run.app", body, {
         headers: {
           "x-signature": headers["x-signature"],
         },
-      }
-    ).then(r => r.data);
+      })
+      .then((r) => r.data);
   }
 
   @Post("callbackCoins")
   async callbackCoins(@Body() body, @Headers() headers): Promise<any> {
-    return axios.post(
-      "https://onconfirmedcoins-mdx7upthia-uc.a.run.app",
-      body,
-      {
+    return axios
+      .post("https://onconfirmedcoins-mdx7upthia-uc.a.run.app", body, {
         headers: {
           "x-signature": headers["x-signature"],
         },
-      }
-    ).then(r => r.data);
+      })
+      .then((r) => r.data);
   }
 
   @Post("createPaymentAddress")
   async create(@Body() body) {
-    return axios.post(
-      "https://createpaymentaddress-mdx7upthia-uc.a.run.app",
-      body
-    ).then(r => r.data);
+    return axios
+      .post("https://createpaymentaddress-mdx7upthia-uc.a.run.app", body)
+      .then((r) => r.data);
   }
 
   @Get("getFees")
-  async getFees(){
-    return axios.get("https://getfees-mdx7upthia-uc.a.run.app").then(r => r.data)
+  async getFees() {
+    return axios
+      .get("https://getfees-mdx7upthia-uc.a.run.app")
+      .then((r) => r.data);
+  }
+
+  @Post("callbackSendedCoins")
+  async callbackSendedCoins(@Body() body, @Headers() headers): Promise<any> {
+    return axios
+      .post("https://onconfirmsendedcoins-mdx7upthia-uc.a.run.app", body, {
+        headers: {
+          "x-signature": headers["x-signature"],
+        },
+      })
+      .then((r) => r.data);
   }
 }
