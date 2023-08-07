@@ -1,20 +1,9 @@
-import admin from 'firebase-admin';
-import prod from './serviceAccountKey';
+import firebaseConfig from "./serviceAccountKey";
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
-const credential = prod;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-try {
-  admin.initializeApp({
-    credential: admin.credential.cert(credential),
-  });
-} catch (error: any) {
-  /*
-   * We skip the "already exists" message which is
-   * not an actual error when we're hot-reloading.
-   */
-  if (!/already exists/u.test(error.message)) {
-    console.error('Firebase admin initialization error', error.stack);
-  }
-}
-
-export default admin;
+// Initialize Cloud Firestore and get a reference to the service
+export const db = getFirestore(app);
