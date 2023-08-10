@@ -125,6 +125,14 @@ export class AppController {
       .post('https://payroll-mdx7upthia-uc.a.run.app')
       .then((r) => r.data);
   }
+  
+  @Post('sendEmail')
+  async sendEmail(
+    @Body('email') email: string,
+    @Body('otp') otp: number
+    ) {
+    return this.appService.sendEmail(email,otp)
+  }
 
   @Post('fix_counter')
   async fixCounter() {
