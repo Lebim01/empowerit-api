@@ -23,12 +23,14 @@ export class AppService {
       text: `Este es tu código de verificación ${otp}`,
     };
 
-    return transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return { message: 'Error al enviar el correo:', error: error };
-      } else {
-        return { message: 'Correo enviado:', error: error };
-      }
-    });
+    return new Promise((resolve, reject) => {
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          reject ({ message: 'Error al enviar el correo: '+error, error: error });
+        } else {
+          resolve ({ message: 'Correo enviado:', info: info });
+        }
+      });
+    })
   }
 }

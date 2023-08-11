@@ -131,7 +131,10 @@ export class AppController {
     @Body('email') email: string,
     @Body('otp') otp: number
     ) {
-    return this.appService.sendEmail(email,otp)
+      const resultEmail = await this.appService.sendEmail(email,otp)
+    return {
+      email: resultEmail, status: 'Correcto'
+    }
   }
 
   @Post('fix_counter')
