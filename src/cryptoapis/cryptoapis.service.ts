@@ -33,9 +33,12 @@ const streamResponse = (resolve: any, reject: any) => (res: any) => {
   res.on('error', reject);
 };
 
-const cryptoapisRequest = (options: any) => {
+const cryptoapisRequest = (options: any, body?: any) => {
   return new Promise((resolve, reject) => {
     const req = https.request(options, streamResponse(resolve, reject));
+    if (body) {
+      req.write(JSON.stringify(body));
+    }
     req.end();
   });
 };
@@ -103,5 +106,21 @@ export class CryptoapisService {
     }
 
     return data;
+  }
+
+  async validateWallet(wallet: string) {
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/blockchain-tools/bitcoin/mainnet/addresses/validate`,
+    };
+    return cryptoapisRequest(options, {
+      context: 'yourExampleString',
+      data: {
+        item: {
+          address: wallet,
+        },
+      },
+    });
   }
 }
