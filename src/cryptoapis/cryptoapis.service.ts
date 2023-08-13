@@ -54,7 +54,7 @@ export class CryptoapisService {
     await cryptoapisRequest(options);
   }
 
-  async getSubscriptionList(offset: number) {
+  async removeUnusedSubscriptionList(offset: number) {
     const options = {
       ...default_options,
       method: 'GET',

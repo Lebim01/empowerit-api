@@ -11,19 +11,13 @@ import { AppService } from './app.service';
 import axios from 'axios';
 import { db } from './firebase/index';
 import {
-  DocumentData,
-  QuerySnapshot,
   collection,
   doc,
   getDoc,
   getDocs,
   query,
-  setDoc,
-  updateDoc,
   where,
 } from 'firebase/firestore';
-import * as dayjs from 'dayjs';
-import { deleteUser } from 'firebase/auth';
 
 class Node {
   data: any;

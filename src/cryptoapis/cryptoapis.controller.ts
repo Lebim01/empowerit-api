@@ -5,9 +5,9 @@ import { CryptoapisService } from './cryptoapis.service';
 export class CryptoapisController {
   constructor(private readonly cryptoapisService: CryptoapisService) {}
 
-  @Get('subscriptionList')
-  getSubscriptionList(@Query('offset') offset = 0) {
-    return this.cryptoapisService.getSubscriptionList(offset);
+  @Get('removeUnusedSubscriptionList')
+  removeUnusedSubscriptionList(@Query('offset') offset = 0) {
+    return this.cryptoapisService.removeUnusedSubscriptionList(offset);
   }
 
   @Get('validateWallet')
