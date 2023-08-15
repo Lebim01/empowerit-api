@@ -69,7 +69,7 @@ export class AppController {
   @Post('callbackPayment')
   async callbackPayment(@Body() body, @Headers() headers): Promise<any> {
     return axios
-      .post('https://onconfirmedtransaction-mdx7upthia-uc.a.run.app', body, {
+      .post(process.env.ON_CONFIRMED_TRANSACTION, body, {
         headers: {
           'x-signature': headers['x-signature'],
         },
@@ -80,7 +80,7 @@ export class AppController {
   @Post('callbackCoins')
   async callbackCoins(@Body() body, @Headers() headers): Promise<any> {
     return axios
-      .post('https://onconfirmedcoins-mdx7upthia-uc.a.run.app', body, {
+      .post(process.env.ON_CONFIRMED_COINS, body, {
         headers: {
           'x-signature': headers['x-signature'],
         },
@@ -91,21 +91,21 @@ export class AppController {
   @Post('createPaymentAddress')
   async create(@Body() body) {
     return axios
-      .post('https://createpaymentaddress-mdx7upthia-uc.a.run.app', body)
+      .post(process.env.CREATE_PAYMENTS_ADDRESS, body)
       .then((r) => r.data);
   }
 
   @Get('getFees')
   async getFees() {
     return axios
-      .get('https://getfees-mdx7upthia-uc.a.run.app')
+      .get(process.env.GETFEES)
       .then((r) => r.data);
   }
 
   @Post('callbackSendedCoins')
   async callbackSendedCoins(@Body() body, @Headers() headers): Promise<any> {
     return axios
-      .post('https://onconfirmsendedcoins-mdx7upthia-uc.a.run.app', body, {
+      .post(process.env.ON_CONFIRMED_SENT_COINS, body, {
         headers: {
           'x-signature': headers['x-signature'],
         },
@@ -116,7 +116,7 @@ export class AppController {
   @Post('execPayroll')
   async execPayroll(@Body() body) {
     return axios
-      .post('https://payroll-mdx7upthia-uc.a.run.app')
+      .post(process.env.PAYROLL)
       .then((r) => r.data);
   }
   

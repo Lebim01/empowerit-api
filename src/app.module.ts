@@ -4,9 +4,12 @@ import { AppService } from './app.service';
 import { CryptoapisModule } from './cryptoapis/cryptoapis.module';
 import { BondsModule } from './bonds/bonds.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { ConfigModule } from '@nestjs/config'
 
 @Module({
-  imports: [CryptoapisModule, BondsModule, SubscriptionsModule],
+  imports: [CryptoapisModule, BondsModule, SubscriptionsModule, ConfigModule.forRoot({
+    envFilePath: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development',
+  })],
   controllers: [AppController],
   providers: [AppService],
 })
