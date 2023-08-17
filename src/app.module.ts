@@ -6,6 +6,7 @@ import { BondsModule } from './bonds/bonds.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConfigModule } from '@nestjs/config';
 import { ScholarshipModule } from './scholarship/scholarship.module';
+import { ScriptsModule } from './scripts/scripts.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ScholarshipModule } from './scholarship/scholarship.module';
           ? '.env.production'
           : '.env.development',
     }),
+    ScriptsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
