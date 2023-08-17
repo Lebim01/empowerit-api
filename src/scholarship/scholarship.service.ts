@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from 'src/firebase';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class ScholarshipService {
@@ -52,5 +53,29 @@ export class ScholarshipService {
     }
 
     return 'Persona para beca 1 de 2';
+  }
+
+  async useSchorlarship(idUser: string) {
+    const docRef = doc(db, 'users', idUser);
+    const user = await getDoc(docRef);
+
+    if (!user.exists()) {
+      return 'El usuario no existe';
+    }
+
+    if (!user.get('has_scholarship')) {
+      return 'El usuario no tiene beca';
+    }
+
+    const initialDate = dayjs().toDate();
+    const finalDate = dayjs().add(28, 'days').toDate();
+    const scholarship = {
+      has_scholarship: false,
+      count_scholarship_people: 0,
+      subscription_start_at: initialDate,
+      subscription_expires_at: finalDate,
+    };
+    await updateDoc(docRef, scholarship);
+    return 'Se utilizo la beca';
   }
 }

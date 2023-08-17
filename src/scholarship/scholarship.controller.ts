@@ -14,4 +14,9 @@ export class ScholarshipController {
   addDirectPeople(@Param('idUser') idUser: string) {
     return this.scholarshipService.addDirectPeople(idUser);
   }
+
+  @Post('use/:idUser')
+  useSchorlarship(@Param('idUser') idUser: string) {
+    return this.scholarshipService.useSchorlarship(idUser);
+  }
 }
