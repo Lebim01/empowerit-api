@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-export default process.env.NODE_ENV == 'production' || true
+export default process.env.NODE_ENV == 'production'
   ? {
       apiKey: 'AIzaSyAqnTMbaCfibt13K7Y2K-NfrlmHBPkc-is',
       authDomain: 'topx-academy.firebaseapp.com',
