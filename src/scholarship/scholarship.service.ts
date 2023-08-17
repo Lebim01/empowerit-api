@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import * as dayjs from 'dayjs';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from 'src/firebase';
 
@@ -17,13 +16,12 @@ export class ScholarshipService {
     const directPeopleCount = user.get('count_scholarship_people');
 
     if (directPeopleCount >= 2) {
-      const initialDate = dayjs().toDate();
-      const finalDate = dayjs().add(28, 'days').toDate();
+      if (user.get('has_scholarship')) {
+        return 'El usuario ya tiene beca';
+      }
       const scholarship = {
         has_scholarship: true,
         count_scholarship_people: 0,
-        membership_start_at: initialDate,
-        membership_expires_at: finalDate,
       };
       await updateDoc(docRef, scholarship);
     }
@@ -35,6 +33,10 @@ export class ScholarshipService {
 
     if (!user.exists()) {
       return 'El usuario no existe';
+    }
+
+    if (user.get('has_scholarship')) {
+      return 'El usuario ya tiene beca';
     }
 
     let directPeopleCount = Number(user.get('count_scholarship_people'));
