@@ -19,4 +19,9 @@ export class ScholarshipController {
   useSchorlarship(@Param('idUser') idUser: string) {
     return this.scholarshipService.useSchorlarship(idUser);
   }
+
+  @Post('distributeBond/:idUser')
+  distributeBond(@Param('idUser') idUser: string) {
+    return this.scholarshipService.distributeBond(idUser);
+  }
 }

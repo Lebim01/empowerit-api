@@ -5,6 +5,17 @@ import dayjs from 'dayjs';
 
 @Injectable()
 export class ScholarshipService {
+  async isActiveUser(id_user: string) {
+    const user = await getDoc(doc(db, 'users/' + id_user));
+    const expires_at = user.get('subscription_expires_at');
+    const is_admin = Boolean(user.get('is_admin'));
+    return is_admin
+      ? true
+      : expires_at
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
+  }
+
   async hasScholarship(idUser: string): Promise<boolean> {
     const user = await getDoc(doc(db, 'users/' + idUser));
     const hasScholarship = Boolean(user.get('has_scholarship'));
@@ -77,5 +88,66 @@ export class ScholarshipService {
     };
     await updateDoc(docRef, scholarship);
     return 'Se utilizo la beca';
+  }
+
+  async distributeBond(idUser: string) {
+    const BOND_VALUE_1 = 50; // Usuario
+    const BOND_VALUE_2 = 20; // Sponsor (Upline)
+    const BOND_VALUE_3 = 10; // Sponsor del sponsor (Upline)
+
+    const userRef = doc(db, 'users', idUser);
+    const user = await getDoc(userRef);
+
+    if (!user.exists()) {
+      return 'El usuario no existe';
+    }
+
+    const isActive = await this.isActiveUser(idUser);
+    if (!isActive) {
+      return 'El usuario no esta activo';
+    }
+
+    let bond = Number(user.get('bond_scholarship_level_1'));
+    if (!bond) {
+      bond = 0;
+    }
+    bond += BOND_VALUE_1;
+    console.log('Usuario: ', bond, 'id', idUser);
+
+    const sponsorId = user.get('sponsor_id');
+    if (sponsorId) {
+      const sponsorRef = doc(db, 'users', sponsorId);
+      const sponsor = await getDoc(sponsorRef);
+
+      if (sponsor.exists()) {
+        const isActive = await this.isActiveUser(sponsorId);
+        if (isActive) {
+          let bond = Number(sponsor.get('bond_scholarship_level_2'));
+          if (!bond) {
+            bond = 0;
+          }
+          bond += BOND_VALUE_2;
+          console.log('Sponsor: ', bond, 'id', sponsorId);
+        }
+      }
+
+      const grandSponsorId = sponsor.get('sponsor_id');
+      if (grandSponsorId) {
+        const grandSponsorRef = doc(db, 'users', grandSponsorId);
+        const grandSponsor = await getDoc(grandSponsorRef);
+
+        if (grandSponsor.exists()) {
+          const isActive = await this.isActiveUser(grandSponsorId);
+          if (isActive) {
+            let bond = Number(grandSponsor.get('bond_scholarship_level_3'));
+            if (!bond) {
+              bond = 0;
+            }
+            bond += BOND_VALUE_3;
+            console.log('Sponsor del sponsor: ', bond, 'id', grandSponsorId);
+          }
+        }
+      }
+    }
   }
 }
