@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from 'src/firebase';
 

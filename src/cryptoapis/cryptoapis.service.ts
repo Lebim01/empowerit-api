@@ -1,5 +1,5 @@
 import * as https from 'https';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import { Injectable } from '@nestjs/common';
 import {
   collection,
