@@ -5,8 +5,8 @@ import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 
 @Module({
-  providers: [SubscriptionsService],
+  providers: [SubscriptionsService, BinaryService, BondsService],
   controllers: [SubscriptionsController],
-  imports: [BinaryService, BondsService],
+  imports: [],
 })
 export class SubscriptionsModule {}

@@ -8,6 +8,9 @@ import { ConfigModule } from '@nestjs/config';
 import { ScholarshipModule } from './scholarship/scholarship.module';
 import { ScriptsModule } from './scripts/scripts.module';
 import { BinaryService } from './binary/binary.service';
+import { UsersService } from './users/users.service';
+import { UsersModule } from './users/users.module';
+import { BinaryModule } from './binary/binary.module';
 
 @Module({
   imports: [
@@ -22,8 +25,10 @@ import { BinaryService } from './binary/binary.service';
           : '.env.development',
     }),
     ScriptsModule,
+    UsersModule,
+    BinaryModule,
   ],
   controllers: [AppController],
-  providers: [AppService, BinaryService],
+  providers: [AppService, BinaryService, UsersService],
 })
 export class AppModule {}

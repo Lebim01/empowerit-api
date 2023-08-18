@@ -8,15 +8,17 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CryptoapisService } from './cryptoapis.service';
-import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { addDoc, collection } from 'firebase/firestore';
 import { db } from 'src/firebase';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
+import { UsersService } from 'src/users/users.service';
 
 @Controller('cryptoapis')
 export class CryptoapisController {
   constructor(
     private readonly cryptoapisService: CryptoapisService,
     private readonly subscriptionService: SubscriptionsService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Get('removeUnusedSubscriptionList')
@@ -41,15 +43,11 @@ export class CryptoapisController {
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
-      const snap = await getDocs(
-        query(
-          collection(db, 'users'),
-          where('payment_link.address', '==', body.data.item.address),
-        ),
+      const userDoc = await this.usersService.getUserByPaymentAddress(
+        body.data.item.address,
       );
 
-      if (snap.size > 0) {
-        const userDoc = snap.docs[0];
+      if (userDoc) {
         const data = userDoc.data();
 
         if (data.payment_link.amount <= body.data.item.amount) {

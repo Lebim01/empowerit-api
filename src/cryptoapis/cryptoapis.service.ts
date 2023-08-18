@@ -14,7 +14,6 @@ import {
   ResponseNewUnconfirmedCoinsTransactions,
 } from './types';
 import axios from 'axios';
-import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 
 const default_options = {
   hostname: 'rest.cryptoapis.io',
@@ -59,8 +58,6 @@ const cryptoapisRequest = async <Response>(
 
 @Injectable()
 export class CryptoapisService {
-  constructor(private readonly subscriptionService: SubscriptionsService){}
-
   async removeSubscriptionEvent(referenceId: string) {
     const options = {
       ...default_options,
