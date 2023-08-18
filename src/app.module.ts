@@ -7,6 +7,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConfigModule } from '@nestjs/config';
 import { ScholarshipModule } from './scholarship/scholarship.module';
 import { ScriptsModule } from './scripts/scripts.module';
+import { BinaryService } from './binary/binary.service';
 
 @Module({
   imports: [
@@ -23,6 +24,6 @@ import { ScriptsModule } from './scripts/scripts.module';
     ScriptsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, BinaryService],
 })
 export class AppModule {}

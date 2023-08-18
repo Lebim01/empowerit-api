@@ -9,6 +9,12 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from 'src/firebase';
+import {
+  ResponseCreateWalletAddress,
+  ResponseNewUnconfirmedCoinsTransactions,
+} from './types';
+import axios from 'axios';
+import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 
 const default_options = {
   hostname: 'rest.cryptoapis.io',
@@ -17,6 +23,11 @@ const default_options = {
     'X-API-Key': 'fb00b4aa1965ff6bc36b5fba67447a3c927f2f6a',
   },
 };
+
+const walletId = '64cbde4178ffd80007affa0f';
+const blockchain = 'bitcoin';
+const network = 'mainnet';
+const hostapi = 'https://topx-academy-nest.vercel.app';
 
 const streamResponse = (resolve: any, reject: any) => (res: any) => {
   const chunks: any[] = [];
@@ -33,7 +44,10 @@ const streamResponse = (resolve: any, reject: any) => (res: any) => {
   res.on('error', reject);
 };
 
-const cryptoapisRequest = (options: any, body?: any) => {
+const cryptoapisRequest = async <Response>(
+  options: any,
+  body?: any,
+): Promise<Response> => {
   return new Promise((resolve, reject) => {
     const req = https.request(options, streamResponse(resolve, reject));
     if (body) {
@@ -45,6 +59,8 @@ const cryptoapisRequest = (options: any, body?: any) => {
 
 @Injectable()
 export class CryptoapisService {
+  constructor(private readonly subscriptionService: SubscriptionsService){}
+
   async removeSubscriptionEvent(referenceId: string) {
     const options = {
       ...default_options,
@@ -53,6 +69,57 @@ export class CryptoapisService {
     };
     await cryptoapisRequest(options);
   }
+
+  async createNewWalletAddress() {
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/wallet-as-a-service/wallets/${walletId}/${blockchain}/${network}/addresses`,
+      qs: { context: 'yourExampleString' },
+    };
+    const res = await cryptoapisRequest<ResponseCreateWalletAddress>(options);
+    return res.data.item.address;
+  }
+
+  async createFirstConfirmationTransaction(userId: string, address: string) {
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/blockchain-events/${blockchain}/${network}/subscriptions/address-coins-transactions-unconfirmed`,
+      qs: { context: userId },
+    };
+    const res =
+      await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
+        options,
+        {
+          context: userId,
+          data: {
+            item: {
+              address: address,
+              allowDuplicates: true,
+              callbackSecretKey: 'a12k*?_1ds',
+              callbackUrl: `${hostapi}/callbackCoins`,
+            },
+          },
+        },
+      );
+    return res;
+  }
+
+  async removeCallbackEvent(refereceId: string) {
+    const options = {
+      ...default_options,
+      method: 'DELETE',
+      path: `/v2/blockchain-events/${blockchain}/${network}/subscriptions/${refereceId}`,
+    };
+    await cryptoapisRequest(options);
+  }
+
+  getBTCExchange = async (amount: number) => {
+    return axios
+      .get('https://blockchain.info/tobtc?currency=USD&value=' + amount)
+      .then((r) => r.data);
+  };
 
   async removeUnusedSubscriptionList(offset: number) {
     const options = {
