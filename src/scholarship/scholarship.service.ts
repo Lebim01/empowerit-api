@@ -90,72 +90,46 @@ export class ScholarshipService {
     return 'Se utilizo la beca';
   }
 
+  async giveBond(userId: string, bondValue: number) {
+    const BOND_FIELD = {
+      50: 'bond_scholarship_level_1',
+      20: 'bond_scholarship_level_2',
+      10: 'bond_scholarship_level_3',
+    };
+
+    const docRef = doc(db, 'users', userId);
+    const docData = await getDoc(docRef);
+
+    if (!docData.exists()) return undefined;
+
+    const isActive = await this.isActiveUser(userId);
+    if (isActive) {
+      let bond = Number(docData.get(BOND_FIELD[bondValue]));
+      if (!bond) {
+        bond = 0;
+      }
+      bond += bondValue;
+
+      console.log(BOND_FIELD[bondValue], bond, 'ID:', userId);
+      await updateDoc(docRef, {
+        [BOND_FIELD[bondValue]]: bond,
+      });
+    }
+
+    return docData.get('sponsor_id');
+  }
+
   async distributeBond(idUser: string) {
     const BOND_VALUE_1 = 50; // Usuario
     const BOND_VALUE_2 = 20; // Sponsor (Upline)
     const BOND_VALUE_3 = 10; // Sponsor del sponsor (Upline)
 
-    const userRef = doc(db, 'users', idUser);
-    const user = await getDoc(userRef);
+    const sponsorId = await this.giveBond(idUser, BOND_VALUE_1);
 
-    if (!user.exists()) {
-      return 'El usuario no existe';
-    }
-
-    const isActive = await this.isActiveUser(idUser);
-    if (!isActive) {
-      return 'El usuario no esta activo';
-    }
-
-    let bond = Number(user.get('bond_scholarship_level_1'));
-    if (!bond) {
-      bond = 0;
-    }
-    bond += BOND_VALUE_1;
-    console.log('Usuario: ', bond, 'id', idUser);
-    await updateDoc(userRef, {
-      bond_scholarship_level_1: bond,
-    });
-
-    const sponsorId = user.get('sponsor_id');
     if (sponsorId) {
-      const sponsorRef = doc(db, 'users', sponsorId);
-      const sponsor = await getDoc(sponsorRef);
-
-      if (sponsor.exists()) {
-        const isActive = await this.isActiveUser(sponsorId);
-        if (isActive) {
-          let bond = Number(sponsor.get('bond_scholarship_level_2'));
-          if (!bond) {
-            bond = 0;
-          }
-          bond += BOND_VALUE_2;
-          console.log('Sponsor: ', bond, 'id', sponsorId);
-          await updateDoc(sponsorRef, {
-            bond_scholarship_level_2: bond,
-          });
-        }
-      }
-
-      const grandSponsorId = sponsor.get('sponsor_id');
+      const grandSponsorId = await this.giveBond(sponsorId, BOND_VALUE_2);
       if (grandSponsorId) {
-        const grandSponsorRef = doc(db, 'users', grandSponsorId);
-        const grandSponsor = await getDoc(grandSponsorRef);
-
-        if (grandSponsor.exists()) {
-          const isActive = await this.isActiveUser(grandSponsorId);
-          if (isActive) {
-            let bond = Number(grandSponsor.get('bond_scholarship_level_3'));
-            if (!bond) {
-              bond = 0;
-            }
-            bond += BOND_VALUE_3;
-            console.log('Sponsor del sponsor: ', bond, 'id', grandSponsorId);
-            await updateDoc(grandSponsorRef, {
-              bond_scholarship_level_3: bond,
-            });
-          }
-        }
+        await this.giveBond(grandSponsorId, BOND_VALUE_3);
       }
     }
   }
