@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from 'src/firebase';
-import dayjs from 'dayjs';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class ScholarshipService {
@@ -113,6 +113,9 @@ export class ScholarshipService {
     }
     bond += BOND_VALUE_1;
     console.log('Usuario: ', bond, 'id', idUser);
+    await updateDoc(userRef, {
+      bond_scholarship_level_1: bond,
+    });
 
     const sponsorId = user.get('sponsor_id');
     if (sponsorId) {
@@ -128,6 +131,9 @@ export class ScholarshipService {
           }
           bond += BOND_VALUE_2;
           console.log('Sponsor: ', bond, 'id', sponsorId);
+          await updateDoc(sponsorRef, {
+            bond_scholarship_level_2: bond,
+          });
         }
       }
 
@@ -145,6 +151,9 @@ export class ScholarshipService {
             }
             bond += BOND_VALUE_3;
             console.log('Sponsor del sponsor: ', bond, 'id', grandSponsorId);
+            await updateDoc(grandSponsorRef, {
+              bond_scholarship_level_3: bond,
+            });
           }
         }
       }
