@@ -7,6 +7,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConfigModule } from '@nestjs/config';
 import { ScholarshipModule } from './scholarship/scholarship.module';
 import { ScriptsModule } from './scripts/scripts.module';
+import { RanksModule } from './ranks/ranks.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ScriptsModule } from './scripts/scripts.module';
           : '.env.development',
     }),
     ScriptsModule,
+    RanksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

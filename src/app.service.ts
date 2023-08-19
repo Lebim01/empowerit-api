@@ -26,11 +26,14 @@ export class AppService {
     return new Promise((resolve, reject) => {
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-          reject ({ message: 'Error al enviar el correo: '+error, error: error });
+          reject({
+            message: 'Error al enviar el correo: ' + error,
+            error: error,
+          });
         } else {
-          resolve ({ message: 'Correo enviado:', info: info });
+          resolve({ message: 'Correo enviado:', info: info });
         }
       });
-    })
+    });
   }
 }
