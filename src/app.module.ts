@@ -7,8 +7,13 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConfigModule } from '@nestjs/config';
 import { ScholarshipModule } from './scholarship/scholarship.module';
 import { ScriptsModule } from './scripts/scripts.module';
-import { RanksModule } from './ranks/ranks.module';
+import { BinaryService } from './binary/binary.service';
+import { UsersService } from './users/users.service';
+import { UsersModule } from './users/users.module';
+import { BinaryModule } from './binary/binary.module';
 
+import { RanksModule } from './ranks/ranks.module';
+import { RanksService } from './ranks/ranks.service';
 @Module({
   imports: [
     CryptoapisModule,
@@ -22,9 +27,11 @@ import { RanksModule } from './ranks/ranks.module';
           : '.env.development',
     }),
     ScriptsModule,
+    UsersModule,
+    BinaryModule,
     RanksModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, BinaryService, UsersService, RanksService],
 })
 export class AppModule {}

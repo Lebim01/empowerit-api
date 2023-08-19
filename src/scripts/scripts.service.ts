@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from 'src/firebase';
 
@@ -41,10 +41,12 @@ export class ScriptsService {
 
     const delay = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
+
     if (!data) return;
 
     for (const user of data) {
       if (!user) continue;
+
       const { docId, expiresAfter28Days, subscription_expires_at } = user;
 
       let startAt = dayjs(subscription_expires_at).subtract(28, 'day');
