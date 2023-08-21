@@ -6,6 +6,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
+  orderBy,
   query,
   where,
 } from 'firebase/firestore';
@@ -38,5 +40,27 @@ export class UsersService {
     if (snap.empty) return null;
 
     return snap.docs[0];
+  }
+
+  async getTopUsersByProfit() {
+    const snap = await getDocs(
+      query(collection(db, 'users'), orderBy('profits', 'desc'), limit(100)),
+    );
+
+    if (snap.empty) return null;
+
+    const top = snap.docs.map((doc) => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        name: data.name,
+        email: data.email,
+        profits: data.profits,
+        rank: data.rank,
+      };
+    });
+
+    return top;
   }
 }
