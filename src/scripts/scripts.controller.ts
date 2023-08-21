@@ -17,4 +17,9 @@ export class ScriptsController {
   ) {
     return this.scriptsService.duplicateUserDoc(userDocID, newId);
   }
+
+  @Post('assignInitialRank')
+  assignInitialRank() {
+    return this.scriptsService.assignInitialRank();
+  }
 }

@@ -16,6 +16,21 @@ export class ScriptsService {
   usersCollectionRef = collection(db, 'users');
   D28_DAYS_AFTER_NOW = dayjs().add(28, 'day');
 
+  async getUsersWithoutRank() {
+    const data = await getDocs(this.usersCollectionRef);
+    const filteredData = data.docs.map((doc) => {
+      const docData = doc.data();
+      if (!docData.rank) {
+        return {
+          id: doc.id,
+          ...docData,
+        };
+      }
+    });
+    const validData = filteredData.filter((data) => data !== undefined);
+    return validData;
+  }
+
   async getExpiresAt() {
     const data = await getDocs(this.usersCollectionRef);
     const filteredData = data.docs.map((doc) => {
@@ -96,7 +111,26 @@ export class ScriptsService {
         docSub.data(),
       );
     }
-
     return 1;
+  }
+
+  async assignInitialRank() {
+    const users = await this.getUsersWithoutRank();
+
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    for (const user of users) {
+      if (!user) continue;
+      const userDoc = doc(db, 'users', user.id);
+      await updateDoc(userDoc, {
+        rank: 'vanguard',
+      });
+
+      console.log('Rank Updated: ', 'vanguard', 'from user: ', user.id);
+
+      await delay(50);
+    }
+    console.log('Script finished successfully');
   }
 }
