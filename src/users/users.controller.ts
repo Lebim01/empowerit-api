@@ -9,4 +9,9 @@ export class UsersController {
   getTopUsersByProfit() {
     return this.usersService.getTopUsersByProfit();
   }
+
+  @Get('top-direct')
+  getTopUsersByReferrals() {
+    return this.usersService.getTopUsersByReferrals();
+  }
 }

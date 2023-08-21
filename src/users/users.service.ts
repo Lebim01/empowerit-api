@@ -63,4 +63,29 @@ export class UsersService {
 
     return top;
   }
+
+  async getTopUsersByReferrals() {
+    const snap = await getDocs(
+      query(
+        collection(db, 'users'),
+        orderBy('count_direct_people', 'desc'),
+        limit(100),
+      ),
+    );
+
+    if (snap.empty) return null;
+
+    const top = snap.docs.map((doc) => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        name: data.name,
+        email: data.email,
+        count_direct_people: data.count_direct_people,
+      };
+    });
+
+    return top;
+  }
 }
