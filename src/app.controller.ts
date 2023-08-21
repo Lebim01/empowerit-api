@@ -95,6 +95,10 @@ export class AppController {
       .then((r) => r.data);
   }
 
+  @Post('createPaymentAddress/supreme')async createSupreme(@Body() body)  {
+    return axios.post(process.env.CREATE_PAYMENTS_ADDRESS_SUPREME, body).then((r) => r.data)
+  }
+
   @Get('getFees')
   async getFees() {
     return axios
