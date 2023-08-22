@@ -14,4 +14,9 @@ export class UsersController {
   getTopUsersByReferrals() {
     return this.usersService.getTopUsersByReferrals();
   }
+
+  @Get('top-earnings')
+  viewData() {
+    return this.usersService.getTopUsersByEarnings();
+  }
 }

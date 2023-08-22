@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { log } from 'console';
+import * as dayjs from 'dayjs';
 import {
   DocumentData,
   QueryDocumentSnapshot,
@@ -87,5 +89,49 @@ export class UsersService {
     });
 
     return top;
+  }
+
+  async getTopUsersByEarnings() {
+    const data = await getDocs(collection(db, 'users'));
+    const filteredData = await Promise.all(
+      data.docs.map(async (doc) => {
+        const payroll = await getDocs(
+          query(collection(db, `users/${doc.id}/payroll`)),
+        );
+
+        if (payroll.empty) return undefined;
+
+        const payrollData = payroll.docs.map((doc) => doc.data());
+
+        const D28_DAYS_AGO = dayjs().subtract(28, 'days');
+        const montlyPayroll = payrollData.filter((data) => {
+          const isCurrent = dayjs(data.created_at.toDate()).isAfter(
+            D28_DAYS_AGO,
+          );
+          if (isCurrent) return data;
+        });
+        if (montlyPayroll.length != 0) {
+          const earnings = montlyPayroll.reduce((acc, curr) => {
+            if (curr.total) {
+              return acc + curr.total;
+            }
+            return acc;
+          }, 0);
+          if (earnings != 0) {
+            return {
+              id: doc.id,
+              name: doc.data().name,
+              email: doc.data().email,
+              earnings,
+            };
+          }
+        }
+      }),
+    );
+
+    const validData = filteredData.filter((data) => data !== undefined);
+    const validDataSorted = validData.sort((a, b) => b.earnings - a.earnings);
+
+    return validDataSorted;
   }
 }
