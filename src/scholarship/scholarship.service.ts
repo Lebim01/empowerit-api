@@ -7,7 +7,8 @@ import * as dayjs from 'dayjs';
 export class ScholarshipService {
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, 'users/' + id_user));
-    const expires_at = user.get('subscription_expires_at');
+    const expires_at = user.get('subscription.pro.expires_at');
+
     const is_admin = Boolean(user.get('is_admin'));
     return is_admin
       ? true
@@ -83,8 +84,8 @@ export class ScholarshipService {
     const scholarship = {
       has_scholarship: false,
       count_scholarship_people: 0,
-      subscription_start_at: initialDate,
-      subscription_expires_at: finalDate,
+      'subscription.pro.start_at': initialDate,
+      'subscription.pro.expires_at': finalDate,
     };
     await updateDoc(docRef, scholarship);
     return 'Se utilizo la beca';

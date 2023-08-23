@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import dayjs from 'dayjs';
+import * as dayjs from 'dayjs';
 import {
   collection,
   doc,
@@ -11,7 +11,6 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { async } from 'rxjs';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { db } from 'src/firebase';
@@ -24,8 +23,9 @@ export class SubscriptionsService {
   ) {}
 
   async isActiveUser(id_user: string) {
-    const user = await getDoc(doc(db, `users/${id_user}`));
-    const expires_at = user.get('subscription_expires_at');
+    const user = await getDoc(doc(db, 'users/' + id_user));
+    const expires_at = user.get('subscription.pro.expires_at');
+
     const is_admin = Boolean(user.get('is_admin'));
     return is_admin
       ? true
@@ -116,71 +116,64 @@ export class SubscriptionsService {
   // VALORES DE body COMPATIBLES:
   //    Fecha indicada: { day, month, year }
   //    Fecha actual: {}
-  statusToExpired =async (body) => {
+  statusToExpired = async (body) => {
     // Respuesta para error
-    let answer:Object = {
-      "message": "No fue posible actualizar las suscripciones",
-      "error": "Subscriptions service",
-      "statusCode": 500,
+    let answer: Object = {
+      message: 'No fue posible actualizar las suscripciones',
+      error: 'Subscriptions service',
+      statusCode: 500,
     };
 
-    const {day, month, year} =  body;
+    const { day, month, year } = body;
     // Comportamiento para una fecha indicada
-    if(day && month && year)
-    //if(('day'in body) && ('month'in month)  && ('year'in year))
-    {
-      const fromDate:Date = new Date(`${year}-${month}-${day}`);
-      answer = expireSubscription(fromDate) 
-      ? {
-        "message": `Suscripciones actualizadas a 'expired' a partir de ${year}-${month}-${day}`,
-        "statusCode": 204
-      } 
-      : answer;
+    if (day && month && year) {
+      //if(('day'in body) && ('month'in month)  && ('year'in year))
+      const fromDate: Date = new Date(`${year}-${month}-${day}`);
+      answer = expireSubscription(fromDate)
+        ? {
+            message: `Suscripciones actualizadas a 'expired' a partir de ${year}-${month}-${day}`,
+            statusCode: 204,
+          }
+        : answer;
     }
     // Comportamiento para la fecha actual
-    else if(Object.keys(body).length == 0){
-      answer = expireSubscription() 
-      ? {
-        "message": `Suscripciones actualizadas a 'expired' a partir de la fecha actual`,
-        "statusCode": 204
-      } 
-      : answer;
-    }
-    else{
+    else if (Object.keys(body).length == 0) {
+      answer = expireSubscription()
+        ? {
+            message: `Suscripciones actualizadas a 'expired' a partir de la fecha actual`,
+            statusCode: 204,
+          }
+        : answer;
+    } else {
       answer = {
-        "message": "El body no tiene el formato correcto: {day, month, year}",
-        "error": "Wrong body",
-        "statusCode": 400,  
+        message: 'El body no tiene el formato correcto: {day, month, year}',
+        error: 'Wrong body',
+        statusCode: 400,
       };
     }
 
     return answer;
-  }
+  };
 }
-
-
-
-
 
 // Actualizar el status de las subscripciones
 // a partir de una fecha dada
 // o de la actual si no de proporciona nada.
-const expireSubscription = async (fromDate:Date = new Date(Date.now())) =>
-{
+const expireSubscription = async (fromDate: Date = new Date(Date.now())) => {
   const _query = query(
-    collection(db, "users"),
-    where("subscription_status", "==", "paid"),
-    where("subscription_expires_at", "<=", fromDate));
+    collection(db, 'users'),
+    where('subscription_status', '==', 'paid'),
+    where('subscription_expires_at', '<=', fromDate),
+  );
 
-  try{
-    // Consultar todos los 'users' 
+  try {
+    // Consultar todos los 'users'
     // que entren en las condiciones anteriores.
     const result = await getDocs(_query);
-      result.docs.forEach((doc) =>{
-    });
+    result.docs.forEach((doc) => {});
 
-    let users_id : string[] = [];
-    result.docs.forEach((doc) =>{
+    let users_id: string[] = [];
+    result.docs.forEach((doc) => {
       users_id.push(doc.id);
     });
 
@@ -188,20 +181,18 @@ const expireSubscription = async (fromDate:Date = new Date(Date.now())) =>
     // Actualizara el estado de los 'users' consultados
     const batch = writeBatch(db);
     [...users_id].forEach((id) => {
-      const sfRef = doc(db, "users", id.toString());
+      const sfRef = doc(db, 'users', id.toString());
       batch.update(sfRef, {
-        "subscription_status": "expired"
+        subscription_status: 'expired',
       });
     });
 
     // Ejecutar lote
     await batch.commit();
-    console.log("Subscripciones actualizadas a 'expired'.")
+    console.log("Subscripciones actualizadas a 'expired'.");
     return true;
-  }
-
-  catch(e){
+  } catch (e) {
     console.warn(e);
     return false;
   }
-}
+};
