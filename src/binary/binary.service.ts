@@ -11,9 +11,12 @@ import {
   increment,
 } from 'firebase/firestore';
 import { db } from 'src/firebase';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class BinaryService {
+  constructor(private readonly userService: UsersService) {}
+
   async calculatePositionOfBinary(
     sponsor_id: string,
     position: 'left' | 'right',
@@ -61,23 +64,26 @@ export class BinaryService {
 
         currentUser = user.id;
 
-        batch.set(
-          user.ref,
-          {
-            ...(position == 'left'
-              ? {
-                  left_points: increment(100),
-                }
-              : {
-                  right_points: increment(100),
-                }),
+        const isActive = await this.userService.isActiveUser(user.id);
+        if (isActive) {
+          batch.set(
+            user.ref,
+            {
+              ...(position == 'left'
+                ? {
+                    left_points: increment(100),
+                  }
+                : {
+                    right_points: increment(100),
+                  }),
 
-            count_underline_people: increment(1),
-          },
-          {
-            merge: true,
-          },
-        );
+              count_underline_people: increment(1),
+            },
+            {
+              merge: true,
+            },
+          );
+        }
       } else {
         currentUser = null;
       }

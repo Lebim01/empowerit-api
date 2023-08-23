@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ScriptsService } from './scripts.service';
 
 @Controller('scripts')
@@ -8,5 +8,13 @@ export class ScriptsController {
   @Post('calculateStartAt')
   calculateStartAt() {
     return this.scriptsService.calculateStartAt();
+  }
+
+  @Post('duplicateUserDoc/:uid')
+  duplicateUserDoc(
+    @Param('uid') userDocID: string,
+    @Body('new_id') newId: string,
+  ) {
+    return this.scriptsService.duplicateUserDoc(userDocID, newId);
   }
 }

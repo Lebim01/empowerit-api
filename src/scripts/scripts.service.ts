@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import dayjs from 'dayjs';
-import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
+import * as dayjs from 'dayjs';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  collectionGroup,
+  addDoc,
+} from 'firebase/firestore';
 import { db } from 'src/firebase';
 
 @Injectable()
@@ -65,5 +74,30 @@ export class ScriptsService {
     }
 
     console.log('Script finished successfully');
+  }
+
+  async duplicateUserDoc(userDocID: string, newId: string) {
+    const _doc = await getDoc(doc(db, `users/${userDocID}`));
+    const payroll = await getDocs(collection(db, `users/${userDocID}/payroll`));
+    const rank_history = await getDocs(
+      collection(db, `users/${userDocID}/rank_history`),
+    );
+
+    await setDoc(doc(db, `users/${newId}`), {
+      ..._doc.data(),
+    });
+
+    for (const docSub of payroll.docs) {
+      await addDoc(collection(db, `users/${newId}/payroll`), docSub.data());
+    }
+
+    for (const docSub of rank_history.docs) {
+      await addDoc(
+        collection(db, `users/${newId}/rank_history`),
+        docSub.data(),
+      );
+    }
+
+    return 1;
   }
 }

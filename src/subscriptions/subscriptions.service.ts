@@ -49,7 +49,7 @@ export class SubscriptionsService {
     return isNew;
   }
 
-  async onPaymentMembership(id_user: string) {
+  async onPaymentProMembership(id_user: string) {
     const userDocRef = doc(db, `users/${id_user}`);
     const data = await getDoc(userDocRef).then((r) => r.data());
 

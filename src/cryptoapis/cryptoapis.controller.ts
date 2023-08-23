@@ -36,7 +36,7 @@ export class CryptoapisController {
    * Cambiar status a "paid"
    */
   @Post('callbackPayment')
-  async callbackPayment(@Body() body): Promise<any> {
+  async callbackPaymentProMembership(@Body() body): Promise<any> {
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == 'mainnet' &&
@@ -51,7 +51,7 @@ export class CryptoapisController {
         const data = userDoc.data();
 
         if (data.payment_link.amount <= body.data.item.amount) {
-          await this.subscriptionService.onPaymentMembership(userDoc.id);
+          await this.subscriptionService.onPaymentProMembership(userDoc.id);
 
           /**
            * eliminar el evento que esta en el servicio de la wallet
