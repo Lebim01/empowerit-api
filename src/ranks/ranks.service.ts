@@ -38,7 +38,7 @@ export class RanksService {
     const collectionRef = collection(db, 'users');
     const queryCondition = where('sponsor_id', '==', _user.id);
     const queryCondition_ = where(
-      'subscription_start_at',
+      'subscription.pro.start_at',
       '>=',
       dayjs().add(-28, 'days').toDate(),
     );
