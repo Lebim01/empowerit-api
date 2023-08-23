@@ -7,7 +7,6 @@ import {
   getDocs,
   setDoc,
   updateDoc,
-  collectionGroup,
   addDoc,
 } from 'firebase/firestore';
 import { db } from 'src/firebase';

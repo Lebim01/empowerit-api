@@ -12,6 +12,8 @@ import { UsersService } from './users/users.service';
 import { UsersModule } from './users/users.module';
 import { BinaryModule } from './binary/binary.module';
 
+import { RanksModule } from './ranks/ranks.module';
+import { RanksService } from './ranks/ranks.service';
 @Module({
   imports: [
     CryptoapisModule,
@@ -27,8 +29,9 @@ import { BinaryModule } from './binary/binary.module';
     ScriptsModule,
     UsersModule,
     BinaryModule,
+    RanksModule,
   ],
   controllers: [AppController],
-  providers: [AppService, BinaryService, UsersService],
+  providers: [AppService, BinaryService, UsersService, RanksService],
 })
 export class AppModule {}
