@@ -37,12 +37,11 @@ export class SubscriptionsService {
   async assingMembership(id_user: string, isNew = false) {
     await updateDoc(doc(db, `users/${id_user}`), {
       payment_link: null,
-      subscription: 'pro',
-      subscription_start_at: dayjs().toDate(),
-      subscription_expires_at: dayjs()
+      'subscription.pro.start_at': dayjs().toDate(),
+      'subscription.pro.expires_at': dayjs()
         .add(isNew ? 56 : 28, 'days')
         .toDate(),
-      subscription_status: 'paid',
+      'subscription.pro.status': 'paid',
     });
   }
 
@@ -162,8 +161,8 @@ export class SubscriptionsService {
 const expireSubscription = async (fromDate: Date = new Date(Date.now())) => {
   const _query = query(
     collection(db, 'users'),
-    where('subscription_status', '==', 'paid'),
-    where('subscription_expires_at', '<=', fromDate),
+    where('subscription.pro.status', '==', 'paid'),
+    where('subscription.pro.expires_at', '<=', fromDate),
   );
 
   try {
@@ -183,7 +182,7 @@ const expireSubscription = async (fromDate: Date = new Date(Date.now())) => {
     [...users_id].forEach((id) => {
       const sfRef = doc(db, 'users', id.toString());
       batch.update(sfRef, {
-        subscription_status: 'expired',
+        'subscription.pro.status': 'expired',
       });
     });
 
