@@ -15,6 +15,19 @@ import { db } from 'src/firebase';
 export class ScriptsService {
   usersCollectionRef = collection(db, 'users');
   D28_DAYS_AFTER_NOW = dayjs().add(28, 'day');
+  DELAY = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  async getAllUsers() {
+    const data = await getDocs(this.usersCollectionRef);
+    const users = data.docs.map((doc) => {
+      const docData = doc.data();
+      return {
+        id: doc.id,
+        ...docData,
+      };
+    });
+    return users;
+  }
 
   async getUsersWithoutRank() {
     const data = await getDocs(this.usersCollectionRef);
@@ -62,9 +75,6 @@ export class ScriptsService {
       };
     });
 
-    const delay = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
-
     if (!data) return;
 
     for (const user of data) {
@@ -84,7 +94,7 @@ export class ScriptsService {
 
       console.log('startAt Updated: ', startAt.toDate(), 'from user: ', docId);
 
-      await delay(50);
+      await this.DELAY(50);
     }
 
     console.log('Script finished successfully');
@@ -117,9 +127,6 @@ export class ScriptsService {
   async assignInitialRank() {
     const users = await this.getUsersWithoutRank();
 
-    const delay = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
-
     for (const user of users) {
       if (!user) continue;
       const userDoc = doc(db, 'users', user.id);
@@ -129,8 +136,12 @@ export class ScriptsService {
 
       console.log('Rank Updated: ', 'vanguard', 'from user: ', user.id);
 
-      await delay(50);
+      await this.DELAY(50);
     }
     console.log('Script finished successfully');
+  }
+
+  async assignNewSubscriptionsObject() {
+    return await this.getAllUsers();
   }
 }
