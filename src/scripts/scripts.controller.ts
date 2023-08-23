@@ -22,4 +22,9 @@ export class ScriptsController {
   assignInitialRank() {
     return this.scriptsService.assignInitialRank();
   }
+
+  @Post('assignNewSubscriptionsObject')
+  assignNewSubscriptionsObject() {
+    return this.scriptsService.assignNewSubscriptionsObject();
+  }
 }

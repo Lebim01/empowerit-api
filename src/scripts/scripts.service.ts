@@ -142,6 +142,44 @@ export class ScriptsService {
   }
 
   async assignNewSubscriptionsObject() {
-    return await this.getAllUsers();
+    const users = await this.getAllUsers();
+
+    const updatePromises = users.map(async (user: any) => {
+      const subscription = {
+        pro: {
+          expires_at: user.subscription_expires_at || null,
+          start_at: user.subscription_start_at || null,
+          status: user.subscription_status || null,
+        },
+        supreme: {
+          expires_at: null,
+          start_at: null,
+          status: null,
+        },
+        ibo: {
+          expires_at: null,
+          start_at: null,
+          status: null,
+        },
+      };
+
+      const userRef = doc(db, 'users', user.id);
+
+      try {
+        await updateDoc(userRef, {
+          subscription,
+        });
+        console.log(`Updated subscription for user with ID ${user.id}`);
+      } catch (error) {
+        console.error(
+          `Error updating subscription for user with ID ${user.id}:`,
+          error,
+        );
+      }
+
+      await this.DELAY(50);
+    });
+
+    await Promise.all(updatePromises);
   }
 }
