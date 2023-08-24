@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import {
   collection,
   doc,
@@ -117,7 +117,7 @@ export class SubscriptionsService {
   //    Fecha actual: {}
   statusToExpired = async (body) => {
     // Respuesta para error
-    let answer: Object = {
+    let answer: object = {
       message: 'No fue posible actualizar las suscripciones',
       error: 'Subscriptions service',
       statusCode: 500,
@@ -169,9 +169,11 @@ const expireSubscription = async (fromDate: Date = new Date(Date.now())) => {
     // Consultar todos los 'users'
     // que entren en las condiciones anteriores.
     const result = await getDocs(_query);
-    result.docs.forEach((doc) => {});
+    result.docs.forEach((doc) => {
+      //
+    });
 
-    let users_id: string[] = [];
+    const users_id: string[] = [];
     result.docs.forEach((doc) => {
       users_id.push(doc.id);
     });

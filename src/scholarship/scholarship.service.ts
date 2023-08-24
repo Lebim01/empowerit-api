@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from 'src/firebase';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class ScholarshipService {
@@ -67,6 +67,10 @@ export class ScholarshipService {
     return 'Persona para beca 1 de 2';
   }
 
+  /**
+   * Activar la beca, se agregan 28 dias
+   * y se reinicia el status de la beca a "false"
+   */
   async useSchorlarship(idUser: string) {
     const docRef = doc(db, 'users', idUser);
     const user = await getDoc(docRef);
