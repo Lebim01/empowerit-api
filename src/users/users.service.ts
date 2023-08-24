@@ -10,7 +10,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from 'src/firebase';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class UsersService {
