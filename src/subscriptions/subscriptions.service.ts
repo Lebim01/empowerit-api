@@ -10,10 +10,13 @@ import {
   query,
   where,
   writeBatch,
+  collectionGroup,
+  setDoc,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { db } from 'src/firebase';
+import Sentry from '@sentry/node';
 
 @Injectable()
 export class SubscriptionsService {
@@ -80,35 +83,108 @@ export class SubscriptionsService {
           ? { left_binary_user_id: id_user }
           : { right_binary_user_id: id_user },
       );
-    } catch (e) {
-      console.info('no se pudo actualizar el binario derrame', e);
+    } catch (err) {
+      Sentry.configureScope((scope) => {
+        scope.setExtra('id_user', id_user);
+        scope.setExtra('message', 'no se pudo actualizar el binario derrame');
+        Sentry.captureException(err);
+      });
+    }
+
+    /**
+     * se crea un registro en la subcoleccion users/{id}/sanguine_users
+     */
+    try {
+      await this.insertSanguineUsers(id_user);
+    } catch (err) {
+      Sentry.configureScope((scope) => {
+        scope.setExtra('id_user', id_user);
+        scope.setExtra(
+          'message',
+          'no se pudo insertar los usuarios sanguineos',
+        );
+        Sentry.captureException(err);
+      });
     }
 
     /**
      * aumenta los puntos del binario hacia arriba
      */
-    if (data.sponsor_id) {
-      try {
-        await this.binaryService.increaseBinaryPoints(id_user);
-      } catch (e) {
-        console.info('no se repartio el bono binario', e);
-      }
+    try {
+      await this.binaryService.increaseBinaryPoints(id_user);
+    } catch (err) {
+      Sentry.configureScope((scope) => {
+        scope.setExtra('id_user', id_user);
+        scope.setExtra('message', 'no se repartio el bono binario');
+        Sentry.captureException(err);
+      });
     }
 
     /**
      * aumentar puntos de bono directo 2 niveles
      */
-    if (data.sponsor_id && !data.subscription) {
-      try {
-        await this.bondService.execUserDirectBond(data.sponsor_id);
-      } catch (e) {
-        console.info('no se repartio el bono directo', e);
-      }
+    try {
+      await this.bondService.execUserDirectBond(data.sponsor_id);
+    } catch (err) {
+      Sentry.configureScope((scope) => {
+        scope.setExtra('id_user', id_user);
+        scope.setExtra('message', 'no se repartio el bono directo');
+        Sentry.captureException(err);
+      });
     }
 
     const isNew = await this.isNewMember(id_user);
-
     await this.assingMembership(id_user, isNew);
+  }
+
+  async insertSanguineUsers(id_user: string) {
+    const userRef = await getDoc(doc(db, `users/${id_user}`));
+
+    const current_user = {
+      id: id_user,
+      is_active: true,
+      created_at: userRef.get('created_at'),
+      sponsor_id: userRef.get('sponsor_id'),
+      position: userRef.get('position'),
+    };
+
+    await setDoc(
+      doc(db, `users/${current_user.sponsor_id}/sanguine_users/${id_user}`),
+      {
+        id_user: userRef.id,
+        sponsor_id: current_user.sponsor_id,
+        is_active: current_user.is_active,
+        created_at: current_user.created_at || null,
+        position: current_user.position || null,
+      },
+      {
+        merge: true,
+      },
+    );
+
+    const sanguine_sponsors = await getDocs(
+      query(
+        collectionGroup(db, 'sanguine_users'),
+        where('id_user', '==', current_user.sponsor_id),
+      ),
+    );
+
+    for (const sponsorSanguineRef of sanguine_sponsors.docs) {
+      const userId = sponsorSanguineRef.ref.parent.parent.id;
+      await setDoc(
+        doc(db, `users/${userId}/sanguine_users/${id_user}`),
+        {
+          id_user: userRef.id,
+          sponsor_id: current_user.sponsor_id,
+          is_active: current_user.is_active,
+          created_at: current_user.created_at || null,
+          position: sponsorSanguineRef.get('position') || null,
+        },
+        {
+          merge: true,
+        },
+      );
+    }
   }
 
   // Actualizar el status a 'expired' de las subscripciones a partir de una fecha.
@@ -158,7 +234,7 @@ export class SubscriptionsService {
 // Actualizar el status de las subscripciones
 // a partir de una fecha dada
 // o de la actual si no de proporciona nada.
-const expireSubscription = async (fromDate: Date = new Date(Date.now())) => {
+const expireSubscription = async (fromDate: Date = new Date()) => {
   const _query = query(
     collection(db, 'users'),
     where('subscription.pro.status', '==', 'paid'),

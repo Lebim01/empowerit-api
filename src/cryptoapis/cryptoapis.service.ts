@@ -188,8 +188,8 @@ export class CryptoapisService {
         await this.removeSubscriptionEvent(docData.referenceId);
       } else {
         const docUser = snap.docs[0].data();
-        if (docUser.subscription.pro.expires_at) {
-          console.log(docUser.subscription.pro.expires_at, 'eliminar');
+        if (docUser.subscription_expires_at) {
+          console.log(docUser.subscription_expires_at, 'eliminar');
 
           await this.removeSubscriptionEvent(docData.referenceId);
           await updateDoc(snap.docs[0].ref, {

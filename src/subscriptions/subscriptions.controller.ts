@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Query,
-  Body,
-  BadRequestException,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Query, Body } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 
 @Controller('subscriptions')
