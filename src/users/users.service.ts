@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { log } from 'console';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import {
   DocumentData,
   QueryDocumentSnapshot,
@@ -14,7 +13,6 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from 'src/firebase';
-import dayjs from 'dayjs';
 
 @Injectable()
 export class UsersService {
