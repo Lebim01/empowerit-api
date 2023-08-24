@@ -66,6 +66,11 @@ export class AppController {
     return 'cryptoapis-cb-3c5ed9409121d6814c3c7383372faefb3ed72ccc4775a42c56c49e92949fc616';
   }
 
+  @Get('test')
+  testSentry(){
+    throw new Error("ERROR")
+  }
+
   @Post('callbackPayment')
   async callbackPayment(@Body() body, @Headers() headers): Promise<any> {
     return axios
