@@ -5,7 +5,7 @@ import { SentryFilter } from './sentry/sentry.filter';
 
 async function bootstrap() {
   Sentry.init({
-    dsn: process.env.SENTRY_DNS,
+    dsn: process.env.SENTRY_DSN,
     environment: process.env.SENTRY_ENV,
     enabled: true,
     debug: true,
