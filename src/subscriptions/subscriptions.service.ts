@@ -17,12 +17,14 @@ import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { db } from 'src/firebase';
 import Sentry from '@sentry/node';
+import { ScholarshipService } from 'src/scholarship/scholarship.service';
 
 @Injectable()
 export class SubscriptionsService {
   constructor(
     private readonly binaryService: BinaryService,
     private readonly bondService: BondsService,
+    private readonly scholarshipService: ScholarshipService,
   ) {}
 
   async isActiveUser(id_user: string) {
@@ -73,6 +75,12 @@ export class SubscriptionsService {
       parent_binary_user_id: binaryPosition.parent_id,
     });
 
+    /**
+     * Se activa la membresia
+     */
+    const isNew = await this.isNewMember(id_user);
+    await this.assingMembership(id_user, isNew);
+
     try {
       /**
        * se setea el valor del hijo al usuario ascendente en el binario
@@ -86,7 +94,7 @@ export class SubscriptionsService {
     } catch (err) {
       Sentry.configureScope((scope) => {
         scope.setExtra('id_user', id_user);
-        scope.setExtra('message', 'no se pudo actualizar el binario derrame');
+        scope.setExtra('message', 'no se pudo setear al hijo');
         Sentry.captureException(err);
       });
     }
@@ -105,6 +113,19 @@ export class SubscriptionsService {
         );
         Sentry.captureException(err);
       });
+    }
+
+    const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
+    const sponsorHasScholapship = sponsorRef.get('has_scholarship');
+    /**
+     * Si el sponsor no esta becado le cuenta para la beca
+     */
+    if (!sponsorHasScholapship) {
+      await this.scholarshipService.addDirectPeople(sponsorRef.id);
+      /**
+       * Si el sponsor no esta becado no reparte bonos
+       */
+      return;
     }
 
     /**
@@ -132,9 +153,6 @@ export class SubscriptionsService {
         Sentry.captureException(err);
       });
     }
-
-    const isNew = await this.isNewMember(id_user);
-    await this.assingMembership(id_user, isNew);
   }
 
   async insertSanguineUsers(id_user: string) {

@@ -4,9 +4,16 @@ import { SubscriptionsController } from './subscriptions.controller';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { UsersService } from 'src/users/users.service';
+import { ScholarshipService } from 'src/scholarship/scholarship.service';
 
 @Module({
-  providers: [SubscriptionsService, BinaryService, BondsService, UsersService],
+  providers: [
+    SubscriptionsService,
+    BinaryService,
+    BondsService,
+    UsersService,
+    ScholarshipService,
+  ],
   controllers: [SubscriptionsController],
   imports: [],
 })
