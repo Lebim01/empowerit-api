@@ -7,6 +7,9 @@ import { UsersService } from 'src/users/users.service';
 export class BondsService {
   constructor(private readonly userService: UsersService) {}
 
+  /**
+   * solo se reparte este bono a los usuarios activos
+   */
   async execUserDirectBond(sponsor_id: string) {
     const sponsorRef = doc(db, `users/${sponsor_id}`);
     const sponsor = await getDoc(sponsorRef).then((r) => r.data());

@@ -8,10 +8,13 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CryptoapisService } from './cryptoapis.service';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from 'src/firebase';
+import { db } from 'src/firebase/admin';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 import { UsersService } from 'src/users/users.service';
+import {
+  CallbackNewConfirmedCoins,
+  CallbackNewUnconfirmedCoins,
+} from './types';
 
 @Controller('cryptoapis')
 export class CryptoapisController {
@@ -36,7 +39,9 @@ export class CryptoapisController {
    * Cambiar status a "paid"
    */
   @Post('callbackPayment')
-  async callbackPaymentProMembership(@Body() body): Promise<any> {
+  async callbackPaymentProMembership(
+    @Body() body: CallbackNewConfirmedCoins,
+  ): Promise<any> {
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == 'mainnet' &&
@@ -56,12 +61,12 @@ export class CryptoapisController {
           /**
            * eliminar el evento que esta en el servicio de la wallet
            */
-          await this.cryptoapisService.removeCallbackEvent(body.refereceId);
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
 
           /**
            * guardar registro de la transaccion dentro de una subcoleccion
            */
-          await addDoc(collection(db, `users/${userDoc.id}/transactions`), {
+          await db.collection(`users/${userDoc.id}/transactions`).add({
             ...body,
             created_at: new Date(),
           });
@@ -95,7 +100,42 @@ export class CryptoapisController {
    * Cambiar status a "confirming"
    */
   @Post('callbackCoins')
-  async callbackCoins(@Body() body): Promise<any> {
-    //
+  async callbackCoins(@Body() body: CallbackNewUnconfirmedCoins): Promise<any> {
+    if (
+      body.data.event == 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED' &&
+      body.data.item.network == 'mainnet' &&
+      body.data.item.direction == 'incoming' &&
+      body.data.item.unit == 'BTC'
+    ) {
+      const snap = await db
+        .collection('users')
+        .where('payment_link.address', '==', body.data.item.address)
+        .get();
+
+      if (snap.size > 0) {
+        const doc = snap.docs[0];
+        const data = doc.data();
+
+        await doc.ref.update({
+          payment_link: {
+            ...data.payment_link,
+            status: 'confirming',
+          },
+        });
+
+        await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+
+        await this.cryptoapisService.createCallbackConfirmation(
+          data.id,
+          body.data.item.address,
+        );
+
+        return 'OK';
+      } else {
+        throw new HttpException('Cantidad incorrecta', HttpStatus.BAD_REQUEST);
+      }
+    } else {
+      throw new HttpException('Peticion invalida', HttpStatus.BAD_REQUEST);
+    }
   }
 }

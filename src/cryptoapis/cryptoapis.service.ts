@@ -12,6 +12,7 @@ import { db } from 'src/firebase';
 import {
   ResponseCreateWalletAddress,
   ResponseNewUnconfirmedCoinsTransactions,
+  ResponseNewConfirmedCoinsTransactions,
 } from './types';
 import axios from 'axios';
 
@@ -23,10 +24,16 @@ const default_options = {
   },
 };
 
-const walletId = '64cbde4178ffd80007affa0f';
+const walletId =
+  process.env.CUSTOM_ENV == 'production'
+    ? '64cbde4178ffd80007affa0f'
+    : '64c6dd54aa48640007b8e26f';
 const blockchain = 'bitcoin';
-const network = 'mainnet';
-const hostapi = 'https://topx-academy-nest.vercel.app';
+const network = process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
+const hostapi =
+  process.env.CUSTOM_ENV == 'production'
+    ? 'https://topx-academy-nest.vercel.app'
+    : 'https://topx-academy-dev.vercel.app';
 
 const streamResponse = (resolve: any, reject: any) => (res: any) => {
   const chunks: any[] = [];
@@ -110,6 +117,29 @@ export class CryptoapisService {
       path: `/v2/blockchain-events/${blockchain}/${network}/subscriptions/${refereceId}`,
     };
     await cryptoapisRequest(options);
+  }
+
+  async createCallbackConfirmation(id_user: string, address: string) {
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/blockchain-events/${blockchain}/${network}/subscriptions/address-coins-transactions-confirmed`,
+    };
+    return await cryptoapisRequest<ResponseNewConfirmedCoinsTransactions>(
+      options,
+      {
+        context: id_user,
+        data: {
+          item: {
+            address: address,
+            allowDuplicates: true,
+            callbackSecretKey: 'a12k*?_1ds',
+            callbackUrl: `${hostapi}/callbackPayment`,
+            receiveCallbackOn: 2,
+          },
+        },
+      },
+    );
   }
 
   getBTCExchange = async (amount: number) => {
