@@ -14,9 +14,14 @@ import { BinaryModule } from './binary/binary.module';
 
 import { RanksModule } from './ranks/ranks.module';
 import { RanksService } from './ranks/ranks.service';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
     CryptoapisModule,
     BondsModule,
     SubscriptionsModule,
