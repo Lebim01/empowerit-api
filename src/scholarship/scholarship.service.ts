@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from 'src/firebase';
-import dayjs from 'dayjs';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class ScholarshipService {
