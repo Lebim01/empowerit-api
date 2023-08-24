@@ -61,6 +61,11 @@ async function buildTreeFromFirestore(
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  @Get('')
+  hello(){
+    return "Hello world";
+  }
+
   @Get('cryptoapisverifydomain')
   verifyDomain() {
     return 'cryptoapis-cb-3c5ed9409121d6814c3c7383372faefb3ed72ccc4775a42c56c49e92949fc616';
