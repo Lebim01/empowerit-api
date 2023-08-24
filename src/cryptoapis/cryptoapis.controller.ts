@@ -15,6 +15,7 @@ import {
   CallbackNewConfirmedCoins,
   CallbackNewUnconfirmedCoins,
 } from './types';
+import Sentry from '@sentry/node';
 
 @Controller('cryptoapis')
 export class CryptoapisController {
@@ -73,24 +74,36 @@ export class CryptoapisController {
 
           return 'transaccion correcta';
         } else {
-          console.log('Cantidad incorrecta');
+          Sentry.captureException('Inscripción: cantidad incorrecta', {
+            extra: {
+              reference: body.referenceId,
+              address: body.data.item.address,
+            },
+          });
           throw new HttpException(
             'Cantidad incorrecta',
             HttpStatus.BAD_REQUEST,
           );
         }
       } else {
-        console.log(
-          'No se encontro el usuario para el pago address: ' +
-            body.data.item.address,
-        );
+        Sentry.captureException('Inscripción: usuario no encontrado', {
+          extra: {
+            reference: body.referenceId,
+            address: body.data.item.address,
+          },
+        });
         throw new HttpException(
           'No se encontro el usuario',
           HttpStatus.BAD_REQUEST,
         );
       }
     } else {
-      console.log('algo no viene bien');
+      Sentry.captureException('Inscripción: peticion invalida', {
+        extra: {
+          reference: body.referenceId,
+          address: body.data.item.address,
+        },
+      });
       throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
     }
   }
@@ -132,9 +145,21 @@ export class CryptoapisController {
 
         return 'OK';
       } else {
+        Sentry.captureException('Inscripción: cantidad incorrecta', {
+          extra: {
+            reference: body.referenceId,
+            address: body.data.item.address,
+          },
+        });
         throw new HttpException('Cantidad incorrecta', HttpStatus.BAD_REQUEST);
       }
     } else {
+      Sentry.captureException('Inscripción: peticion invalida', {
+        extra: {
+          reference: body.referenceId,
+          address: body.data.item.address,
+        },
+      });
       throw new HttpException('Peticion invalida', HttpStatus.BAD_REQUEST);
     }
   }
