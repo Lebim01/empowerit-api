@@ -134,6 +134,7 @@ export class SubscriptionsService {
 
   async onPaymentSupremeMembership(id_user) {
     await this.assingSupremeMembership(id_user);
+    await this.bondService.execSupremeBond(id_user);
   }
 
   async onPaymentProMembership(id_user: string) {
