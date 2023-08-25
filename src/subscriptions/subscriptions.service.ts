@@ -92,7 +92,8 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingProMembership(id_user: string, isNew = false) {
+  async assingProMembership(id_user: string) {
+    const isNew = await this.isNewMember(id_user);
     await updateDoc(doc(db, `users/${id_user}`), {
       'subscription.pro.payment_link': null,
       'subscription.pro.start_at': dayjs().toDate(),
@@ -100,6 +101,7 @@ export class SubscriptionsService {
         .add(isNew ? 56 : 28, 'days')
         .toDate(),
       'subscription.pro.status': 'paid',
+      is_new: false,
     });
   }
 
@@ -122,10 +124,8 @@ export class SubscriptionsService {
   }
 
   async isNewMember(id_user: string) {
-    const transactions = await getCountFromServer(
-      collection(db, `users/${id_user}/transactions`),
-    );
-    const isNew = transactions.data().count == 0;
+    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const isNew = Boolean(userRef.get('is_new')) ?? false;
     return isNew;
   }
 
@@ -157,8 +157,7 @@ export class SubscriptionsService {
     /**
      * Se activa la membresia
      */
-    const isNew = await this.isNewMember(id_user);
-    await this.assingProMembership(id_user, isNew);
+    await this.assingProMembership(id_user);
 
     try {
       /**
