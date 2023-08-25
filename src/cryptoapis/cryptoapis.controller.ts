@@ -91,6 +91,7 @@ export class CryptoapisController {
           extra: {
             reference: body.referenceId,
             address: body.data.item.address,
+            payload: JSON.stringify(body),
           },
         });
         throw new HttpException(
@@ -103,6 +104,7 @@ export class CryptoapisController {
         extra: {
           reference: body.referenceId,
           address: body.data.item.address,
+          payload: JSON.stringify(body),
         },
       });
       throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
@@ -160,6 +162,7 @@ export class CryptoapisController {
           extra: {
             reference: body.referenceId,
             address: body.data.item.address,
+            payload: JSON.stringify(body),
           },
         });
         throw new HttpException('Cantidad incorrecta', HttpStatus.BAD_REQUEST);
@@ -169,6 +172,7 @@ export class CryptoapisController {
         extra: {
           reference: body.referenceId,
           address: body.data.item.address,
+          payload: JSON.stringify(body),
         },
       });
       throw new HttpException('Peticion invalida', HttpStatus.BAD_REQUEST);
