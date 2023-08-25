@@ -53,7 +53,7 @@ export class CryptoapisController {
       if (userDoc) {
         const data = userDoc.data();
 
-        if (data.payment_link.amount <= body.data.item.amount) {
+        if (Number(data.payment_link.amount) <= Number(body.data.item.amount)) {
           await this.subscriptionService.onPaymentProMembership(userDoc.id);
 
           /**
