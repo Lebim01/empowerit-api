@@ -128,11 +128,11 @@ export class SubscriptionsService {
     return isNew;
   }
 
-  async onPaymentIBOMembership(id_user) {
+  async onPaymentIBOMembership(id_user: string) {
     await this.assingIBOMembership(id_user);
   }
 
-  async onPaymentSupremeMembership(id_user) {
+  async onPaymentSupremeMembership(id_user: string) {
     await this.assingSupremeMembership(id_user);
     await this.bondService.execSupremeBond(id_user);
   }
@@ -319,7 +319,7 @@ export class SubscriptionsService {
   // VALORES DE body COMPATIBLES:
   //    Fecha indicada: { day, month, year }
   //    Fecha actual: {}
-  statusToExpired = async (body) => {
+  async statusToExpired(body) {
     // Respuesta para error
     let answer: object = {
       message: 'No fue posible actualizar las suscripciones',
@@ -356,7 +356,7 @@ export class SubscriptionsService {
     }
 
     return answer;
-  };
+  }
 }
 
 // Actualizar el status de las subscripciones

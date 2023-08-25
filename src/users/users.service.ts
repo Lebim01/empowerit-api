@@ -13,7 +13,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-//
+import * as Sentry from '@sentry/node';
 
 @Injectable()
 export class UsersService {
@@ -62,6 +62,14 @@ export class UsersService {
         where(`subscription.${type}.payment_link.address`, '==', address),
       ),
     );
+
+    Sentry.captureMessage('usuarios', {
+      extra: {
+        address,
+        type,
+        snapshot: JSON.stringify(snap.docs),
+      },
+    });
 
     if (snap.empty) return null;
 
