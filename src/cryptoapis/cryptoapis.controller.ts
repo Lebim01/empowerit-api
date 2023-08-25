@@ -38,8 +38,9 @@ export class CryptoapisController {
   @Post('callbackPayment/:type')
   async callbackPaymentProMembership(
     @Body() body: CallbackNewConfirmedCoins,
-    @Param('type') type,
+    @Param('type') type: 'ibo' | 'supreme' | 'pro',
   ): Promise<any> {
+    console.log(body.data.item.address, type);
     const network =
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (

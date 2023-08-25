@@ -48,7 +48,6 @@ export class SubscriptionsService {
           newAddress,
           type,
         );
-      console.log(resConfirmation);
 
       referenceId = resConfirmation.data.item.referenceId;
     } else {
