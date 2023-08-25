@@ -6,7 +6,6 @@ import {
   getDoc,
   getDocs,
   updateDoc,
-  getCountFromServer,
   query,
   where,
   writeBatch,
@@ -140,57 +139,65 @@ export class SubscriptionsService {
   async onPaymentProMembership(id_user: string) {
     const userDocRef = doc(db, `users/${id_user}`);
     const data = await getDoc(userDocRef).then((r) => r.data());
-
-    const binaryPosition = await this.binaryService.calculatePositionOfBinary(
-      data.sponsor_id,
-      data.position,
-    );
-    console.log(binaryPosition);
+    const isNew = await this.isNewMember(id_user);
 
     /**
-     * se setea el valor del usuario padre en el usuario que se registro
+     * Asignar posicion en el binario solo para usuarios nuevos
      */
-    await updateDoc(userDocRef, {
-      parent_binary_user_id: binaryPosition.parent_id,
-    });
+    if (!data.parent_binary_user_id) {
+      const binaryPosition = await this.binaryService.calculatePositionOfBinary(
+        data.sponsor_id,
+        data.position,
+      );
+      console.log(binaryPosition);
+
+      /**
+       * se setea el valor del usuario padre en el usuario que se registro
+       */
+      await updateDoc(userDocRef, {
+        parent_binary_user_id: binaryPosition.parent_id,
+      });
+
+      try {
+        /**
+         * se setea el valor del hijo al usuario ascendente en el binario
+         */
+        await updateDoc(
+          doc(db, 'users/' + binaryPosition.parent_id),
+          data.position == 'left'
+            ? { left_binary_user_id: id_user }
+            : { right_binary_user_id: id_user },
+        );
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', id_user);
+          scope.setExtra('message', 'no se pudo setear al hijo');
+          Sentry.captureException(err);
+        });
+      }
+    }
 
     /**
      * Se activa la membresia
      */
     await this.assingProMembership(id_user);
 
-    try {
-      /**
-       * se setea el valor del hijo al usuario ascendente en el binario
-       */
-      await updateDoc(
-        doc(db, 'users/' + binaryPosition.parent_id),
-        data.position == 'left'
-          ? { left_binary_user_id: id_user }
-          : { right_binary_user_id: id_user },
-      );
-    } catch (err) {
-      Sentry.configureScope((scope) => {
-        scope.setExtra('id_user', id_user);
-        scope.setExtra('message', 'no se pudo setear al hijo');
-        Sentry.captureException(err);
-      });
-    }
-
     /**
      * se crea un registro en la subcoleccion users/{id}/sanguine_users
      */
-    try {
-      await this.insertSanguineUsers(id_user);
-    } catch (err) {
-      Sentry.configureScope((scope) => {
-        scope.setExtra('id_user', id_user);
-        scope.setExtra(
-          'message',
-          'no se pudo insertar los usuarios sanguineos',
-        );
-        Sentry.captureException(err);
-      });
+    if (isNew) {
+      try {
+        await this.insertSanguineUsers(id_user);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', id_user);
+          scope.setExtra(
+            'message',
+            'no se pudo insertar los usuarios sanguineos',
+          );
+          Sentry.captureException(err);
+        });
+      }
     }
 
     const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
@@ -222,14 +229,16 @@ export class SubscriptionsService {
     /**
      * aumentar puntos de bono directo 2 niveles
      */
-    try {
-      await this.bondService.execUserDirectBond(data.sponsor_id);
-    } catch (err) {
-      Sentry.configureScope((scope) => {
-        scope.setExtra('id_user', id_user);
-        scope.setExtra('message', 'no se repartio el bono directo');
-        Sentry.captureException(err);
-      });
+    if (isNew) {
+      try {
+        await this.bondService.execUserDirectBond(data.sponsor_id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', id_user);
+          scope.setExtra('message', 'no se repartio el bono directo');
+          Sentry.captureException(err);
+        });
+      }
     }
   }
 
