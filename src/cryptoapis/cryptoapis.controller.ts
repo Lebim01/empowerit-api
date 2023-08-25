@@ -40,7 +40,6 @@ export class CryptoapisController {
     @Body() body: CallbackNewConfirmedCoins,
     @Param('type') type: 'ibo' | 'supreme' | 'pro',
   ): Promise<any> {
-    console.log(body.data.item.address, type);
     const network =
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
@@ -57,8 +56,19 @@ export class CryptoapisController {
       if (userDoc) {
         const data = userDoc.data();
 
-        if (Number(data.payment_link.amount) <= Number(body.data.item.amount)) {
-          await this.subscriptionService.onPaymentProMembership(userDoc.id);
+        if (
+          Number(data.subscription[type].payment_link.amount) <=
+          Number(body.data.item.amount)
+        ) {
+          if (type == 'pro') {
+            await this.subscriptionService.onPaymentProMembership(userDoc.id);
+          } else if (type == 'ibo') {
+            await this.subscriptionService.onPaymentIBOMembership(userDoc.id);
+          } else if (type == 'supreme') {
+            await this.subscriptionService.onPaymentSupremeMembership(
+              userDoc.id,
+            );
+          }
 
           /**
            * eliminar el evento que esta en el servicio de la wallet
@@ -142,10 +152,7 @@ export class CryptoapisController {
         const data = doc.data();
 
         await doc.ref.update({
-          payment_link: {
-            ...data.payment_link,
-            status: 'confirming',
-          },
+          [`subscription.${type}.payment_link.status`]: 'confirming',
         });
 
         await this.cryptoapisService.removeCallbackEvent(body.referenceId);

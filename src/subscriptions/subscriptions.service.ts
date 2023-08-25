@@ -92,14 +92,32 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingMembership(id_user: string, isNew = false) {
+  async assingProMembership(id_user: string, isNew = false) {
     await updateDoc(doc(db, `users/${id_user}`), {
-      payment_link: null,
+      'subscription.pro.payment_link': null,
       'subscription.pro.start_at': dayjs().toDate(),
       'subscription.pro.expires_at': dayjs()
         .add(isNew ? 56 : 28, 'days')
         .toDate(),
       'subscription.pro.status': 'paid',
+    });
+  }
+
+  async assingIBOMembership(id_user: string) {
+    await updateDoc(doc(db, `users/${id_user}`), {
+      'subscription.ibo.payment_link': null,
+      'subscription.ibo.start_at': dayjs().toDate(),
+      'subscription.ibo.expires_at': dayjs().add(112, 'days').toDate(),
+      'subscription.ibo.status': 'paid',
+    });
+  }
+
+  async assingSupremeMembership(id_user: string) {
+    await updateDoc(doc(db, `users/${id_user}`), {
+      'subscription.supreme.payment_link': null,
+      'subscription.supreme.start_at': dayjs().toDate(),
+      'subscription.supreme.expires_at': dayjs().add(168, 'days').toDate(),
+      'subscription.supreme.status': 'paid',
     });
   }
 
@@ -109,6 +127,14 @@ export class SubscriptionsService {
     );
     const isNew = transactions.data().count == 0;
     return isNew;
+  }
+
+  async onPaymentIBOMembership(id_user) {
+    await this.assingIBOMembership(id_user);
+  }
+
+  async onPaymentSupremeMembership(id_user) {
+    await this.assingSupremeMembership(id_user);
   }
 
   async onPaymentProMembership(id_user: string) {
@@ -132,7 +158,7 @@ export class SubscriptionsService {
      * Se activa la membresia
      */
     const isNew = await this.isNewMember(id_user);
-    await this.assingMembership(id_user, isNew);
+    await this.assingProMembership(id_user, isNew);
 
     try {
       /**
