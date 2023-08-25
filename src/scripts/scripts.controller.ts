@@ -32,4 +32,9 @@ export class ScriptsController {
   assingSaguineUsers() {
     return this.scriptsService.assingSanguineUsers();
   }
+
+  @Post('assignLeftRightUsers')
+  assignLeftRightUsers() {
+    return this.scriptsService.assignLeftRightUsers();
+  }
 }
