@@ -8,7 +8,7 @@ import {
   where,
   addDoc,
 } from 'firebase/firestore';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
 import dayjs from 'dayjs';
 
 @Injectable()

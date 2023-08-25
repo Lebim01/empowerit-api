@@ -9,7 +9,7 @@ import {
   updateDoc,
   addDoc,
 } from 'firebase/firestore';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()

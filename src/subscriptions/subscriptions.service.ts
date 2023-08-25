@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
 import Sentry from '@sentry/node';
 import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';

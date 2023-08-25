@@ -12,7 +12,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
 
 @Injectable()
 export class UsersService {

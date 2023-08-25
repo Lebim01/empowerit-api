@@ -8,7 +8,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CryptoapisService } from './cryptoapis.service';
-import { db } from 'src/firebase/admin';
+import { db } from '../firebase/admin';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 import { UsersService } from 'src/users/users.service';
 import {
