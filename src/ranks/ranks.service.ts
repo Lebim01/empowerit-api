@@ -21,7 +21,6 @@ export class RanksService {
     /* recorrer todos los usuarios */
     for (let i = 0; i <= users.size - 1; i++) {
       const dataUser = await this.getRankUser(users.docs[i].id);
-      console.log(dataUser.user);
       const docRef = doc(db, 'users', dataUser.user);
       await updateDoc(docRef, { rank: dataUser.rank });
 
@@ -49,30 +48,27 @@ export class RanksService {
       const days_start =
         i == 0 ? 28 : i == 1 ? 21 : i == 2 ? 14 : i == 3 ? 7 : 0;
       const days_end = i == 0 ? 21 : i == 1 ? 14 : i == 2 ? 7 : i == 3 ? 0 : 0;
-      const collectionRef = collection(db, 'users');
-      const queryCondition = where('sponsor_id', '==', _user.id);
+      const collectionRef = collection(db, `users/${_user.id}/sanguine_users`);
       const queryCondition_ = where(
-        'subscription_start_at',
+        'created_at',
         '>=',
         dayjs().add(-days_start, 'days').toDate(),
       );
       const queryCondition__ = where(
-        'subscription_start_at',
-        '>=',
+        'created_at',
+        '<=',
         dayjs().add(-days_end, 'days').toDate(),
       );
-      console.log(days_end, days_start);
       const filteredQuery = query(
         collectionRef,
-        queryCondition,
         queryCondition_,
         queryCondition__,
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
-      const usersSponsored = await getDocs(filteredQuery);
+      const sanguineUsers = await getDocs(filteredQuery);
       /* Recorrer los usuarios sponsoreados por el usuario en turno */
-      for (const doc of usersSponsored.docs) {
+      for (const doc of sanguineUsers.docs) {
         /* Acumular el contador depentiendo del valor del atributo position del usuario esponsoreado */
         if (doc.data().position === 'left') {
           left++;
@@ -86,6 +82,7 @@ export class RanksService {
 
     const sanguinea = _user.data().position == 'left' ? right_week : left_week;
     const derrame = _user.data().position == 'left' ? left_week : right_week;
+    const firms = await this.getDirectFirms(_user.id);
     /* Obtener el payroll de los ultimos 28 dias */
     const totalUSD = await this.getPayrollUser(_user.id);
     /* Crear subcoleccion para el historial de rangos */
@@ -94,9 +91,8 @@ export class RanksService {
       _user.data(),
       sanguinea,
       derrame,
+      firms,
     );
-
-    console.log(left_week, right_week);
 
     return {
       rank: rank.rank,
@@ -108,7 +104,48 @@ export class RanksService {
       right_week,
       sanguinea,
       derrame,
+      firms,
     };
+  }
+
+  async getDirectFirms(id) {
+    /* Obtener firmas  directas*/
+    const firm_week = [];
+    for (let i = 0; i <= 3; i++) {
+      let firm = 0;
+      const days_start =
+        i == 0 ? 28 : i == 1 ? 21 : i == 2 ? 14 : i == 3 ? 7 : 0;
+      const days_end = i == 0 ? 21 : i == 1 ? 14 : i == 2 ? 7 : i == 3 ? 0 : 0;
+      const collectionRef = collection(db, `users`);
+      const queryCondition_ = where(
+        'created_at',
+        '>=',
+        dayjs().add(-days_start, 'days').toDate(),
+      );
+      const queryCondition__ = where(
+        'created_at',
+        '<=',
+        dayjs().add(-days_end, 'days').toDate(),
+      );
+      const queryCondition___ = where('sponsor_id', '==', id);
+
+      const filteredQuery = query(
+        collectionRef,
+        queryCondition_,
+        queryCondition__,
+        queryCondition___,
+      );
+
+      /* Obtener el total de usuarios que pertenecen al usuario en turno del */
+      const firmsUsers = await getDocs(filteredQuery);
+      /* Recorrer los usuarios sponsoreados por el usuario en turno */
+      for (const doc of firmsUsers.docs) {
+        /* Acumular el contador depentiendo del valor del atributo position del usuario esponsoreado */
+        if (doc) firm++;
+      }
+      firm_week.push(firm);
+    }
+    return firm_week;
   }
 
   async getPayrollUser(id) {
@@ -117,6 +154,8 @@ export class RanksService {
     let totalUSD = 0;
 
     for (let i = 0; i <= 3; i++) {
+      let totalUSD_week = 0;
+
       const days_start =
         i == 0 ? 28 : i == 1 ? 21 : i == 2 ? 14 : i == 3 ? 7 : 0;
       const days_end = i == 0 ? 21 : i == 1 ? 14 : i == 2 ? 7 : i == 3 ? 0 : 0;
@@ -128,7 +167,7 @@ export class RanksService {
 
       const queryConditionPayroll_ = where(
         'created_at',
-        '>=',
+        '<=',
         dayjs().add(-days_end, 'days').toDate(),
       );
 
@@ -142,9 +181,10 @@ export class RanksService {
       try {
         const querySnapshot = await getDocs(filteredQueryPayroll);
         for (const doc of querySnapshot.docs) {
-          totalUSD += doc.data().total;
+          totalUSD += doc.data().total || 0;
+          totalUSD_week += doc.data().total || 0;
         }
-        total_week.push(totalUSD);
+        total_week.push(totalUSD_week);
       } catch (error) {
         console.error('Error al obtener documentos:', error);
       }
@@ -152,64 +192,109 @@ export class RanksService {
     return { totalUSD, total_week };
   }
 
-  async getRank(totalUSD: number, _users: any, sanguinea: any, derrame: any) {
-    console.log('olkdhdjkllkdkd', totalUSD);
+  async getRank(
+    totalUSD: number,
+    _users: any,
+    sanguinea: number[],
+    derrame: number[],
+    firms: number[],
+  ) {
+    console.log(sanguinea, derrame);
+
     let rank = '';
-    let missing_sanguinea = 0;
-    let missing_derrame = 0;
     let next_rank = '';
     let missing_usd = 0;
     let missing_scolarship = false;
 
-    if (totalUSD >= 50000 && sanguinea >= 80 && derrame >= 120) {
+    if (
+      totalUSD >= 50000 &&
+      sanguinea.every((currentValue) => currentValue >= 80) &&
+      derrame.every((currentValue) => currentValue >= 120) &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 10)
+    ) {
       rank = 'top_legend';
-    } else if (totalUSD >= 20000 && sanguinea >= 40 && derrame >= 60) {
+    } else if (
+      totalUSD >= 20000 &&
+      sanguinea.every((currentValue) => currentValue >= 40) &&
+      derrame.every((currentValue) => currentValue >= 60) &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 9)
+    ) {
       rank = 'top_1';
-      missing_sanguinea = 80 - sanguinea;
-      missing_derrame = 120 - derrame;
       missing_usd = 50000 - totalUSD;
       next_rank = 'top_leyend';
-    } else if (totalUSD >= 10000 && sanguinea >= 20 && derrame >= 30) {
+    } else if (
+      totalUSD >= 10000 &&
+      sanguinea.every((currentValue) => currentValue >= 20) &&
+      derrame.every((currentValue) => currentValue >= 30) &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 8)
+    ) {
       rank = 'top_king_10';
-      missing_sanguinea = 40 - sanguinea;
-      missing_derrame = 60 - derrame;
       missing_usd = 20000 - totalUSD;
       next_rank = 'top_1';
-    } else if (totalUSD >= 5000 && sanguinea >= 8 && derrame >= 12) {
+    } else if (
+      totalUSD >= 5000 &&
+      sanguinea.every((currentValue) => currentValue >= 8) &&
+      derrame.every((currentValue) => currentValue >= 12) &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 7)
+    ) {
       rank = 'top_diamond_5';
-      missing_sanguinea = 20 - sanguinea;
-      missing_derrame = 30 - derrame;
       missing_usd = 10000 - totalUSD;
       next_rank = 'top_king_10';
-    } else if (totalUSD >= 2500 && sanguinea >= 4 && derrame >= 6) {
+    } else if (
+      totalUSD >= 2500 &&
+      sanguinea.every((currentValue) => currentValue >= 4) &&
+      derrame.every((currentValue) => currentValue >= 6) &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 6)
+    ) {
       rank = 'top_royal_25';
-      missing_sanguinea = 8 - sanguinea;
-      missing_derrame = 12 - derrame;
       missing_usd = 5000 - totalUSD;
       next_rank = 'top_diamond_5';
-    } else if (totalUSD >= 1500 && sanguinea >= 3 && derrame >= 5) {
+    } else if (
+      totalUSD >= 1500 &&
+      sanguinea.every((currentValue) => currentValue >= 3) &&
+      derrame.every((currentValue) => currentValue >= 5) &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 5)
+    ) {
       rank = 'master_15';
-      missing_sanguinea = 4 - sanguinea;
-      missing_derrame = 6 - derrame;
       missing_usd = 2500 - totalUSD;
       next_rank = 'top_royal_25';
-    } else if (totalUSD >= 1000 && sanguinea >= 2 && derrame >= 3) {
+    } else if (
+      totalUSD >= 1000 &&
+      sanguinea.every((currentValue) => currentValue >= 2) &&
+      derrame.every((currentValue) => currentValue >= 3) &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 4)
+    ) {
       rank = 'master_1';
-      missing_sanguinea = 3 - sanguinea;
-      missing_derrame = 5 - derrame;
       missing_usd = 1500 - totalUSD;
       next_rank = 'master_15';
-    } else if (totalUSD >= 600) {
+    } else if (
+      totalUSD >= 600 &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 3)
+    ) {
       rank = 'runner_6';
-      missing_sanguinea = 2 - sanguinea;
-      missing_derrame = 3 - derrame;
       missing_usd = 10000 - totalUSD;
       next_rank = 'master_1';
-    } else if (totalUSD >= 300) {
+    } else if (
+      totalUSD >= 300 &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 2)
+    ) {
       rank = 'runner_3';
       missing_usd = 600 - totalUSD;
       next_rank = 'runner_6';
-    } else if (totalUSD >= 100) {
+    } else if (
+      totalUSD >= 100 &&
+      _users.has_scholarship &&
+      firms.every((currentValue) => currentValue >= 1)
+    ) {
       rank = 'runner_1';
       missing_usd = 300 - totalUSD;
       next_rank = 'runner_3';
@@ -225,8 +310,6 @@ export class RanksService {
 
     return {
       rank,
-      missing_derrame,
-      missing_sanguinea,
       missing_usd,
       next_rank,
       missing_scolarship,
