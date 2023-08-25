@@ -56,24 +56,22 @@ export class UsersService {
     address: string,
     type: 'ibo' | 'supreme' | 'pro',
   ): Promise<null | QueryDocumentSnapshot<DocumentData, DocumentData>> {
-    const snap = await getDocs(
-      query(
-        collection(db, 'users'),
-        where(`subscription.${type}.payment_link.address`, '==', address),
-      ),
-    );
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, 'users'),
+          where(`subscription.${type}.payment_link.address`, '==', address),
+        ),
+      );
 
-    Sentry.captureMessage('usuarios', {
-      extra: {
-        address,
-        type,
-        snapshot: JSON.stringify(snap.docs),
-      },
-    });
+      if (snap.empty) return null;
 
-    if (snap.empty) return null;
-
-    return snap.docs[0];
+      return snap.docs[0];
+    } catch (err) {
+      console.error(err);
+      Sentry.captureException(err);
+      return null;
+    }
   }
 
   async getTopUsersByProfit() {
