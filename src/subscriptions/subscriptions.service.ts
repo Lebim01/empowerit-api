@@ -46,6 +46,7 @@ export class SubscriptionsService {
         await this.cryptoapisService.createFirstConfirmationTransaction(
           id_user,
           newAddress,
+          type,
         );
       console.log(resConfirmation);
 

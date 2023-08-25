@@ -6,6 +6,7 @@ import {
   Body,
   HttpException,
   HttpStatus,
+  Param,
 } from '@nestjs/common';
 import { CryptoapisService } from './cryptoapis.service';
 import { db } from '../firebase/admin';
@@ -34,9 +35,10 @@ export class CryptoapisController {
    * Transaccion confirmada
    * Cambiar status a "paid"
    */
-  @Post('callbackPayment')
+  @Post('callbackPayment/:type')
   async callbackPaymentProMembership(
     @Body() body: CallbackNewConfirmedCoins,
+    @Param('type') type,
   ): Promise<any> {
     const network =
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
@@ -48,6 +50,7 @@ export class CryptoapisController {
     ) {
       const userDoc = await this.usersService.getUserByPaymentAddress(
         body.data.item.address,
+        type,
       );
 
       if (userDoc) {
@@ -109,8 +112,11 @@ export class CryptoapisController {
    * Primera confirmacion de transaccion
    * Cambiar status a "confirming"
    */
-  @Post('callbackCoins')
-  async callbackCoins(@Body() body: CallbackNewUnconfirmedCoins): Promise<any> {
+  @Post('callbackCoins/:type')
+  async callbackCoins(
+    @Body() body: CallbackNewUnconfirmedCoins,
+    @Param('type') type: 'ibo' | 'supreme' | 'pro',
+  ): Promise<any> {
     const network =
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
@@ -121,7 +127,11 @@ export class CryptoapisController {
     ) {
       const snap = await db
         .collection('users')
-        .where('payment_link.address', '==', body.data.item.address)
+        .where(
+          `subscription.${type}.payment_link.address`,
+          '==',
+          body.data.item.address,
+        )
         .get();
 
       if (snap.size > 0) {
@@ -140,6 +150,7 @@ export class CryptoapisController {
         await this.cryptoapisService.createCallbackConfirmation(
           data.id,
           body.data.item.address,
+          type,
         );
 
         return 'OK';

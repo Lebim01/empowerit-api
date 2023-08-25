@@ -83,7 +83,11 @@ export class CryptoapisService {
     return res.data.item.address;
   }
 
-  async createFirstConfirmationTransaction(userId: string, address: string) {
+  async createFirstConfirmationTransaction(
+    userId: string,
+    address: string,
+    type: 'ibo' | 'supreme' | 'pro',
+  ) {
     const options = {
       ...default_options,
       method: 'POST',
@@ -100,7 +104,7 @@ export class CryptoapisService {
               address: address,
               allowDuplicates: true,
               callbackSecretKey: 'a12k*?_1ds',
-              callbackUrl: `${hostapi}/cryptoapis/callbackCoins`,
+              callbackUrl: `${hostapi}/cryptoapis/callbackCoins/${type}`,
             },
           },
         },
@@ -117,7 +121,11 @@ export class CryptoapisService {
     await cryptoapisRequest(options);
   }
 
-  async createCallbackConfirmation(id_user: string, address: string) {
+  async createCallbackConfirmation(
+    id_user: string,
+    address: string,
+    type: 'ibo' | 'supreme' | 'pro',
+  ) {
     const options = {
       ...default_options,
       method: 'POST',
@@ -132,7 +140,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${hostapi}/cryptoapis/callbackPayment`,
+            callbackUrl: `${hostapi}/cryptoapis/callbackPayment/${type}`,
             receiveCallbackOn: 2,
           },
         },
