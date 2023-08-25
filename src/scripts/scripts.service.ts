@@ -233,4 +233,31 @@ export class ScriptsService {
       console.log(index, '/', users.size);
     }
   }
+
+  /**
+   * crear subcoleccion right_users and left_users
+   */
+  async assignLeftRightUsers() {
+    const users = await this.getAllUsers();
+
+    const updatePromises = users.map(async (user: any) => {
+      if (user.left_binary_user_id) {
+        await addDoc(collection(db, `users/${user.id}/left_points`), {
+          left_binary_user_id: user.left_binary_user_id,
+          points: user.left_points || 0,
+        });
+        await this.DELAY(50);
+      }
+
+      if (user.right_binary_user_id) {
+        await addDoc(collection(db, `users/${user.id}/right_points`), {
+          right_binary_user_id: user.right_binary_user_id,
+          points: user.right_points || 0,
+        });
+        await this.DELAY(50);
+      }
+    });
+
+    await Promise.all(updatePromises);
+  }
 }
