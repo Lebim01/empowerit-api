@@ -18,6 +18,7 @@ import { BondsService } from 'src/bonds/bonds.service';
 import { db } from 'src/firebase';
 import Sentry from '@sentry/node';
 import { ScholarshipService } from 'src/scholarship/scholarship.service';
+import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 
 @Injectable()
 export class SubscriptionsService {
@@ -25,7 +26,59 @@ export class SubscriptionsService {
     private readonly binaryService: BinaryService,
     private readonly bondService: BondsService,
     private readonly scholarshipService: ScholarshipService,
+    private readonly cryptoapisService: CryptoapisService,
   ) {}
+
+  async createPaymentAddress(id_user: string, type: 'pro' | 'supreme' | 'ibo') {
+    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const userData = userRef.data();
+    let address = '';
+    let referenceId = '';
+
+    if (
+      !userData.subscription[type] ||
+      !userData.subscription[type].payment_link
+    ) {
+      const newAddress = await this.cryptoapisService.createNewWalletAddress();
+      address = newAddress;
+
+      const resConfirmation =
+        await this.cryptoapisService.createFirstConfirmationTransaction(
+          id_user,
+          newAddress,
+        );
+      console.log(resConfirmation);
+
+      referenceId = resConfirmation.data.item.referenceId;
+    } else {
+      address = userData.subscription[type].payment_link.address;
+      referenceId = userData.subscription[type].payment_link.referenceId;
+    }
+
+    const amount: any = await this.cryptoapisService.getBTCExchange(177);
+
+    const payment_link = {
+      referenceId,
+      address,
+      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amount}`,
+      status: 'pending',
+      created_at: new Date(),
+      amount,
+      currency: 'BTC',
+      expires_at: dayjs().add(15, 'minutes').toDate(),
+    };
+
+    await updateDoc(userRef.ref, {
+      [`subscription.${type}.payment_link`]: payment_link,
+    });
+
+    return {
+      address: address,
+      amount: payment_link.amount,
+      currency: payment_link.currency,
+      qr: payment_link.qr,
+    };
+  }
 
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, 'users/' + id_user));

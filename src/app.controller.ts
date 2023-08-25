@@ -31,10 +31,7 @@ class Node {
   }
 }
 
-async function buildTreeFromFirestore(
-  docs: any,
-  rootId: string,
-) {
+async function buildTreeFromFirestore(docs: any, rootId: string) {
   const queue = [new Node(docs[rootId])];
 
   let counter = 0;
@@ -62,18 +59,20 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get('')
-  hello(){
-    return "Hello world";
+  hello() {
+    return 'Hello world';
   }
 
   @Get('cryptoapisverifydomain')
   verifyDomain() {
-    return 'cryptoapis-cb-3c5ed9409121d6814c3c7383372faefb3ed72ccc4775a42c56c49e92949fc616';
+    return process.env.CUSTOM_ENV == 'productin'
+      ? 'cryptoapis-cb-3c5ed9409121d6814c3c7383372faefb3ed72ccc4775a42c56c49e92949fc616'
+      : 'cryptoapis-cb-c104a80e5982695efb1b26ed8f30e0dc764ec4878f2b58d8f4c4609e8a4c665c';
   }
 
   @Get('test')
-  testSentry(){
-    throw new Error("ERROR")
+  testSentry() {
+    throw new Error('ERROR');
   }
 
   @Post('callbackPayment')
@@ -98,22 +97,9 @@ export class AppController {
       .then((r) => r.data);
   }
 
-  @Post('createPaymentAddress')
-  async create(@Body() body) {
-    return axios
-      .post(process.env.CREATE_PAYMENTS_ADDRESS, body)
-      .then((r) => r.data);
-  }
-
-  @Post('createPaymentAddress/supreme')async createSupreme(@Body() body)  {
-    return axios.post(process.env.CREATE_PAYMENTS_ADDRESS_SUPREME, body).then((r) => r.data)
-  }
-
   @Get('getFees')
   async getFees() {
-    return axios
-      .get(process.env.GETFEES)
-      .then((r) => r.data);
+    return axios.get(process.env.GETFEES).then((r) => r.data);
   }
 
   @Post('callbackSendedCoins')
@@ -129,26 +115,22 @@ export class AppController {
 
   @Post('execPayroll')
   async execPayroll(@Body() body) {
-    return axios
-      .post(process.env.PAYROLL)
-      .then((r) => r.data);
+    return axios.post(process.env.PAYROLL).then((r) => r.data);
   }
-  
+
   @Post('sendEmail')
-  async sendEmail(
-    @Body('email') email: string,
-    @Body('otp') otp: number
-    ) {
-      const resultEmail = await this.appService.sendEmail(email,otp)
+  async sendEmail(@Body('email') email: string, @Body('otp') otp: number) {
+    const resultEmail = await this.appService.sendEmail(email, otp);
     return {
-      email: resultEmail, status: 'Correcto'
-    }
+      email: resultEmail,
+      status: 'Correcto',
+    };
   }
 
   @Post('fix_counter')
   async fixCounter() {
     const users = await getDocs(collection(db, 'users'));
-    const docs = {}
+    const docs = {};
     const _users = [];
     for (const doc of users.docs) {
       const user = { id: doc.id, ...doc.data() };
@@ -237,6 +219,4 @@ export class AppController {
 
     return 'borrado';
   }
-
-  
 }

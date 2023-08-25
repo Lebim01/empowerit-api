@@ -81,7 +81,14 @@ export class CryptoapisService {
       path: `/v2/wallet-as-a-service/wallets/${walletId}/${blockchain}/${network}/addresses`,
       qs: { context: 'yourExampleString' },
     };
-    const res = await cryptoapisRequest<ResponseCreateWalletAddress>(options);
+    const res = await cryptoapisRequest<ResponseCreateWalletAddress>(options, {
+      context: 'yourExampleString',
+      data: {
+        item: {
+          label: 'yourLabelStringHere',
+        },
+      },
+    });
     return res.data.item.address;
   }
 
