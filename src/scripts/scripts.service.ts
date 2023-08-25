@@ -9,13 +9,16 @@ import {
   updateDoc,
   addDoc,
 } from 'firebase/firestore';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class ScriptsService {
   usersCollectionRef = collection(db, 'users');
   D28_DAYS_AFTER_NOW = dayjs().add(28, 'day');
   DELAY = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  constructor(private readonly userService: UsersService) {}
 
   async getAllUsers() {
     const data = await getDocs(this.usersCollectionRef);
@@ -181,5 +184,53 @@ export class ScriptsService {
     });
 
     await Promise.all(updatePromises);
+  }
+
+  /**
+   * crear subcolccion sanguine_users
+   */
+  async assingSanguineUsers() {
+    const users = await getDocs(collection(db, 'users'));
+
+    let index = 0;
+    for (const userRef of users.docs) {
+      const current_user = {
+        id: userRef.id,
+        sponsor_id: userRef.get('sponsor_id'),
+        is_active: await this.userService.isActiveUser(userRef.id),
+        created_at: userRef.get('created_at'),
+      };
+
+      const path = [current_user.id];
+
+      let prev_position = userRef.get('position');
+      let sponsor_id = current_user.sponsor_id;
+      while (sponsor_id) {
+        const sponsorRef = await getDoc(doc(db, `users/${sponsor_id}`));
+
+        await setDoc(
+          doc(db, `users/${sponsorRef.id}/sanguine_users/${current_user.id}`),
+          {
+            id_user: userRef.id,
+            sponsor_id: current_user.sponsor_id,
+            is_active: current_user.is_active,
+            created_at: current_user.created_at || null,
+            position: prev_position || null,
+          },
+          {
+            merge: true,
+          },
+        );
+
+        path.push(sponsor_id);
+        console.log(`(${path.length})`, path.join('> '));
+
+        sponsor_id = sponsorRef.get('sponsor_id');
+        prev_position = sponsorRef.get('position');
+      }
+
+      index++;
+      console.log(index, '/', users.size);
+    }
   }
 }

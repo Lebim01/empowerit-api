@@ -10,8 +10,8 @@ import {
   where,
   increment,
 } from 'firebase/firestore';
-import { db } from 'src/firebase';
-import { UsersService } from 'src/users/users.service';
+import { db } from '../firebase';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class BinaryService {
@@ -64,32 +64,34 @@ export class BinaryService {
 
         currentUser = user.id;
 
+        // solo se suman puntos si el usuario esta activo
         const isActive = await this.userService.isActiveUser(user.id);
-        if (isActive) {
-          batch.set(
-            user.ref,
-            {
-              ...(position == 'left'
+
+        batch.set(
+          user.ref,
+          {
+            ...(isActive
+              ? position == 'left'
                 ? {
                     left_points: increment(100),
                   }
                 : {
                     right_points: increment(100),
-                  }),
+                  }
+              : {}),
 
-              count_underline_people: increment(1),
-            },
-            {
-              merge: true,
-            },
-          );
-        }
+            count_underline_people: increment(1),
+          },
+          {
+            merge: true,
+          },
+        );
       } else {
         currentUser = null;
       }
     } while (currentUser);
 
     // Commit the batch
-    // await batch.commit();
+    await batch.commit();
   }
 }

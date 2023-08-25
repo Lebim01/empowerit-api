@@ -9,7 +9,7 @@ import {
   addDoc,
   updateDoc,
 } from 'firebase/firestore';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
 import dayjs from 'dayjs';
 
 @Injectable()

@@ -27,4 +27,9 @@ export class ScriptsController {
   assignNewSubscriptionsObject() {
     return this.scriptsService.assignNewSubscriptionsObject();
   }
+
+  @Post('assingSaguineUsers')
+  assingSaguineUsers() {
+    return this.scriptsService.assingSanguineUsers();
+  }
 }

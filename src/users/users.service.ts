@@ -12,7 +12,8 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
+//
 
 @Injectable()
 export class UsersService {
@@ -29,11 +30,12 @@ export class UsersService {
 
   async getUserByPaymentAddress(
     address: string,
+    type: 'ibo' | 'supreme' | 'pro',
   ): Promise<null | QueryDocumentSnapshot<DocumentData, DocumentData>> {
     const snap = await getDocs(
       query(
         collection(db, 'users'),
-        where('payment_link.address', '==', address),
+        where(`subscription.${type}.payment_link.address`, '==', address),
       ),
     );
 
