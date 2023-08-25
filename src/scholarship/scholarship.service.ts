@@ -45,11 +45,11 @@ export class ScholarshipService {
     const user = await getDoc(docRef);
 
     if (!user.exists()) {
-      return 'El usuario no existe';
+      return false;
     }
 
     if (user.get('has_scholarship')) {
-      return 'El usuario ya tiene beca';
+      return false;
     }
 
     let directPeopleCount = Number(user.get('count_scholarship_people'));
@@ -61,10 +61,10 @@ export class ScholarshipService {
 
     if (directPeopleCount >= 2) {
       await this.assingScholarship(idUser);
-      return 'Se asigno beca al usuario';
+      return true;
     }
 
-    return 'Persona para beca 1 de 2';
+    return false;
   }
 
   /**

@@ -207,7 +207,17 @@ export class SubscriptionsService {
      * Si el sponsor no esta becado le cuenta para la beca
      */
     if (!sponsorHasScholapship) {
-      await this.scholarshipService.addDirectPeople(sponsorRef.id);
+      const activated = await this.scholarshipService.addDirectPeople(
+        sponsorRef.id,
+      );
+      if (activated) {
+        /**
+         * Se reparte bono por ganar la beca
+         * SCHOLARSHIP PRO BONUS
+         */
+        await this.scholarshipService.distributeBond(sponsorRef.id);
+      }
+
       /**
        * Si el sponsor no esta becado no reparte bonos
        */
