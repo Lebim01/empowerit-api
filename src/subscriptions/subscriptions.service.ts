@@ -213,6 +213,18 @@ export class SubscriptionsService {
       return;
     }
 
+    if (!isNew) {
+      try {
+        await this.bondService.execUserResidualBond(sponsorRef.id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('sponsorRef', sponsorRef.id);
+          scope.setExtra('message', 'no se repartio el bono residual');
+          Sentry.captureException(err);
+        });
+      }
+    }
+
     /**
      * aumenta los puntos del binario hacia arriba
      */

@@ -35,4 +35,30 @@ export class BondsService {
       }
     }
   }
+
+  async execUserResidualBond(sponsor_id: string) {
+    const sponsorRef = doc(db, `users/${sponsor_id}`);
+    const sponsor = await getDoc(sponsorRef).then((r) => r.data());
+
+    // primer nivel
+    if (sponsor) {
+      const isActive = await this.userService.isActiveUser(sponsor_id);
+      if (isActive) {
+        await updateDoc(sponsorRef, {
+          bond_residual: increment(sponsor && sponsor.sponsor_id ? 30 : 50),
+        });
+      }
+    }
+
+    // segundo nivel
+    if (sponsor && sponsor.sponsor_id) {
+      const isActive = await this.userService.isActiveUser(sponsor.sponsor_id);
+      if (isActive) {
+        const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
+        await updateDoc(sponsor2Ref, {
+          bond_residual_second_level: increment(20),
+        });
+      }
+    }
+  }
 }
