@@ -15,7 +15,7 @@ import {
   CallbackNewConfirmedCoins,
   CallbackNewUnconfirmedCoins,
 } from './types';
-import Sentry from '@sentry/node';
+import * as Sentry from '@sentry/node';
 
 @Controller('cryptoapis')
 export class CryptoapisController {

@@ -1,14 +1,5 @@
 import * as https from 'https';
-import dayjs from 'dayjs';
 import { Injectable } from '@nestjs/common';
-import {
-  collection,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
-import { db } from '../firebase/index';
 import {
   ResponseCreateWalletAddress,
   ResponseNewUnconfirmedCoinsTransactions,
