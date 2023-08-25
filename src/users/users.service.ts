@@ -17,6 +17,15 @@ import { db } from '../firebase';
 
 @Injectable()
 export class UsersService {
+  async isSupremeActive(id_user: string) {
+    const user = await getDoc(doc(db, 'users/' + id_user));
+    const expires_at = user.get('subscription.supreme.expires_at');
+
+    return expires_at
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
+  }
+
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, `users/${id_user}`));
     const expires_at = user.get('subscription_expires_at');

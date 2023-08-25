@@ -79,30 +79,54 @@ export class BondsService {
 
     switch (nextBond) {
       case 1:
-        await updateDoc(sponsorRef.ref, {
-          bond_supreme_first_level: increment(100),
-        });
+        const is_active = await this.userService.isSupremeActive(
+          sponsorRef.ref.id,
+        );
+        // El usuario debe ser supreme tambien
+        if (is_active) {
+          await updateDoc(sponsorRef.ref, {
+            bond_supreme_first_level: increment(100),
+          });
+        }
         break;
       case 2:
       case 3:
         try {
-          await updateDoc(sponsorRef.ref, {
-            bond_supreme_first_level: increment(50),
-          });
+          const is_active = await this.userService.isSupremeActive(
+            sponsorRef.ref.id,
+          );
+          // El usuario debe ser supreme tambien
+          if (is_active) {
+            await updateDoc(sponsorRef.ref, {
+              bond_supreme_first_level: increment(50),
+            });
+          }
 
           const sponsor2 = await getDoc(
             doc(db, `users/${sponsorRef.get('sponsor_id')}`),
           );
-          await updateDoc(sponsor2.ref, {
-            bond_supreme_second_level: increment(20),
-          });
+          const is_active_2 = await this.userService.isSupremeActive(
+            sponsor2.id,
+          );
+          // El usuario debe ser supreme tambien
+          if (is_active_2) {
+            await updateDoc(sponsor2.ref, {
+              bond_supreme_second_level: increment(20),
+            });
+          }
 
           const sponsor3 = await getDoc(
             doc(db, `users/${sponsor2.get('sponsor_id')}`),
           );
-          await updateDoc(sponsor3.ref, {
-            bond_supreme_third_level: increment(10),
-          });
+          const is_active_3 = await this.userService.isSupremeActive(
+            sponsor3.id,
+          );
+          // El usuario debe ser supreme tambien
+          if (is_active_3) {
+            await updateDoc(sponsor3.ref, {
+              bond_supreme_third_level: increment(10),
+            });
+          }
         } catch (err) {
           Sentry.configureScope((scope) => {
             scope.setExtra('id_user', id_user);
