@@ -5,6 +5,7 @@ import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 import { UsersService } from 'src/users/users.service';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
+import { ScholarshipService } from 'src/scholarship/scholarship.service';
 
 @Module({
   providers: [
@@ -13,6 +14,7 @@ import { BondsService } from 'src/bonds/bonds.service';
     UsersService,
     BinaryService,
     BondsService,
+    ScholarshipService,
   ],
   controllers: [CryptoapisController],
 })

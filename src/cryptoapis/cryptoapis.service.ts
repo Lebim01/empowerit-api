@@ -1,14 +1,5 @@
 import * as https from 'https';
-import dayjs from 'dayjs';
 import { Injectable } from '@nestjs/common';
-import {
-  collection,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
-import { db } from 'src/firebase';
 import {
   ResponseCreateWalletAddress,
   ResponseNewUnconfirmedCoinsTransactions,
@@ -81,11 +72,22 @@ export class CryptoapisService {
       path: `/v2/wallet-as-a-service/wallets/${walletId}/${blockchain}/${network}/addresses`,
       qs: { context: 'yourExampleString' },
     };
-    const res = await cryptoapisRequest<ResponseCreateWalletAddress>(options);
+    const res = await cryptoapisRequest<ResponseCreateWalletAddress>(options, {
+      context: 'yourExampleString',
+      data: {
+        item: {
+          label: 'yourLabelStringHere',
+        },
+      },
+    });
     return res.data.item.address;
   }
 
-  async createFirstConfirmationTransaction(userId: string, address: string) {
+  async createFirstConfirmationTransaction(
+    userId: string,
+    address: string,
+    type: 'ibo' | 'supreme' | 'pro',
+  ) {
     const options = {
       ...default_options,
       method: 'POST',
@@ -102,7 +104,7 @@ export class CryptoapisService {
               address: address,
               allowDuplicates: true,
               callbackSecretKey: 'a12k*?_1ds',
-              callbackUrl: `${hostapi}/cryptoapis/callbackCoins`,
+              callbackUrl: `${hostapi}/cryptoapis/callbackCoins/${type}`,
             },
           },
         },
@@ -119,7 +121,11 @@ export class CryptoapisService {
     await cryptoapisRequest(options);
   }
 
-  async createCallbackConfirmation(id_user: string, address: string) {
+  async createCallbackConfirmation(
+    id_user: string,
+    address: string,
+    type: 'ibo' | 'supreme' | 'pro',
+  ) {
     const options = {
       ...default_options,
       method: 'POST',
@@ -134,7 +140,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${hostapi}/cryptoapis/callbackPayment`,
+            callbackUrl: `${hostapi}/cryptoapis/callbackPayment/${type}`,
             receiveCallbackOn: 2,
           },
         },
@@ -147,60 +153,6 @@ export class CryptoapisService {
       .get('https://blockchain.info/tobtc?currency=USD&value=' + amount)
       .then((r) => r.data);
   };
-
-  async removeUnusedSubscriptionList(offset: number) {
-    const options = {
-      ...default_options,
-      method: 'GET',
-      path: '/v2/blockchain-events/bitcoin/mainnet/subscriptions',
-      qs: { context: 'yourExampleString', limit: 10, offset: 0 },
-    };
-
-    /*const bunch = await Promise.all([
-      cryptoapisRequest({
-        ...options,
-        limit: 10,
-        offset,
-        qs: { limit: 10, offset },
-      }).then((r: any) => {
-        return r?.data?.items || [];
-      }),
-    ]);*/
-
-    const bunch = [];
-
-    const data = bunch.map((docData) => {
-      return {
-        ...docData,
-        created_at: dayjs(docData.createdTimestamp * 1000).toISOString(),
-      };
-    });
-
-    for (const docData of data) {
-      const snap = await getDocs(
-        query(
-          collection(db, 'users'),
-          where('payment_link.address', '==', docData.address),
-        ),
-      );
-      console.log(docData.address, snap.size);
-      if (snap.size == 0) {
-        await this.removeSubscriptionEvent(docData.referenceId);
-      } else {
-        const docUser = snap.docs[0].data();
-        if (docUser.subscription_expires_at) {
-          console.log(docUser.subscription_expires_at, 'eliminar');
-
-          await this.removeSubscriptionEvent(docData.referenceId);
-          await updateDoc(snap.docs[0].ref, {
-            payment_link: {},
-          });
-        }
-      }
-    }
-
-    return data;
-  }
 
   async validateWallet(wallet: string) {
     const options = {

@@ -10,8 +10,8 @@ import {
   where,
   increment,
 } from 'firebase/firestore';
-import { db } from 'src/firebase';
-import { UsersService } from 'src/users/users.service';
+import { db } from '../firebase';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class BinaryService {

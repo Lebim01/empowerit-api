@@ -7,7 +7,9 @@ admin.initializeApp({
   credential: admin.credential.cert(
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    process.env.ENV == 'production' ? serviceAccountProd : serviceAccountDev,
+    process.env.CUSTOM_ENV == 'production'
+      ? serviceAccountProd
+      : serviceAccountDev,
   ),
 });
 
