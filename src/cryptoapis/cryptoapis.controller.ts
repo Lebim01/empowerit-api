@@ -38,9 +38,11 @@ export class CryptoapisController {
   async callbackPaymentProMembership(
     @Body() body: CallbackNewConfirmedCoins,
   ): Promise<any> {
+    const network =
+      process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
-      body.data.item.network == 'mainnet' &&
+      body.data.item.network == network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
@@ -109,9 +111,11 @@ export class CryptoapisController {
    */
   @Post('callbackCoins')
   async callbackCoins(@Body() body: CallbackNewUnconfirmedCoins): Promise<any> {
+    const network =
+      process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED' &&
-      body.data.item.network == 'mainnet' &&
+      body.data.item.network == network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
