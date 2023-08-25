@@ -15,15 +15,70 @@ import {
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
 import Sentry from '@sentry/node';
+import { ScholarshipService } from 'src/scholarship/scholarship.service';
+import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 
 @Injectable()
 export class SubscriptionsService {
   constructor(
     private readonly binaryService: BinaryService,
     private readonly bondService: BondsService,
+    private readonly scholarshipService: ScholarshipService,
+    private readonly cryptoapisService: CryptoapisService,
   ) {}
+
+  async createPaymentAddress(id_user: string, type: 'pro' | 'supreme' | 'ibo') {
+    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const userData = userRef.data();
+    let address = '';
+    let referenceId = '';
+
+    if (
+      !userData.subscription[type] ||
+      !userData.subscription[type].payment_link
+    ) {
+      const newAddress = await this.cryptoapisService.createNewWalletAddress();
+      address = newAddress;
+
+      const resConfirmation =
+        await this.cryptoapisService.createFirstConfirmationTransaction(
+          id_user,
+          newAddress,
+          type,
+        );
+
+      referenceId = resConfirmation.data.item.referenceId;
+    } else {
+      address = userData.subscription[type].payment_link.address;
+      referenceId = userData.subscription[type].payment_link.referenceId;
+    }
+
+    const amount: any = await this.cryptoapisService.getBTCExchange(177);
+
+    const payment_link = {
+      referenceId,
+      address,
+      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amount}`,
+      status: 'pending',
+      created_at: new Date(),
+      amount,
+      currency: 'BTC',
+      expires_at: dayjs().add(15, 'minutes').toDate(),
+    };
+
+    await updateDoc(userRef.ref, {
+      [`subscription.${type}.payment_link`]: payment_link,
+    });
+
+    return {
+      address: address,
+      amount: payment_link.amount,
+      currency: payment_link.currency,
+      qr: payment_link.qr,
+    };
+  }
 
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, 'users/' + id_user));
@@ -37,23 +92,49 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingMembership(id_user: string, isNew = false) {
+  async assingProMembership(id_user: string) {
+    const isNew = await this.isNewMember(id_user);
     await updateDoc(doc(db, `users/${id_user}`), {
-      payment_link: null,
+      'subscription.pro.payment_link': null,
       'subscription.pro.start_at': dayjs().toDate(),
       'subscription.pro.expires_at': dayjs()
         .add(isNew ? 56 : 28, 'days')
         .toDate(),
       'subscription.pro.status': 'paid',
+      is_new: false,
+    });
+  }
+
+  async assingIBOMembership(id_user: string) {
+    await updateDoc(doc(db, `users/${id_user}`), {
+      'subscription.ibo.payment_link': null,
+      'subscription.ibo.start_at': dayjs().toDate(),
+      'subscription.ibo.expires_at': dayjs().add(112, 'days').toDate(),
+      'subscription.ibo.status': 'paid',
+    });
+  }
+
+  async assingSupremeMembership(id_user: string) {
+    await updateDoc(doc(db, `users/${id_user}`), {
+      'subscription.supreme.payment_link': null,
+      'subscription.supreme.start_at': dayjs().toDate(),
+      'subscription.supreme.expires_at': dayjs().add(168, 'days').toDate(),
+      'subscription.supreme.status': 'paid',
     });
   }
 
   async isNewMember(id_user: string) {
-    const transactions = await getCountFromServer(
-      collection(db, `users/${id_user}/transactions`),
-    );
-    const isNew = transactions.data().count == 0;
+    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const isNew = Boolean(userRef.get('is_new')) ?? false;
     return isNew;
+  }
+
+  async onPaymentIBOMembership(id_user) {
+    await this.assingIBOMembership(id_user);
+  }
+
+  async onPaymentSupremeMembership(id_user) {
+    await this.assingSupremeMembership(id_user);
   }
 
   async onPaymentProMembership(id_user: string) {
@@ -73,6 +154,11 @@ export class SubscriptionsService {
       parent_binary_user_id: binaryPosition.parent_id,
     });
 
+    /**
+     * Se activa la membresia
+     */
+    await this.assingProMembership(id_user);
+
     try {
       /**
        * se setea el valor del hijo al usuario ascendente en el binario
@@ -86,7 +172,7 @@ export class SubscriptionsService {
     } catch (err) {
       Sentry.configureScope((scope) => {
         scope.setExtra('id_user', id_user);
-        scope.setExtra('message', 'no se pudo actualizar el binario derrame');
+        scope.setExtra('message', 'no se pudo setear al hijo');
         Sentry.captureException(err);
       });
     }
@@ -105,6 +191,19 @@ export class SubscriptionsService {
         );
         Sentry.captureException(err);
       });
+    }
+
+    const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
+    const sponsorHasScholapship = sponsorRef.get('has_scholarship');
+    /**
+     * Si el sponsor no esta becado le cuenta para la beca
+     */
+    if (!sponsorHasScholapship) {
+      await this.scholarshipService.addDirectPeople(sponsorRef.id);
+      /**
+       * Si el sponsor no esta becado no reparte bonos
+       */
+      return;
     }
 
     /**
@@ -132,9 +231,6 @@ export class SubscriptionsService {
         Sentry.captureException(err);
       });
     }
-
-    const isNew = await this.isNewMember(id_user);
-    await this.assingMembership(id_user, isNew);
   }
 
   async insertSanguineUsers(id_user: string) {

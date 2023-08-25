@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from 'src/firebase';
+import { db } from '../firebase';
 import dayjs from 'dayjs';
 
 @Injectable()
