@@ -13,6 +13,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { db as admin } from '../firebase/admin';
 import * as Sentry from '@sentry/node';
 
 @Injectable()
@@ -55,20 +56,17 @@ export class UsersService {
   async getUserByPaymentAddress(
     address: string,
     type: 'ibo' | 'supreme' | 'pro',
-  ): Promise<null | QueryDocumentSnapshot<DocumentData, DocumentData>> {
+  ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
     try {
-      const snap = await getDocs(
-        query(
-          collection(db, 'users'),
-          where(`subscription.${type}.payment_link.address`, '==', address),
-        ),
-      );
+      const snap = await admin
+        .collection('users')
+        .where(`subscription.${type}.payment_link.address`, '==', address)
+        .get();
 
       if (snap.empty) return null;
 
       return snap.docs[0];
     } catch (err) {
-      console.error(err);
       Sentry.captureException(err);
       return null;
     }

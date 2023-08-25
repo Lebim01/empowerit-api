@@ -48,70 +48,66 @@ export class CryptoapisController {
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
-      try {
-        const userDoc = await this.usersService.getUserByPaymentAddress(
-          body.data.item.address,
-          type,
-        );
+      const userDoc = await this.usersService.getUserByPaymentAddress(
+        body.data.item.address,
+        type,
+      );
 
-        if (userDoc) {
-          const data = userDoc.data();
+      if (userDoc) {
+        const data = userDoc.data();
 
-          if (
-            Number(data.subscription[type].payment_link.amount) <=
-            Number(body.data.item.amount)
-          ) {
-            if (type == 'pro') {
-              await this.subscriptionService.onPaymentProMembership(userDoc.id);
-            } else if (type == 'ibo') {
-              await this.subscriptionService.onPaymentIBOMembership(userDoc.id);
-            } else if (type == 'supreme') {
-              await this.subscriptionService.onPaymentSupremeMembership(
-                userDoc.id,
-              );
-            }
-
-            /**
-             * eliminar el evento que esta en el servicio de la wallet
-             */
-            await this.cryptoapisService.removeCallbackEvent(body.referenceId);
-
-            /**
-             * guardar registro de la transaccion dentro de una subcoleccion
-             */
-            await db.collection(`users/${userDoc.id}/transactions`).add({
-              ...body,
-              created_at: new Date(),
-            });
-
-            return 'transaccion correcta';
-          } else {
-            Sentry.captureException('Inscripción: cantidad incorrecta', {
-              extra: {
-                reference: body.referenceId,
-                address: body.data.item.address,
-              },
-            });
-            throw new HttpException(
-              'Cantidad incorrecta',
-              HttpStatus.BAD_REQUEST,
+        if (
+          Number(data.subscription[type].payment_link.amount) <=
+          Number(body.data.item.amount)
+        ) {
+          if (type == 'pro') {
+            await this.subscriptionService.onPaymentProMembership(userDoc.id);
+          } else if (type == 'ibo') {
+            await this.subscriptionService.onPaymentIBOMembership(userDoc.id);
+          } else if (type == 'supreme') {
+            await this.subscriptionService.onPaymentSupremeMembership(
+              userDoc.id,
             );
           }
+
+          /**
+           * eliminar el evento que esta en el servicio de la wallet
+           */
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+
+          /**
+           * guardar registro de la transaccion dentro de una subcoleccion
+           */
+          await db.collection(`users/${userDoc.id}/transactions`).add({
+            ...body,
+            created_at: new Date(),
+          });
+
+          return 'transaccion correcta';
         } else {
-          Sentry.captureException('Inscripción: usuario no encontrado', {
+          Sentry.captureException('Inscripción: cantidad incorrecta', {
             extra: {
               reference: body.referenceId,
               address: body.data.item.address,
-              payload: JSON.stringify(body),
             },
           });
           throw new HttpException(
-            'No se encontro el usuario',
+            'Cantidad incorrecta',
             HttpStatus.BAD_REQUEST,
           );
         }
-      } catch (err) {
-        console.error(err);
+      } else {
+        Sentry.captureException('Inscripción: usuario no encontrado', {
+          extra: {
+            reference: body.referenceId,
+            address: body.data.item.address,
+            payload: JSON.stringify(body),
+          },
+        });
+        throw new HttpException(
+          'No se encontro el usuario',
+          HttpStatus.BAD_REQUEST,
+        );
       }
     } else {
       Sentry.captureException('Inscripción: peticion invalida', {
