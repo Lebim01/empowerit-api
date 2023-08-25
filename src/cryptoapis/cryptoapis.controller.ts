@@ -25,11 +25,6 @@ export class CryptoapisController {
     private readonly usersService: UsersService,
   ) {}
 
-  @Get('removeUnusedSubscriptionList')
-  removeUnusedSubscriptionList(@Query('offset') offset = 0) {
-    return this.cryptoapisService.removeUnusedSubscriptionList(offset);
-  }
-
   @Get('validateWallet')
   validateWallet(@Query('wallet') wallet: string) {
     return this.cryptoapisService.validateWallet(wallet);
