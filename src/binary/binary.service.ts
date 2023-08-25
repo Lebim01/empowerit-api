@@ -15,7 +15,7 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class BinaryService {
-  constructor(private readonly userService: UsersService) { }
+  constructor(private readonly userService: UsersService) {}
 
   async calculatePositionOfBinary(
     sponsor_id: string,
@@ -44,6 +44,8 @@ export class BinaryService {
   async increaseBinaryPoints(registerUserId: string) {
     const batch = writeBatch(db);
 
+    const isNew = await this.userService.isNewMember(registerUserId);
+
     let currentUser = registerUserId;
 
     do {
@@ -66,26 +68,29 @@ export class BinaryService {
 
         // solo se suman puntos si el usuario esta activo
         const isActive = await this.userService.isActiveUser(user.id);
+        const isIBOActive = await this.userService.isIBOActive(user.id);
 
-        if (isActive) {
-          //se determina a que subcoleccion se va a enfocar
-          const positionCollection = position == 'left' ? 'left_points' : 'right_points';
-          const subCollectionRef = doc(collection(db, `users/${user.id}/${positionCollection}`));
-          let dataToSet; 
-          if (position == 'left') {
-            dataToSet = {
-              points: increment(100),
-              left_binary_user_id: currentUser,
-            }
-          } else {
-             dataToSet = {
-              points: increment(100),
-              right_binary_user_id: currentUser,
-            }
-          }
-        
-          batch.set(subCollectionRef, dataToSet)
-          batch.set(user.ref, {count_underline_people: increment(1)}, {merge: true})
+        if (isActive && isIBOActive) {
+          //se determina a que subcoleccion que se va a enfocar
+          const positionCollection =
+            position == 'left' ? 'left_points' : 'right_points';
+
+          const subCollectionRef = doc(
+            collection(db, `users/${user.id}/${positionCollection}`),
+          );
+
+          batch.set(subCollectionRef, {
+            points: 100,
+            user_id: currentUser,
+          });
+        }
+
+        if (isNew) {
+          batch.set(
+            user.ref,
+            { count_underline_people: increment(1) },
+            { merge: true },
+          );
         }
       } else {
         currentUser = null;
