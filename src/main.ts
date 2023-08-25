@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import * as Sentry from '@sentry/node';
 import { SentryFilter } from './sentry/sentry.filter';
 
+//
+
 async function bootstrap() {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
