@@ -135,6 +135,9 @@ export class ScriptsService {
       const userDoc = doc(db, 'users', user.id);
       await updateDoc(userDoc, {
         rank: 'vanguard',
+        count_direct_people_this_cycle: 0,
+        count_scholarship_people: 0,
+        has_scholarship: false,
       });
 
       console.log('Rank Updated: ', 'vanguard', 'from user: ', user.id);

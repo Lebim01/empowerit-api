@@ -61,6 +61,7 @@ export class ScholarshipService {
 
     if (directPeopleCount >= 2) {
       await this.assingScholarship(idUser);
+      await this.distributeBond(idUser);
       return true;
     }
 
