@@ -85,8 +85,14 @@ export class AdminService {
         profits: doc.profits + doc.total,
         bond_direct: 0,
         bond_direct_second_level: 0,
-        left_points: doc.left_points - doc.binary_points,
-        right_points: doc.right_points - doc.binary_points,
+        bond_residual_level_1: 0,
+        bond_residual_level_2: 0,
+        bond_scolarship_level_1: 0,
+        bond_scolarship_level_2: 0,
+        bond_scolarship_level_3: 0,
+        bond_supreme_level_1: 0,
+        bond_supreme_level_2: 0,
+        bond_supreme_level_3: 0,
       });
     }
 
