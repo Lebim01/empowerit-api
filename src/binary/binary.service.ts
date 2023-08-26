@@ -107,7 +107,9 @@ export class BinaryService {
     const rightPointsRef = collection(db, `users/${userId}/right-points`);
 
     const leftDocs = await getDocs(query(leftPointsRef, orderBy('starts_at'))); // Asumiendo que tienes un campo 'date'
-    const rightDocs = await getDocs(query(rightPointsRef, orderBy('starts_at')));
+    const rightDocs = await getDocs(
+      query(rightPointsRef, orderBy('starts_at')),
+    );
 
     const leftPointsDocs = leftDocs.docs;
     const rightPointsDocs = rightDocs.docs;
@@ -115,15 +117,15 @@ export class BinaryService {
     const batch = writeBatch(db);
 
     while (leftPointsDocs.length > 0 && rightPointsDocs.length > 0) {
-        // Tomamos y eliminamos el documento más antiguo de cada lado
-        const oldestLeftDoc = leftPointsDocs.shift();
-        const oldestRightDoc = rightPointsDocs.shift();
+      // Tomamos y eliminamos el documento más antiguo de cada lado
+      const oldestLeftDoc = leftPointsDocs.shift();
+      const oldestRightDoc = rightPointsDocs.shift();
 
-        batch.delete(oldestLeftDoc.ref);
-        batch.delete(oldestRightDoc.ref);
+      batch.delete(oldestLeftDoc.ref);
+      batch.delete(oldestRightDoc.ref);
     }
 
     // Ejecutar la operación batch
     await batch.commit();
-}
+  }
 }

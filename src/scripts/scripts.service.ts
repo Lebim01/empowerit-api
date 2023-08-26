@@ -20,7 +20,7 @@ export class ScriptsService {
   D28_DAYS_AFTER_NOW = dayjs().add(28, 'day');
   DELAY = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  constructor(private readonly userService: UsersService) { }
+  constructor(private readonly userService: UsersService) {}
 
   async getAllUsers() {
     const data = await getDocs(this.usersCollectionRef);
@@ -268,20 +268,20 @@ export class ScriptsService {
 
   async deleteExpiredPoints() {
     const currentDate = dayjs();
-  
+
     // Busca todos los documentos en las subcolecciones 'left-points' y 'right-points'
     for (const subcollection of ['left-points', 'right-points']) {
       const pointsRef = collectionGroup(db, subcollection);
-  
+
       const allPoints = await getDocs(pointsRef);
-  
+
       for (const pointDoc of allPoints.docs) {
         const data = pointDoc.data();
-  
+
         if (data.starts_at) {
           const startPointDate = dayjs(data.starts_at.toDate());
           const diffInDays = currentDate.diff(startPointDate, 'day');
-  
+
           if (diffInDays > 84) {
             await deleteDoc(pointDoc.ref);
             console.log(`Deleted expired point with ID: ${pointDoc.id}`);
@@ -290,8 +290,21 @@ export class ScriptsService {
       }
     }
   }
+
+  async deleteUsers() {
+    const ignore = [
+      '1QcZupKiTxTOYfe9CAfTQuaBcnK2',
+      '7iRezG7E6vRq7OQywQN3WawSa872',
+      'G3E5HN0K2XMDPPbO0BgkbGNfVZ33',
+    ];
+    const users = await getDocs(collection(db, 'users')).then((r) => r.docs);
+
+    for (const u of users) {
+      if (!ignore.includes(u.id)) {
+        await deleteDoc(u.ref);
+      }
+    }
+  }
 }
-
-
 
 //deleteExpiredPoints();
