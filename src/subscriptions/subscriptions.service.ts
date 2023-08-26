@@ -154,10 +154,8 @@ export class SubscriptionsService {
        */
       const sponsor = await getDoc(doc(db, `users/${data.sponsor_id}`));
       const sponsor_side = sponsor.get('position') ?? 'right';
-      console.log({ sponsor_side, user_side: data.position });
       const forceDerrame =
         Number(sponsor.get('count_direct_people_this_cycle')) < 2;
-      console.log({ forceDerrame });
 
       if (forceDerrame) {
         /**
@@ -170,7 +168,6 @@ export class SubscriptionsService {
           });
         }
 
-        console.log('update count_direct_people_this_cycle');
         await updateDoc(sponsor.ref, {
           count_direct_people_this_cycle: increment(1),
         });
@@ -190,19 +187,6 @@ export class SubscriptionsService {
       });
 
       try {
-        await this.binaryService.increaseUnderlinePeople(id_user);
-      } catch (err) {
-        Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', id_user);
-          scope.setExtra(
-            'message',
-            'no se pudo incrementar count_underline_people',
-          );
-          Sentry.captureException(err);
-        });
-      }
-
-      try {
         /**
          * se setea el valor del hijo al usuario ascendente en el binario
          */
@@ -216,6 +200,19 @@ export class SubscriptionsService {
         Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);
           scope.setExtra('message', 'no se pudo setear al hijo');
+          Sentry.captureException(err);
+        });
+      }
+
+      try {
+        await this.binaryService.increaseUnderlinePeople(userDocRef.id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', userDocRef.id);
+          scope.setExtra(
+            'message',
+            'no se pudo incrementar count_underline_people',
+          );
           Sentry.captureException(err);
         });
       }
@@ -247,6 +244,16 @@ export class SubscriptionsService {
     const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
     const sponsorHasScholapship =
       Boolean(sponsorRef.get('has_scholarship')) ?? false;
+
+    /**
+     * aumentar contador de gente directa
+     */
+    if (isNew) {
+      await updateDoc(sponsorRef.ref, {
+        count_direct_people: increment(1),
+      });
+    }
+
     /**
      * Si el sponsor no esta becado le cuenta para la beca
      */

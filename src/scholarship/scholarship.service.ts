@@ -32,11 +32,9 @@ export class ScholarshipService {
       if (user.get('has_scholarship')) {
         return 'El usuario ya tiene beca';
       }
-      const scholarship = {
+      await updateDoc(docRef, {
         has_scholarship: true,
-        count_scholarship_people: 0,
-      };
-      await updateDoc(docRef, scholarship);
+      });
     }
   }
 

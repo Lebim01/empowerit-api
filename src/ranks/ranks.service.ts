@@ -199,8 +199,6 @@ export class RanksService {
     derrame: number[],
     firms: number[],
   ) {
-    console.log(sanguinea, derrame);
-
     let rank = '';
     let next_rank = '';
     let missing_usd = 0;

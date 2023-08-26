@@ -296,10 +296,13 @@ export class ScriptsService {
       '1QcZupKiTxTOYfe9CAfTQuaBcnK2',
       '7iRezG7E6vRq7OQywQN3WawSa872',
       'G3E5HN0K2XMDPPbO0BgkbGNfVZ33',
+      '8MIprgTiKGOkZ1MhkFaB81wegdM2',
+      '1ICmQvQgq1hfq1CxTJGj1jI6PC53',
     ];
     const users = await getDocs(collection(db, 'users')).then((r) => r.docs);
 
     for (const u of users) {
+      console.log(u.id);
       if (!ignore.includes(u.id)) {
         await deleteDoc(u.ref);
       }

@@ -46,19 +46,13 @@ export class BinaryService {
     const batch = writeBatch(db);
 
     let currentUser = registerUserId;
+    let user = await getDoc(doc(db, `users/${registerUserId}`));
 
     do {
-      const users = await getDocs(
-        query(
-          collection(db, 'users'),
-          or(
-            where('left_binary_user_id', '==', currentUser),
-            where('right_binary_user_id', '==', currentUser),
-          ),
-        ),
+      user = await getDoc(
+        doc(db, `users/${user.get('parent_binary_user_id')}`),
       );
-      if (users.size > 0) {
-        const user = users.docs[0];
+      if (user.exists()) {
         currentUser = user.id;
 
         batch.set(
