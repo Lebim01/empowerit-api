@@ -44,7 +44,7 @@ export class UsersService {
 
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, `users/${id_user}`));
-    const expires_at = user.get('subscription_expires_at');
+    const expires_at = user.get('subscription.pro.expires_at');
     const is_admin = Boolean(user.get('is_admin'));
     return is_admin
       ? true

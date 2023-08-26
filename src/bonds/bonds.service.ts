@@ -67,17 +67,16 @@ export class BondsService {
 
   async execSupremeBond(id_user: string) {
     const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const sponsorRef = await getDoc(
+      doc(db, `users/${userRef.get('sponsor_id')}`),
+    );
 
-    const sequence = Number(userRef.get('supreme_sequence') ?? 0);
+    const sequence = Number(sponsorRef.get('supreme_sequence') ?? 0);
 
     let nextBond = sequence + 1;
     if (nextBond == 4) {
       nextBond = 1;
     }
-
-    const sponsorRef = await getDoc(
-      doc(db, `users/${userRef.get('sponsor_id')}`),
-    );
 
     switch (nextBond) {
       case 1:
@@ -140,5 +139,9 @@ export class BondsService {
       default:
         break;
     }
+
+    await updateDoc(sponsorRef.ref, {
+      supreme_sequence: increment(1),
+    });
   }
 }

@@ -245,6 +245,8 @@ export class SubscriptionsService {
     const sponsorHasScholapship =
       Boolean(sponsorRef.get('has_scholarship')) ?? false;
 
+    console.log({ sponsorHasScholapship, isNew });
+
     /**
      * aumentar contador de gente directa
      */
