@@ -11,6 +11,7 @@ import {
   writeBatch,
   collectionGroup,
   setDoc,
+  increment,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
@@ -143,12 +144,37 @@ export class SubscriptionsService {
     const isNew = await this.isNewMember(id_user);
 
     /**
-     * Asignar posicion en el binario solo para usuarios nuevos
+     * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
     if (!data.parent_binary_user_id) {
+      let finish_position = data.position;
+
+      /**
+       * Las dos primeras personas de cada ciclo van al lado del derrame
+       */
+      const forceDerrame = (data.count_direct_people_this_cycle ?? 0) < 2;
+      if (forceDerrame) {
+        const sponsor = await getDoc(doc(db, `users/${data.sponsor_id}`));
+        const sponsor_side = sponsor.get('position') ?? 'right';
+
+        /**
+         * Nos quiso hackear, y forzamos el lado correcto
+         */
+        if (data.position != sponsor_side) {
+          finish_position = sponsor_side;
+          await updateDoc(userDocRef, {
+            position: sponsor_side,
+          });
+        }
+
+        await updateDoc(userDocRef, {
+          count_direct_people_this_cycle: increment(1),
+        });
+      }
+
       const binaryPosition = await this.binaryService.calculatePositionOfBinary(
         data.sponsor_id,
-        data.position,
+        finish_position,
       );
       console.log(binaryPosition);
 
@@ -165,7 +191,7 @@ export class SubscriptionsService {
          */
         await updateDoc(
           doc(db, 'users/' + binaryPosition.parent_id),
-          data.position == 'left'
+          finish_position == 'left'
             ? { left_binary_user_id: id_user }
             : { right_binary_user_id: id_user },
         );
@@ -202,21 +228,13 @@ export class SubscriptionsService {
     }
 
     const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
-    const sponsorHasScholapship = sponsorRef.get('has_scholarship');
+    const sponsorHasScholapship =
+      Boolean(sponsorRef.get('has_scholarship')) ?? false;
     /**
      * Si el sponsor no esta becado le cuenta para la beca
      */
     if (!sponsorHasScholapship) {
-      const activated = await this.scholarshipService.addDirectPeople(
-        sponsorRef.id,
-      );
-      if (activated) {
-        /**
-         * Se reparte bono por ganar la beca
-         * SCHOLARSHIP PRO BONUS
-         */
-        await this.scholarshipService.distributeBond(sponsorRef.id);
-      }
+      await this.scholarshipService.addDirectPeople(sponsorRef.id);
 
       /**
        * Si el sponsor no esta becado no reparte bonos
