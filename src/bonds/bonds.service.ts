@@ -46,7 +46,9 @@ export class BondsService {
       const isActive = await this.userService.isActiveUser(sponsor_id);
       if (isActive) {
         await updateDoc(sponsorRef, {
-          bond_residual: increment(sponsor && sponsor.sponsor_id ? 30 : 50),
+          bond_residual_level_1: increment(
+            sponsor && sponsor.sponsor_id ? 30 : 50,
+          ),
         });
       }
     }
@@ -57,7 +59,7 @@ export class BondsService {
       if (isActive) {
         const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
         await updateDoc(sponsor2Ref, {
-          bond_residual_second_level: increment(20),
+          bond_residual_level_2: increment(20),
         });
       }
     }
@@ -85,7 +87,7 @@ export class BondsService {
         // El usuario debe ser supreme tambien
         if (is_active) {
           await updateDoc(sponsorRef.ref, {
-            bond_supreme_first_level: increment(100),
+            bond_supreme_level_1: increment(100),
           });
         }
         break;
@@ -98,7 +100,7 @@ export class BondsService {
           // El usuario debe ser supreme tambien
           if (is_active) {
             await updateDoc(sponsorRef.ref, {
-              bond_supreme_first_level: increment(50),
+              bond_supreme_level_1: increment(50),
             });
           }
 
@@ -111,7 +113,7 @@ export class BondsService {
           // El usuario debe ser supreme tambien
           if (is_active_2) {
             await updateDoc(sponsor2.ref, {
-              bond_supreme_second_level: increment(20),
+              bond_supreme_level_2: increment(20),
             });
           }
 
@@ -124,7 +126,7 @@ export class BondsService {
           // El usuario debe ser supreme tambien
           if (is_active_3) {
             await updateDoc(sponsor3.ref, {
-              bond_supreme_third_level: increment(10),
+              bond_supreme_level_3: increment(10),
             });
           }
         } catch (err) {
