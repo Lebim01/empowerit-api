@@ -4,7 +4,7 @@ import { CryptoapisService } from '@/cryptoapis/cryptoapis.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly cryptoapisService: CryptoapisService) {}
+  constructor(private readonly cryptoapisService: CryptoapisService) { }
 
   async payroll() {
     const users = await db.collection('users').get();
@@ -25,6 +25,14 @@ export class AdminService {
           name: docData.name,
           direct: docData.bond_direct || 0,
           direct_second_level: docData.bond_direct_second_level || 0,
+          residual: docData.bond_residual_level_1 || 0,
+          residual_second_level: docData.bond_residual_level_2 || 0,
+          scolarchip: docData.bond_scolarship_level_1 || 0,
+          scolarchip_second_level: docData.bond_scolarship_level_2 || 0,
+          scolarchip_third_level: docData.bond_scolarship_level_3 || 0,
+          supreme: docData.bond_supreme_level_1 || 0,
+          supreme_second_level: docData.bond_supreme_level_2 || 0,
+          supreme_third_level: docData.bond_supreme_level_3 || 0,
           binary: binary_points * (binary_15.includes(docData.id) ? 0.15 : 0.1),
           binary_side,
           binary_points,
@@ -32,11 +40,12 @@ export class AdminService {
           right_points: docData.right_points,
           wallet_bitcoin: docData.wallet_bitcoin,
           profits: docData.profits || 0,
+          rank: docData.rank,
         };
       })
       .map((doc) => ({
         ...doc,
-        subtotal: doc.direct + doc.binary + doc.direct_second_level,
+        subtotal: doc.direct + doc.binary + doc.direct_second_level + doc.residual + doc.residual_second_level + doc.scolarchip + doc.scolarchip_second_level + doc.scolarchip_third_level + doc.supreme + doc.supreme_second_level + doc.supreme_third_level,
       }))
       .map((doc) => ({
         ...doc,
