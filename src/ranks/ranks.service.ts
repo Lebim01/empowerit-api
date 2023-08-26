@@ -12,6 +12,9 @@ import {
 import { db } from '../firebase';
 import dayjs from 'dayjs';
 import { ranks_object } from './ranks_object';
+
+//
+
 @Injectable()
 export class RanksService {
   async updateRank() {
@@ -20,9 +23,9 @@ export class RanksService {
 
     /* recorrer todos los usuarios */
     for (let i = 0; i <= users.size - 1; i++) {
+      const user = users.docs[i];
       const rankData = await this.getRankUser(users.docs[i].id);
-      const docRef = doc(db, 'users', rankData.user);
-      await updateDoc(docRef, { rank: rankData.rank_key });
+      await updateDoc(user.ref, { rank: rankData.rank_key });
 
       await this.insertRank(
         rankData.rank_key,
