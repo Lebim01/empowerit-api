@@ -144,7 +144,7 @@ export class SubscriptionsService {
     const isNew = await this.isNewMember(id_user);
 
     /**
-     * Asignar posicion en el binario solo para usuarios nuevos
+     * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
     if (!data.parent_binary_user_id) {
       let finish_position = data.position;
@@ -157,9 +157,11 @@ export class SubscriptionsService {
         const sponsor = await getDoc(doc(db, `users/${data.sponsor_id}`));
         const sponsor_side = sponsor.get('position') ?? 'right';
 
-        finish_position = sponsor_side;
-
+        /**
+         * Nos quiso hackear, y forzamos el lado correcto
+         */
         if (data.position != sponsor_side) {
+          finish_position = sponsor_side;
           await updateDoc(userDocRef, {
             position: sponsor_side,
           });
