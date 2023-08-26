@@ -137,9 +137,18 @@ export class ScriptsService {
       const userDoc = doc(db, 'users', user.id);
       await updateDoc(userDoc, {
         rank: 'vanguard',
-        count_direct_people_this_cycle: 0,
+        bond_residual_level_1: 0,
+        bond_residual_level_2: 0,
+        bond_supreme_level_1: 0,
+        bond_supreme_level_2: 0,
+        bond_supreme_level_3: 0,
+        bond_scholarship_level_1: 0,
+        bond_scholarship_level_2: 0,
+        bond_scholarship_level_3: 0,
         count_scholarship_people: 0,
+        count_direct_people_this_cycle: 0,
         has_scholarship: false,
+        is_new: false,
       });
 
       console.log('Rank Updated: ', 'vanguard', 'from user: ', user.id);
