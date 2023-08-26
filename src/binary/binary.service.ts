@@ -9,6 +9,7 @@ import {
   or,
   where,
   increment,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UsersService } from '../users/users.service';
@@ -41,6 +42,33 @@ export class BinaryService {
     };
   }
 
+  async increaseUnderlinePeople(registerUserId: string) {
+    const batch = writeBatch(db);
+
+    let currentUser = registerUserId;
+    let user = await getDoc(doc(db, `users/${registerUserId}`));
+
+    do {
+      user = await getDoc(
+        doc(db, `users/${user.get('parent_binary_user_id')}`),
+      );
+      if (user.exists()) {
+        currentUser = user.id;
+
+        batch.set(
+          user.ref,
+          { count_underline_people: increment(1) },
+          { merge: true },
+        );
+      } else {
+        currentUser = null;
+      }
+    } while (currentUser);
+
+    // Commit the batch
+    await batch.commit();
+  }
+
   async increaseBinaryPoints(registerUserId: string) {
     const batch = writeBatch(db);
 
@@ -66,32 +94,55 @@ export class BinaryService {
 
         // solo se suman puntos si el usuario esta activo
         const isActive = await this.userService.isActiveUser(user.id);
+        const isIBOActive = await this.userService.isIBOActive(user.id);
 
-        batch.set(
-          user.ref,
-          {
-            ...(isActive
-              ? position == 'left'
-                ? {
-                    left_points: increment(100),
-                  }
-                : {
-                    right_points: increment(100),
-                  }
-              : {}),
+        if (isActive && isIBOActive) {
+          //se determina a que subcoleccion que se va a enfocar
+          const positionCollection =
+            position == 'left' ? 'left-points' : 'right-points';
 
-            count_underline_people: increment(1),
-          },
-          {
-            merge: true,
-          },
-        );
+          const subCollectionRef = doc(
+            collection(db, `users/${user.id}/${positionCollection}`),
+          );
+
+          batch.set(subCollectionRef, {
+            points: 100,
+            user_id: currentUser,
+          });
+        }
       } else {
         currentUser = null;
       }
     } while (currentUser);
 
     // Commit the batch
+    await batch.commit();
+  }
+
+  async matchBinaryPoints(userId: string) {
+    const leftPointsRef = collection(db, `users/${userId}/left-points`);
+    const rightPointsRef = collection(db, `users/${userId}/right-points`);
+
+    const leftDocs = await getDocs(query(leftPointsRef, orderBy('starts_at'))); // Asumiendo que tienes un campo 'date'
+    const rightDocs = await getDocs(
+      query(rightPointsRef, orderBy('starts_at')),
+    );
+
+    const leftPointsDocs = leftDocs.docs;
+    const rightPointsDocs = rightDocs.docs;
+
+    const batch = writeBatch(db);
+
+    while (leftPointsDocs.length > 0 && rightPointsDocs.length > 0) {
+      // Tomamos y eliminamos el documento más antiguo de cada lado
+      const oldestLeftDoc = leftPointsDocs.shift();
+      const oldestRightDoc = rightPointsDocs.shift();
+
+      batch.delete(oldestLeftDoc.ref);
+      batch.delete(oldestRightDoc.ref);
+    }
+
+    // Ejecutar la operación batch
     await batch.commit();
   }
 }

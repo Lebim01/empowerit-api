@@ -32,4 +32,9 @@ export class SubscriptionsController {
   async createPaymentAddressIbo(@Body() body) {
     return this.subscriptionService.createPaymentAddress(body.userId, 'ibo');
   }
+
+  @Post('insertSanguineUsers')
+  async insertSanguineUsers(@Body() body) {
+    return this.subscriptionService.insertSanguineUsers(body.userId);
+  }
 }

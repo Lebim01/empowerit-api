@@ -11,11 +11,12 @@ import {
   writeBatch,
   collectionGroup,
   setDoc,
+  increment,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { db } from '../firebase';
-import Sentry from '@sentry/node';
+import * as Sentry from '@sentry/node';
 import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 
@@ -128,12 +129,13 @@ export class SubscriptionsService {
     return isNew;
   }
 
-  async onPaymentIBOMembership(id_user) {
+  async onPaymentIBOMembership(id_user: string) {
     await this.assingIBOMembership(id_user);
   }
 
-  async onPaymentSupremeMembership(id_user) {
+  async onPaymentSupremeMembership(id_user: string) {
     await this.assingSupremeMembership(id_user);
+    await this.bondService.execSupremeBond(id_user);
   }
 
   async onPaymentProMembership(id_user: string) {
@@ -142,12 +144,38 @@ export class SubscriptionsService {
     const isNew = await this.isNewMember(id_user);
 
     /**
-     * Asignar posicion en el binario solo para usuarios nuevos
+     * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
     if (!data.parent_binary_user_id) {
+      let finish_position = data.position;
+
+      /**
+       * Las dos primeras personas de cada ciclo van al lado del derrame
+       */
+      const sponsor = await getDoc(doc(db, `users/${data.sponsor_id}`));
+      const sponsor_side = sponsor.get('position') ?? 'right';
+      const forceDerrame =
+        Number(sponsor.get('count_direct_people_this_cycle')) < 2;
+
+      if (forceDerrame) {
+        /**
+         * Nos quiso hackear, y forzamos el lado correcto
+         */
+        if (data.position != sponsor_side) {
+          finish_position = sponsor_side;
+          await updateDoc(userDocRef, {
+            position: sponsor_side,
+          });
+        }
+
+        await updateDoc(sponsor.ref, {
+          count_direct_people_this_cycle: increment(1),
+        });
+      }
+
       const binaryPosition = await this.binaryService.calculatePositionOfBinary(
         data.sponsor_id,
-        data.position,
+        finish_position,
       );
       console.log(binaryPosition);
 
@@ -164,7 +192,7 @@ export class SubscriptionsService {
          */
         await updateDoc(
           doc(db, 'users/' + binaryPosition.parent_id),
-          data.position == 'left'
+          finish_position == 'left'
             ? { left_binary_user_id: id_user }
             : { right_binary_user_id: id_user },
         );
@@ -172,6 +200,19 @@ export class SubscriptionsService {
         Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);
           scope.setExtra('message', 'no se pudo setear al hijo');
+          Sentry.captureException(err);
+        });
+      }
+
+      try {
+        await this.binaryService.increaseUnderlinePeople(userDocRef.id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', userDocRef.id);
+          scope.setExtra(
+            'message',
+            'no se pudo incrementar count_underline_people',
+          );
           Sentry.captureException(err);
         });
       }
@@ -201,12 +242,26 @@ export class SubscriptionsService {
     }
 
     const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
-    const sponsorHasScholapship = sponsorRef.get('has_scholarship');
+    const sponsorHasScholapship =
+      Boolean(sponsorRef.get('has_scholarship')) ?? false;
+
+    console.log({ sponsorHasScholapship, isNew });
+
+    /**
+     * aumentar contador de gente directa
+     */
+    if (isNew) {
+      await updateDoc(sponsorRef.ref, {
+        count_direct_people: increment(1),
+      });
+    }
+
     /**
      * Si el sponsor no esta becado le cuenta para la beca
      */
     if (!sponsorHasScholapship) {
       await this.scholarshipService.addDirectPeople(sponsorRef.id);
+
       /**
        * Si el sponsor no esta becado no reparte bonos
        */
@@ -308,7 +363,7 @@ export class SubscriptionsService {
   // VALORES DE body COMPATIBLES:
   //    Fecha indicada: { day, month, year }
   //    Fecha actual: {}
-  statusToExpired = async (body) => {
+  async statusToExpired(body) {
     // Respuesta para error
     let answer: object = {
       message: 'No fue posible actualizar las suscripciones',
@@ -345,7 +400,7 @@ export class SubscriptionsService {
     }
 
     return answer;
-  };
+  }
 }
 
 // Actualizar el status de las subscripciones

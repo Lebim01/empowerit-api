@@ -13,13 +13,38 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-//
+import { db as admin } from '../firebase/admin';
+import * as Sentry from '@sentry/node';
 
 @Injectable()
 export class UsersService {
+  async isNewMember(id_user: string) {
+    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const isNew = Boolean(userRef.get('is_new')) ?? false;
+    return isNew;
+  }
+
+  async isSupremeActive(id_user: string) {
+    const user = await getDoc(doc(db, 'users/' + id_user));
+    const expires_at = user.get('subscription.supreme.expires_at');
+
+    return expires_at
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
+  }
+
+  async isIBOActive(id_user: string) {
+    const user = await getDoc(doc(db, 'users/' + id_user));
+    const expires_at = user.get('subscription.ibo.expires_at');
+
+    return expires_at
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
+  }
+
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, `users/${id_user}`));
-    const expires_at = user.get('subscription_expires_at');
+    const expires_at = user.get('subscription.pro.expires_at');
     const is_admin = Boolean(user.get('is_admin'));
     return is_admin
       ? true
@@ -31,17 +56,20 @@ export class UsersService {
   async getUserByPaymentAddress(
     address: string,
     type: 'ibo' | 'supreme' | 'pro',
-  ): Promise<null | QueryDocumentSnapshot<DocumentData, DocumentData>> {
-    const snap = await getDocs(
-      query(
-        collection(db, 'users'),
-        where(`subscription.${type}.payment_link.address`, '==', address),
-      ),
-    );
+  ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
+    try {
+      const snap = await admin
+        .collection('users')
+        .where(`subscription.${type}.payment_link.address`, '==', address)
+        .get();
 
-    if (snap.empty) return null;
+      if (snap.empty) return null;
 
-    return snap.docs[0];
+      return snap.docs[0];
+    } catch (err) {
+      Sentry.captureException(err);
+      return null;
+    }
   }
 
   async getTopUsersByProfit() {
