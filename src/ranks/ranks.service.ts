@@ -20,18 +20,18 @@ export class RanksService {
 
     /* recorrer todos los usuarios */
     for (let i = 0; i <= users.size - 1; i++) {
-      const dataUser = await this.getRankUser(users.docs[i].id);
-      const docRef = doc(db, 'users', dataUser.user);
-      await updateDoc(docRef, { rank: dataUser.rank.display });
+      const rankData = await this.getRankUser(users.docs[i].id);
+      const docRef = doc(db, 'users', rankData.user);
+      await updateDoc(docRef, { rank: rankData.rank_key });
 
       await this.insertRank(
-        dataUser.rank.display,
-        dataUser.totalUSD.totalUSD,
-        dataUser.user,
-        dataUser.left_week,
-        dataUser.right_week,
-        dataUser.sanguinea,
-        dataUser.derrame,
+        rankData.rank_key,
+        rankData.totalUSD.totalUSD,
+        rankData.user,
+        rankData.left_week,
+        rankData.right_week,
+        rankData.sanguinea,
+        rankData.derrame,
       );
     }
   }
@@ -95,6 +95,8 @@ export class RanksService {
     );
 
     return {
+      rank_key: rank.rank,
+      rank_next_key: rank.next_rank,
       rank: ranks_object[rank.rank],
       rank_missing: ranks_object[rank.rank],
       next_rank: ranks_object[rank.next_rank],
