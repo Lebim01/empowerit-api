@@ -27,9 +27,9 @@ export class AdminService {
           direct_second_level: docData.bond_direct_second_level || 0,
           residual: docData.bond_residual_level_1 || 0,
           residual_second_level: docData.bond_residual_level_2 || 0,
-          scolarchip: docData.bond_scolarship_level_1 || 0,
-          scolarchip_second_level: docData.bond_scolarship_level_2 || 0,
-          scolarchip_third_level: docData.bond_scolarship_level_3 || 0,
+          scholarship: docData.bond_scholarship_level_1 || 0,
+          scholarship_second_level: docData.bond_scholarship_level_2 || 0,
+          scholarship_third_level: docData.bond_scholarship_level_3 || 0,
           supreme: docData.bond_supreme_level_1 || 0,
           supreme_second_level: docData.bond_supreme_level_2 || 0,
           supreme_third_level: docData.bond_supreme_level_3 || 0,
@@ -45,7 +45,7 @@ export class AdminService {
       })
       .map((doc) => ({
         ...doc,
-        subtotal: doc.direct + doc.binary + doc.direct_second_level + doc.residual + doc.residual_second_level + doc.scolarchip + doc.scolarchip_second_level + doc.scolarchip_third_level + doc.supreme + doc.supreme_second_level + doc.supreme_third_level,
+        subtotal: doc.direct + doc.binary + doc.direct_second_level + doc.residual + doc.residual_second_level + doc.scholarship + doc.scholarship_second_level + doc.scholarship_third_level + doc.supreme + doc.supreme_second_level + doc.supreme_third_level,
       }))
       .map((doc) => ({
         ...doc,
