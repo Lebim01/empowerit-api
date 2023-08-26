@@ -37,4 +37,9 @@ export class ScriptsController {
   assignLeftRightUsers() {
     return this.scriptsService.assignLeftRightUsers();
   }
+  
+  @Post('removePoints')
+  removePoints() {
+    return this.scriptsService.deleteExpiredPoints();
+  }
 }
