@@ -42,10 +42,41 @@ export class BinaryService {
     };
   }
 
-  async increaseBinaryPoints(registerUserId: string) {
+  async increaseUnderlinePeople(registerUserId: string) {
     const batch = writeBatch(db);
 
-    const isNew = await this.userService.isNewMember(registerUserId);
+    let currentUser = registerUserId;
+
+    do {
+      const users = await getDocs(
+        query(
+          collection(db, 'users'),
+          or(
+            where('left_binary_user_id', '==', currentUser),
+            where('right_binary_user_id', '==', currentUser),
+          ),
+        ),
+      );
+      if (users.size > 0) {
+        const user = users.docs[0];
+        currentUser = user.id;
+
+        batch.set(
+          user.ref,
+          { count_underline_people: increment(1) },
+          { merge: true },
+        );
+      } else {
+        currentUser = null;
+      }
+    } while (currentUser);
+
+    // Commit the batch
+    await batch.commit();
+  }
+
+  async increaseBinaryPoints(registerUserId: string) {
+    const batch = writeBatch(db);
 
     let currentUser = registerUserId;
 
@@ -84,14 +115,6 @@ export class BinaryService {
             points: 100,
             user_id: currentUser,
           });
-        }
-
-        if (isNew) {
-          batch.set(
-            user.ref,
-            { count_underline_people: increment(1) },
-            { merge: true },
-          );
         }
       } else {
         currentUser = null;

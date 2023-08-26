@@ -152,11 +152,14 @@ export class SubscriptionsService {
       /**
        * Las dos primeras personas de cada ciclo van al lado del derrame
        */
-      const forceDerrame = (data.count_direct_people_this_cycle ?? 0) < 2;
-      if (forceDerrame) {
-        const sponsor = await getDoc(doc(db, `users/${data.sponsor_id}`));
-        const sponsor_side = sponsor.get('position') ?? 'right';
+      const sponsor = await getDoc(doc(db, `users/${data.sponsor_id}`));
+      const sponsor_side = sponsor.get('position') ?? 'right';
+      console.log({ sponsor_side, user_side: data.position });
+      const forceDerrame =
+        Number(sponsor.get('count_direct_people_this_cycle')) < 2;
+      console.log({ forceDerrame });
 
+      if (forceDerrame) {
         /**
          * Nos quiso hackear, y forzamos el lado correcto
          */
@@ -167,7 +170,8 @@ export class SubscriptionsService {
           });
         }
 
-        await updateDoc(userDocRef, {
+        console.log('update count_direct_people_this_cycle');
+        await updateDoc(sponsor.ref, {
           count_direct_people_this_cycle: increment(1),
         });
       }
@@ -184,6 +188,19 @@ export class SubscriptionsService {
       await updateDoc(userDocRef, {
         parent_binary_user_id: binaryPosition.parent_id,
       });
+
+      try {
+        await this.binaryService.increaseUnderlinePeople(id_user);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', id_user);
+          scope.setExtra(
+            'message',
+            'no se pudo incrementar count_underline_people',
+          );
+          Sentry.captureException(err);
+        });
+      }
 
       try {
         /**
