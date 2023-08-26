@@ -9,6 +9,7 @@ import {
   or,
   where,
   increment,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UsersService } from '../users/users.service';
@@ -73,7 +74,7 @@ export class BinaryService {
         if (isActive && isIBOActive) {
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
-            position == 'left' ? 'left_points' : 'right_points';
+            position == 'left' ? 'left-points' : 'right-points';
 
           const subCollectionRef = doc(
             collection(db, `users/${user.id}/${positionCollection}`),
@@ -100,4 +101,29 @@ export class BinaryService {
     // Commit the batch
     await batch.commit();
   }
+
+  async matchBinaryPoints(userId: string) {
+    const leftPointsRef = collection(db, `users/${userId}/left-points`);
+    const rightPointsRef = collection(db, `users/${userId}/right-points`);
+
+    const leftDocs = await getDocs(query(leftPointsRef, orderBy('starts_at'))); // Asumiendo que tienes un campo 'date'
+    const rightDocs = await getDocs(query(rightPointsRef, orderBy('starts_at')));
+
+    const leftPointsDocs = leftDocs.docs;
+    const rightPointsDocs = rightDocs.docs;
+
+    const batch = writeBatch(db);
+
+    while (leftPointsDocs.length > 0 && rightPointsDocs.length > 0) {
+        // Tomamos y eliminamos el documento más antiguo de cada lado
+        const oldestLeftDoc = leftPointsDocs.shift();
+        const oldestRightDoc = rightPointsDocs.shift();
+
+        batch.delete(oldestLeftDoc.ref);
+        batch.delete(oldestRightDoc.ref);
+    }
+
+    // Ejecutar la operación batch
+    await batch.commit();
+}
 }

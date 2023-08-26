@@ -8,6 +8,8 @@ import {
   setDoc,
   updateDoc,
   addDoc,
+  collectionGroup,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UsersService } from 'src/users/users.service';
@@ -18,7 +20,7 @@ export class ScriptsService {
   D28_DAYS_AFTER_NOW = dayjs().add(28, 'day');
   DELAY = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  constructor(private readonly userService: UsersService) {}
+  constructor(private readonly userService: UsersService) { }
 
   async getAllUsers() {
     const data = await getDocs(this.usersCollectionRef);
@@ -260,4 +262,33 @@ export class ScriptsService {
 
     await Promise.all(updatePromises);
   }
+
+  async deleteExpiredPoints() {
+    const currentDate = dayjs();
+  
+    // Busca todos los documentos en las subcolecciones 'left-points' y 'right-points'
+    for (const subcollection of ['left-points', 'right-points']) {
+      const pointsRef = collectionGroup(db, subcollection);
+  
+      const allPoints = await getDocs(pointsRef);
+  
+      for (const pointDoc of allPoints.docs) {
+        const data = pointDoc.data();
+  
+        if (data.starts_at) {
+          const startPointDate = dayjs(data.starts_at.toDate());
+          const diffInDays = currentDate.diff(startPointDate, 'day');
+  
+          if (diffInDays > 84) {
+            await deleteDoc(pointDoc.ref);
+            console.log(`Deleted expired point with ID: ${pointDoc.id}`);
+          }
+        }
+      }
+    }
+  }
 }
+
+
+
+//deleteExpiredPoints();
