@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import dayjs from 'dayjs';
-
+import { ranks_object } from './ranks_object';
 @Injectable()
 export class RanksService {
   async updateRank() {
@@ -22,10 +22,10 @@ export class RanksService {
     for (let i = 0; i <= users.size - 1; i++) {
       const dataUser = await this.getRankUser(users.docs[i].id);
       const docRef = doc(db, 'users', dataUser.user);
-      await updateDoc(docRef, { rank: dataUser.rank });
+      await updateDoc(docRef, { rank: dataUser.rank.display });
 
       await this.insertRank(
-        dataUser.rank,
+        dataUser.rank.display,
         dataUser.totalUSD.totalUSD,
         dataUser.user,
         dataUser.left_week,
@@ -95,8 +95,9 @@ export class RanksService {
     );
 
     return {
-      rank: rank.rank,
-      rank_missing: rank,
+      rank: ranks_object[rank.rank],
+      rank_missing: ranks_object[rank.rank],
+      next_rank: ranks_object[rank.next_rank],
       totalUSD,
       user_id: _user.id,
       user: _user.id,
@@ -199,8 +200,6 @@ export class RanksService {
     derrame: number[],
     firms: number[],
   ) {
-    console.log(sanguinea, derrame);
-
     let rank = '';
     let next_rank = '';
     let missing_usd = 0;
