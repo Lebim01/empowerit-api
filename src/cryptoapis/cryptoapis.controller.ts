@@ -47,7 +47,7 @@ export class CryptoapisController {
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
-      //body.data.item.network == network &&
+      body.data.item.network == network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
@@ -96,7 +96,7 @@ export class CryptoapisController {
           }
 
           // Eliminar el evento que esta en el servicio de la wallet
-          //await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
 
           return 'transaccion correcta';
         }
@@ -156,7 +156,7 @@ export class CryptoapisController {
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED' &&
-      // body.data.item.network == network &&
+      body.data.item.network == network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
@@ -177,14 +177,13 @@ export class CryptoapisController {
           [`subscription.${type}.payment_link.status`]: 'confirming',
         });
 
-        // No se para que sea (DESCOMENTAR)
-        // await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+        await this.cryptoapisService.removeCallbackEvent(body.referenceId);
 
-        // await this.cryptoapisService.createCallbackConfirmation(
-        //   data.id,
-        //   body.data.item.address,
-        //   type,
-        // );
+        await this.cryptoapisService.createCallbackConfirmation(
+          data.id,
+          body.data.item.address,
+          type,
+        );
 
         // Guardar registro de la transaccion.
         await addTransactionToUser(doc.id, {...body});
