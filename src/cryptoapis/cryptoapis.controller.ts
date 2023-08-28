@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { CryptoapisService } from './cryptoapis.service';
 import { db } from '../firebase/admin';
+import { firestore } from 'firebase-admin';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 import { UsersService } from 'src/users/users.service';
 import {
@@ -50,17 +51,34 @@ export class CryptoapisController {
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
+
+      const {address} = body.data.item;
       const userDoc = await this.usersService.getUserByPaymentAddress(
-        body.data.item.address,
+        address,
         type,
       );
 
       if (userDoc) {
-        // Agregar registro de la transaccion
-        const resAdd = await addTransactionToUser(userDoc.id, {...body});
+        const data = userDoc.data();
 
-        // Sí se registro
-        if(resAdd)
+        // Agregar registro de la transaccion
+        await addTransactionToUser(userDoc.id, {...body});
+
+        /**
+         * Calcular el monto total
+         * de las transacciones a una misma wallet (Suscripción)
+         */
+        const transactions = await getTransactionsOfUser(userDoc.id, address);
+        const sizeT =  transactions.size;
+        let totalAmount:number = 0;
+        for(let i=0; i<sizeT; i++){
+          const doc = transactions.docs[i];
+          const data = doc.data();
+          totalAmount += Number.parseFloat(data.data?.item?.amount);
+        }
+
+        // Sí se registro...
+        if (Number(data.subscription[type].payment_link.amount) <= totalAmount)
         {
           switch(type){
             case 'pro':{
@@ -83,16 +101,16 @@ export class CryptoapisController {
           return 'transaccion correcta';
         }
 
-        // Sí no se registro
+        // Sí no se registro...
         else {
-          Sentry.captureException('Transaccion: No registrada', {
+          Sentry.captureException('Transaccion: Amount menor', {
             extra: {
               reference: body.referenceId,
               address: body.data.item.address,
             },
           });
           throw new HttpException(
-            'La transaccion no fue registrada',
+            'El monto pagado es menor al requerido.',
             HttpStatus.BAD_REQUEST,
           );
         }
@@ -275,19 +293,34 @@ const addTransactionConfirmed = async (
 {
   // Comprobar si ya existe registro de la transaccion
   const {transactionId} = transactionBody.data.item;
-  const transactionDoc = await getTransactionOfUser(user_id, transactionId);
+  const transactions = await getTransactionOfUser(user_id, transactionId);
 
-  // Sí no existe el registro
-  if(transactionDoc.size == 0) {
+  /**
+   * Sí no existe el registro
+   * La agrega
+   */
+  if(transactions.size == 0) {
     await db.collection(`users/${user_id}/transactions`).add({
       ...transactionBody,
       created_at: new Date(),
     });
-    return false;
   }
 
-  console.log("Ya existe esa transacción");
-  return false;
+  /**
+   * Sí existe el registro
+   * Lo modifica
+   */
+  else{
+    const doc = transactions.docs[0];
+
+    await doc.ref.update({
+      [`data.event`]: "ADDRESS_COINS_TRANSACTION_CONFIRMED",
+      [`data.item.minedInBlock`]: transactionBody.data.item.minedInBlock,
+      [`data.item.firstSeenInMempoolTimestamp`]: firestore.FieldValue.delete(),
+    });
+  }
+
+  return true;
 }
 
 /**
@@ -306,4 +339,19 @@ const getTransactionOfUser = (user_id: string, transaction_id: string)
     transaction_id,
   )
   .get();
+}
+
+const getTransactionsOfUser = (user_id: string, addressWallet: string)
+: Promise<FirebaseFirestore.DocumentData> =>
+{
+  // Calcular la fecha de hace un mes
+  // const currentDate = new Date();
+  // const oneMonthAgo = new Date();
+  // oneMonthAgo.setMonth(currentDate.getMonth() - 1);
+
+  return db
+    .collection(`users/${user_id}/transactions`)
+    .where(`data.item.address`, '==', addressWallet)
+    //.where('created_at', '>', oneMonthAgo)
+    .get();
 }
