@@ -346,4 +346,8 @@ export class RanksService {
       console.error('Error al agregar documento:', error);
     }
   }
+
+  async getRankKey(key: string) {
+    return ranks_object[key];
+  }
 }
