@@ -6,17 +6,17 @@ import {
   getDoc,
   getDocs,
   updateDoc,
-  getCountFromServer,
   query,
   where,
   writeBatch,
   collectionGroup,
   setDoc,
+  increment,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { db } from '../firebase';
-import Sentry from '@sentry/node';
+import * as Sentry from '@sentry/node';
 import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 
@@ -129,81 +129,155 @@ export class SubscriptionsService {
     return isNew;
   }
 
-  async onPaymentIBOMembership(id_user) {
+  async onPaymentIBOMembership(id_user: string) {
     await this.assingIBOMembership(id_user);
   }
 
-  async onPaymentSupremeMembership(id_user) {
+  async onPaymentSupremeMembership(id_user: string) {
     await this.assingSupremeMembership(id_user);
+    await this.bondService.execSupremeBond(id_user);
   }
 
   async onPaymentProMembership(id_user: string) {
     const userDocRef = doc(db, `users/${id_user}`);
     const data = await getDoc(userDocRef).then((r) => r.data());
-
-    const binaryPosition = await this.binaryService.calculatePositionOfBinary(
-      data.sponsor_id,
-      data.position,
-    );
-    console.log(binaryPosition);
+    const isNew = await this.isNewMember(id_user);
 
     /**
-     * se setea el valor del usuario padre en el usuario que se registro
+     * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
-    await updateDoc(userDocRef, {
-      parent_binary_user_id: binaryPosition.parent_id,
-    });
+    if (!data.parent_binary_user_id) {
+      let finish_position = data.position;
+
+      /**
+       * Las dos primeras personas de cada ciclo van al lado del derrame
+       */
+      const sponsor = await getDoc(doc(db, `users/${data.sponsor_id}`));
+      const sponsor_side = sponsor.get('position') ?? 'right';
+      const forceDerrame =
+        Number(sponsor.get('count_direct_people_this_cycle')) < 2;
+
+      if (forceDerrame) {
+        /**
+         * Nos quiso hackear, y forzamos el lado correcto
+         */
+        if (data.position != sponsor_side) {
+          finish_position = sponsor_side;
+          await updateDoc(userDocRef, {
+            position: sponsor_side,
+          });
+        }
+
+        await updateDoc(sponsor.ref, {
+          count_direct_people_this_cycle: increment(1),
+        });
+      }
+
+      const binaryPosition = await this.binaryService.calculatePositionOfBinary(
+        data.sponsor_id,
+        finish_position,
+      );
+      console.log(binaryPosition);
+
+      /**
+       * se setea el valor del usuario padre en el usuario que se registro
+       */
+      await updateDoc(userDocRef, {
+        parent_binary_user_id: binaryPosition.parent_id,
+      });
+
+      try {
+        /**
+         * se setea el valor del hijo al usuario ascendente en el binario
+         */
+        await updateDoc(
+          doc(db, 'users/' + binaryPosition.parent_id),
+          finish_position == 'left'
+            ? { left_binary_user_id: id_user }
+            : { right_binary_user_id: id_user },
+        );
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', id_user);
+          scope.setExtra('message', 'no se pudo setear al hijo');
+          Sentry.captureException(err);
+        });
+      }
+
+      try {
+        await this.binaryService.increaseUnderlinePeople(userDocRef.id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', userDocRef.id);
+          scope.setExtra(
+            'message',
+            'no se pudo incrementar count_underline_people',
+          );
+          Sentry.captureException(err);
+        });
+      }
+    }
 
     /**
      * Se activa la membresia
      */
     await this.assingProMembership(id_user);
 
-    try {
-      /**
-       * se setea el valor del hijo al usuario ascendente en el binario
-       */
-      await updateDoc(
-        doc(db, 'users/' + binaryPosition.parent_id),
-        data.position == 'left'
-          ? { left_binary_user_id: id_user }
-          : { right_binary_user_id: id_user },
-      );
-    } catch (err) {
-      Sentry.configureScope((scope) => {
-        scope.setExtra('id_user', id_user);
-        scope.setExtra('message', 'no se pudo setear al hijo');
-        Sentry.captureException(err);
-      });
-    }
-
     /**
      * se crea un registro en la subcoleccion users/{id}/sanguine_users
      */
-    try {
-      await this.insertSanguineUsers(id_user);
-    } catch (err) {
-      Sentry.configureScope((scope) => {
-        scope.setExtra('id_user', id_user);
-        scope.setExtra(
-          'message',
-          'no se pudo insertar los usuarios sanguineos',
-        );
-        Sentry.captureException(err);
-      });
+    if (isNew) {
+      try {
+        await this.insertSanguineUsers(id_user);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', id_user);
+          scope.setExtra(
+            'message',
+            'no se pudo insertar los usuarios sanguineos',
+          );
+          Sentry.captureException(err);
+        });
+      }
     }
 
     const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
-    const sponsorHasScholapship = sponsorRef.get('has_scholarship');
+    const sponsorHasScholapship =
+      Boolean(sponsorRef.get('has_scholarship')) ?? false;
+
+    console.log({ sponsorHasScholapship, isNew });
+
+    /**
+     * aumentar contador de gente directa
+     */
+    if (isNew) {
+      await updateDoc(sponsorRef.ref, {
+        count_direct_people: increment(1),
+      });
+    }
+
     /**
      * Si el sponsor no esta becado le cuenta para la beca
      */
     if (!sponsorHasScholapship) {
       await this.scholarshipService.addDirectPeople(sponsorRef.id);
+
       /**
        * Si el sponsor no esta becado no reparte bonos
        */
       return;
+    }
+
+    if (!isNew) {
+      try {
+        await this.bondService.execUserResidualBond(sponsorRef.id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('sponsorRef', sponsorRef.id);
+          scope.setExtra('message', 'no se repartio el bono residual');
+          Sentry.captureException(err);
+        });
+      }
     }
 
     /**
@@ -222,14 +296,16 @@ export class SubscriptionsService {
     /**
      * aumentar puntos de bono directo 2 niveles
      */
-    try {
-      await this.bondService.execUserDirectBond(data.sponsor_id);
-    } catch (err) {
-      Sentry.configureScope((scope) => {
-        scope.setExtra('id_user', id_user);
-        scope.setExtra('message', 'no se repartio el bono directo');
-        Sentry.captureException(err);
-      });
+    if (isNew) {
+      try {
+        await this.bondService.execUserDirectBond(data.sponsor_id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', id_user);
+          scope.setExtra('message', 'no se repartio el bono directo');
+          Sentry.captureException(err);
+        });
+      }
     }
   }
 
@@ -284,88 +360,44 @@ export class SubscriptionsService {
   }
 
   // Actualizar el status a 'expired' de las subscripciones a partir de una fecha.
-  // VALORES DE body COMPATIBLES:
-  //    Fecha indicada: { day, month, year }
-  //    Fecha actual: {}
-  statusToExpired = async (body) => {
-    // Respuesta para error
-    let answer: object = {
-      message: 'No fue posible actualizar las suscripciones',
-      error: 'Subscriptions service',
-      statusCode: 500,
-    };
+  async statusToExpired(type: 'ibo' | 'supreme' | 'pro') {
+    const _query = query(
+      collection(db, 'users'),
+      where(`subscription.${type}.status`, '==', 'paid'),
+      where(`subscription.${type}.expires_at`, '<=', new Date()),
+    );
 
-    const { day, month, year } = body;
-    // Comportamiento para una fecha indicada
-    if (day && month && year) {
-      //if(('day'in body) && ('month'in month)  && ('year'in year))
-      const fromDate: Date = new Date(`${year}-${month}-${day}`);
-      answer = expireSubscription(fromDate)
-        ? {
-            message: `Suscripciones actualizadas a 'expired' a partir de ${year}-${month}-${day}`,
-            statusCode: 204,
-          }
-        : answer;
-    }
-    // Comportamiento para la fecha actual
-    else if (Object.keys(body).length == 0) {
-      answer = expireSubscription()
-        ? {
-            message: `Suscripciones actualizadas a 'expired' a partir de la fecha actual`,
-            statusCode: 204,
-          }
-        : answer;
-    } else {
-      answer = {
-        message: 'El body no tiene el formato correcto: {day, month, year}',
-        error: 'Wrong body',
-        statusCode: 400,
-      };
-    }
+    try {
+      // Consultar todos los 'users'
+      // que entren en las condiciones anteriores.
+      const result = await getDocs(_query);
 
-    return answer;
-  };
-}
-
-// Actualizar el status de las subscripciones
-// a partir de una fecha dada
-// o de la actual si no de proporciona nada.
-const expireSubscription = async (fromDate: Date = new Date()) => {
-  const _query = query(
-    collection(db, 'users'),
-    where('subscription.pro.status', '==', 'paid'),
-    where('subscription.pro.expires_at', '<=', fromDate),
-  );
-
-  try {
-    // Consultar todos los 'users'
-    // que entren en las condiciones anteriores.
-    const result = await getDocs(_query);
-    result.docs.forEach((doc) => {
-      //
-    });
-
-    const users_id: string[] = [];
-    result.docs.forEach((doc) => {
-      users_id.push(doc.id);
-    });
-
-    // Crear un lote de escritura
-    // Actualizara el estado de los 'users' consultados
-    const batch = writeBatch(db);
-    [...users_id].forEach((id) => {
-      const sfRef = doc(db, 'users', id.toString());
-      batch.update(sfRef, {
-        'subscription.pro.status': 'expired',
+      const users_id: string[] = [];
+      result.docs.forEach((doc) => {
+        users_id.push(doc.id);
       });
-    });
 
-    // Ejecutar lote
-    await batch.commit();
-    console.log("Subscripciones actualizadas a 'expired'.");
-    return true;
-  } catch (e) {
-    console.warn(e);
-    return false;
+      // Crear un lote de escritura
+      // Actualizara el estado de los 'users' consultados
+      const batch = writeBatch(db);
+      [...users_id].forEach((id) => {
+        const sfRef = doc(db, 'users', id.toString());
+        batch.update(sfRef, {
+          'subscription.pro.status': 'expired',
+        });
+      });
+
+      // Ejecutar lote
+      await batch.commit();
+      console.log(
+        result.size,
+        "Subscripciones actualizadas a 'expired'.",
+        type,
+      );
+      return true;
+    } catch (e) {
+      console.warn(e);
+      return false;
+    }
   }
-};
+}

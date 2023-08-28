@@ -16,6 +16,7 @@ import { RanksModule } from './ranks/ranks.module';
 import { RanksService } from './ranks/ranks.service';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { join } from 'path';
     UsersModule,
     BinaryModule,
     RanksModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, BinaryService, UsersService, RanksService],

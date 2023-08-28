@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Query, Body, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Query,
+  Body,
+  Post,
+  Param,
+} from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 
 @Controller('subscriptions')
@@ -10,9 +18,9 @@ export class SubscriptionsController {
     return this.subscriptionService.isActiveUser(idUser);
   }
 
-  @Patch('statusToExpired')
-  statusToExpired(@Body() body: { day: number; month: number; year: number }) {
-    return this.subscriptionService.statusToExpired(body);
+  @Post('statusToExpired/:type')
+  statusToExpired(@Param('type') type) {
+    return this.subscriptionService.statusToExpired(type);
   }
 
   @Post('createPaymentAddress/pro')
@@ -31,5 +39,10 @@ export class SubscriptionsController {
   @Post('createPaymentAddress/ibo')
   async createPaymentAddressIbo(@Body() body) {
     return this.subscriptionService.createPaymentAddress(body.userId, 'ibo');
+  }
+
+  @Post('insertSanguineUsers')
+  async insertSanguineUsers(@Body() body) {
+    return this.subscriptionService.insertSanguineUsers(body.userId);
   }
 }

@@ -4,7 +4,7 @@ import { RanksService } from './ranks.service';
 export class RanksController {
   constructor(private ranksService: RanksService) {}
 
-  @Get('updateRanks')
+  @Post('updateRanks')
   upateRanks() {
     return this.ranksService.updateRank();
   }
