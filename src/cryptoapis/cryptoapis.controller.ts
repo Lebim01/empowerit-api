@@ -47,7 +47,7 @@ export class CryptoapisController {
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
-      body.data.item.network == network &&
+      // body.data.item.network == network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
@@ -64,21 +64,14 @@ export class CryptoapisController {
         // Agregar registro de la transaccion
         await addTransactionToUser(userDoc.id, {...body});
 
-        /**
-         * Calcular el monto total
-         * de las transacciones a una misma wallet (Suscripción)
-         */
-        const transactions = await getTransactionsOfUser(userDoc.id, address);
-        const sizeT =  transactions.size;
-        let totalAmount:number = 0;
-        for(let i=0; i<sizeT; i++){
-          const doc = transactions.docs[i];
-          const data = doc.data();
-          totalAmount += Number.parseFloat(data.data?.item?.amount);
-        }
+        // Verificar si el pago se completo
+        const isPaid:boolean = await paymentIsComplete(
+          userDoc.id,
+          address,
+          Number(data.subscription[type].payment_link.amount)
+        );
 
-        // Sí se registro...
-        if (Number(data.subscription[type].payment_link.amount) <= totalAmount)
+        if (isPaid)
         {
           switch(type){
             case 'pro':{
@@ -96,7 +89,7 @@ export class CryptoapisController {
           }
 
           // Eliminar el evento que esta en el servicio de la wallet
-          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          // await this.cryptoapisService.removeCallbackEvent(body.referenceId);
 
           return 'transaccion correcta';
         }
@@ -156,37 +149,44 @@ export class CryptoapisController {
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED' &&
-      body.data.item.network == network &&
+      //body.data.item.network == network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
+      
+      const {address} = body.data.item;
       const snap = await db
         .collection('users')
-        .where(
-          `subscription.${type}.payment_link.address`,
-          '==',
-          body.data.item.address,
-        )
-        .get();
+        .where(`subscription.${type}.payment_link.address`, '==', address,
+        ).get();
 
       if (snap.size > 0) {
         const doc = snap.docs[0];
         const data = doc.data();
-        
-        await doc.ref.update({
-          [`subscription.${type}.payment_link.status`]: 'confirming',
-        });
-
-        await this.cryptoapisService.removeCallbackEvent(body.referenceId);
-
-        await this.cryptoapisService.createCallbackConfirmation(
-          data.id,
-          body.data.item.address,
-          type,
-        );
 
         // Guardar registro de la transaccion.
         await addTransactionToUser(doc.id, {...body});
+        
+        // Verificar si el pago fue completado
+        const isPaid:boolean = await paymentIsComplete(
+          doc.id,
+          address,
+          Number.parseFloat(data.subscription[type]?.payment_link?.amount),
+        );
+
+        // Cambiar estado a 'confirming'
+        if(isPaid)
+          await doc.ref.update({
+            [`subscription.${type}.payment_link.status`]: 'confirming',
+          });
+
+        // await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+
+        // await this.cryptoapisService.createCallbackConfirmation(
+        //   data.id,
+        //   body.data.item.address,
+        //   type,
+        // );
       
         return 'OK';
       } else {
@@ -325,9 +325,10 @@ const addTransactionConfirmed = async (
 /**
  * Obtener un 'transaction'
  * de 'user'
- * con la propiedad 'data.item.transactionId'
+ * con el id de la transacción
  */
-const getTransactionOfUser = (user_id: string, transaction_id: string)
+const getTransactionOfUser
+= (user_id: string, transaction_id: string)
 : Promise<FirebaseFirestore.DocumentData> =>
 {
   return db
@@ -340,7 +341,13 @@ const getTransactionOfUser = (user_id: string, transaction_id: string)
   .get();
 }
 
-const getTransactionsOfUser = (user_id: string, addressWallet: string)
+/**
+ * Obtener todos los 'transaction'
+ * de 'user'
+ * con la dirección del wallet
+ */
+const getTransactionsOfUser
+= (user_id: string, addressWallet: string)
 : Promise<FirebaseFirestore.DocumentData> =>
 {
   // Calcular la fecha de hace un mes
@@ -353,4 +360,37 @@ const getTransactionsOfUser = (user_id: string, addressWallet: string)
     .where(`data.item.address`, '==', addressWallet)
     //.where('created_at', '>', oneMonthAgo)
     .get();
+}
+
+/**
+ * Verificar si un pago fue completado
+ */
+const paymentIsComplete
+= async (id_user:string, addressWallet:string, totalAmount:number)
+: Promise<boolean> =>
+{
+  try{
+    // Obtener las transacciones
+    const transactions = await getTransactionsOfUser(id_user, addressWallet);
+    const sizeT =  transactions.size;
+
+    // Obtener monto pagado
+    let paidAmount:number = 0;
+    for(let i=0; i<sizeT; i++){
+      const doc = transactions.docs[i];
+      const data = doc.data();
+      paidAmount += Number.parseFloat(data.data?.item?.amount);
+    }
+
+    // Sí el pago no fue completado
+    if(paidAmount < totalAmount)
+      return false;
+  }
+
+  catch(e){
+    console.log("Error al verificar si el pago fue completado: ", e);
+    return false;
+  }
+
+  return true;
 }
