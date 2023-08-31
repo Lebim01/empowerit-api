@@ -4,7 +4,7 @@ import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly cryptoapisService: CryptoapisService) { }
+  constructor(private readonly cryptoapisService: CryptoapisService) {}
 
   async payroll() {
     const users = await db.collection('users').get();
@@ -45,7 +45,18 @@ export class AdminService {
       })
       .map((doc) => ({
         ...doc,
-        subtotal: doc.direct + doc.binary + doc.direct_second_level + doc.residual + doc.residual_second_level + doc.scholarship + doc.scholarship_second_level + doc.scholarship_third_level + doc.supreme + doc.supreme_second_level + doc.supreme_third_level,
+        subtotal:
+          doc.direct +
+          doc.binary +
+          doc.direct_second_level +
+          doc.residual +
+          doc.residual_second_level +
+          doc.scholarship +
+          doc.scholarship_second_level +
+          doc.scholarship_third_level +
+          doc.supreme +
+          doc.supreme_second_level +
+          doc.supreme_third_level,
       }))
       .map((doc) => ({
         ...doc,

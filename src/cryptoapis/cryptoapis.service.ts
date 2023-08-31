@@ -7,7 +7,6 @@ import {
 } from './types';
 import axios from 'axios';
 
-
 const default_options = {
   hostname: 'rest.cryptoapis.io',
   headers: {

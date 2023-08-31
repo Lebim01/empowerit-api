@@ -18,8 +18,6 @@ import {
   CallbackNewUnconfirmedCoins,
 } from './types';
 import * as Sentry from '@sentry/node';
-import { async } from 'rxjs';
-import { Catch } from '@nestjs/common';
 
 @Controller('cryptoapis')
 export class CryptoapisController {
