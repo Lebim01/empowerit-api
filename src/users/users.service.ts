@@ -162,4 +162,228 @@ export class UsersService {
 
     return validDataSorted;
   }
+
+  async getMXUsers() {
+    type HexColor = `#${string}`;
+    type Coordinates = [number, number];
+    type MXStateCode = `${string}-MX`;
+
+    type State = {
+      coordinates: Coordinates;
+      name: string;
+      value: number;
+      color: HexColor;
+    };
+
+    type States = {
+      [key: MXStateCode]: State;
+    };
+
+    const states: States = {
+      'BCS-MX': {
+        coordinates: [-111.7, 26],
+        name: 'Baja California Sur',
+        value: 0,
+        color: '#B39EB5',
+      },
+      'BCN-MX': {
+        coordinates: [-115, 30],
+        name: 'Baja California',
+        value: 0,
+        color: '#F5CBA7',
+      },
+      'SON-MX': {
+        coordinates: [-110.5, 29.5],
+        name: 'Sonora',
+        value: 0,
+        color: '#85C1E9',
+      },
+      'CHH-MX': {
+        coordinates: [-106, 28.5],
+        name: 'Chihuahua',
+        value: 0,
+        color: '#9E89C9',
+      },
+      'COA-MX': {
+        coordinates: [-102, 27],
+        name: 'Coahuila',
+        value: 0,
+        color: '#D2B4DE',
+      },
+      'NLE-MX': {
+        coordinates: [-100, 25],
+        name: 'Nuevo Leon',
+        value: 0,
+        color: '#ABEBC6',
+      },
+      'TAM-MX': {
+        coordinates: [-98.5, 23.5],
+        name: 'Tamaulipas',
+        value: 0,
+        color: '#F9E79F',
+      },
+      'DUR-MX': {
+        coordinates: [-105, 25],
+        name: 'Durango',
+        value: 0,
+        color: '#AED6F1',
+      },
+      'SIN-MX': {
+        coordinates: [-107.5, 25],
+        name: 'Sinaloa',
+        value: 0,
+        color: '#FAD7A0',
+      },
+      'NAY-MX': {
+        coordinates: [-105, 22],
+        name: 'Nayarit',
+        value: 0,
+        color: '#FF83CE',
+      },
+      'AGU-MX': {
+        coordinates: [-102.5, 22],
+        name: 'Aguascalientes',
+        value: 0,
+        color: '#FF83CE',
+      },
+      'JAL-MX': {
+        coordinates: [-103.6, 20.2],
+        name: 'Jalisco',
+        value: 0,
+        color: '#FCF280',
+      },
+      'COL-MX': {
+        coordinates: [-104, 19.1],
+        name: 'Colima',
+        value: 0,
+        color: '#D2B4DE',
+      },
+      'ZAC-MX': {
+        coordinates: [-103, 23.5],
+        name: 'Zacatecas',
+        value: 0,
+        color: '#ABEBC6',
+      },
+      'SLP-MX': {
+        coordinates: [-100, 22.5],
+        name: 'San Luis Potosi',
+        value: 0,
+        color: '#9E89C9',
+      },
+      'GUA-MX': {
+        coordinates: [-101, 20.8],
+        name: 'Guanajuato',
+        value: 0,
+        color: '#F9E79F',
+      },
+      'QUE-MX': {
+        coordinates: [-99.8, 21],
+        name: 'Queretaro',
+        value: 0,
+        color: '#85C1E9',
+      },
+      'HID-MX': {
+        coordinates: [-99, 20.5],
+        name: 'Hidalgo',
+        value: 0,
+        color: '#AED6F1',
+      },
+      'CDMX-MX': {
+        coordinates: [-99.1, 19.2],
+        name: 'CDMX',
+        value: 0,
+        color: '#FCF280',
+      },
+      'MEX-MX': {
+        coordinates: [-99.8, 19.2],
+        name: 'Mexico',
+        value: 0,
+        color: '#FF83CE',
+      },
+      'GRO-MX': {
+        coordinates: [-99.8, 17.5],
+        name: 'Guerrero',
+        value: 0,
+        color: '#F9E79F',
+      },
+      'OAX-MX': {
+        coordinates: [-96.5, 17],
+        name: 'Oaxaca',
+        value: 0,
+        color: '#D2B4DE',
+      },
+      'CHP-MX': {
+        coordinates: [-93, 16.5],
+        name: 'Chiapas',
+        value: 0,
+        color: '#ABEBC6',
+      },
+      'TAB-MX': {
+        coordinates: [-92.7, 18],
+        name: 'Tabasco',
+        value: 0,
+        color: '#FAD7A0',
+      },
+      'CAM-MX': {
+        coordinates: [-90, 19],
+        name: 'Campeche',
+        value: 0,
+        color: '#85C1E9',
+      },
+      'ROO-MX': {
+        coordinates: [-88.5, 19.5],
+        name: 'Quintana Roo',
+        value: 0,
+        color: '#9E89C9',
+      },
+      'YUC-MX': {
+        coordinates: [-89, 20.5],
+        name: 'Yucatan',
+        value: 0,
+        color: '#F9E79F',
+      },
+      'MIC-MX': {
+        coordinates: [-102, 19.2],
+        name: 'Michoacan',
+        value: 0,
+        color: '#D2B4DE',
+      },
+      'TLA-MX': {
+        coordinates: [-98, 19.4],
+        name: 'Tlaxcala',
+        value: 0,
+        color: '#AED6F1',
+      },
+      'MOR-MX': {
+        coordinates: [-99, 18.7],
+        name: 'Morelos',
+        value: 0,
+        color: '#FF83CE',
+      },
+      'PUE-MX': {
+        coordinates: [-97.7, 18.7],
+        name: 'Puebla',
+        value: 0,
+        color: '#FCF280',
+      },
+      'VER-MX': {
+        coordinates: [-96, 18.7],
+        name: 'Veracruz',
+        value: 0,
+        color: '#85C1E9',
+      },
+    };
+
+    const snap = await getDocs(
+      query(collection(db, 'users'), where('country.value', '==', 'MX')),
+    );
+    snap.docs.map((doc) => {
+      const user = doc.data();
+      if (states[user.state.value]) {
+        states[user.state.value].value++;
+      }
+    });
+
+    return states;
+  }
 }

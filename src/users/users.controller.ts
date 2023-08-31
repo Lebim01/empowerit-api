@@ -19,4 +19,9 @@ export class UsersController {
   viewData() {
     return this.usersService.getTopUsersByEarnings();
   }
+
+  @Get('mx-users')
+  getMxUsers() {
+    return this.usersService.getMXUsers();
+  }
 }
