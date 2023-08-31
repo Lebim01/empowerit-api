@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { db } from '../firebase/admin';
-import { CryptoapisService } from '@/cryptoapis/cryptoapis.service';
+import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 
 @Injectable()
 export class AdminService {

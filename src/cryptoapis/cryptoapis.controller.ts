@@ -51,8 +51,7 @@ export class CryptoapisController {
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
-
-      const {address} = body.data.item;
+      const { address } = body.data.item;
       const userDoc = await this.usersService.getUserByPaymentAddress(
         address,
         type,
@@ -62,28 +61,29 @@ export class CryptoapisController {
         const data = userDoc.data();
 
         // Agregar registro de la transaccion
-        await addTransactionToUser(userDoc.id, {...body});
+        await addTransactionToUser(userDoc.id, { ...body });
 
         // Verificar si el pago se completo
-        const isPaid:boolean = await paymentIsComplete(
+        const isPaid: boolean = await paymentIsComplete(
           userDoc.id,
           address,
-          Number(data.subscription[type].payment_link.amount)
+          Number(data.subscription[type].payment_link.amount),
         );
 
-        if (isPaid)
-        {
-          switch(type){
-            case 'pro':{
+        if (isPaid) {
+          switch (type) {
+            case 'pro': {
               await this.subscriptionService.onPaymentProMembership(userDoc.id);
               break;
             }
-            case 'ibo':{
+            case 'ibo': {
               await this.subscriptionService.onPaymentIBOMembership(userDoc.id);
               break;
             }
-            case 'supreme':{
-              await this.subscriptionService.onPaymentSupremeMembership(userDoc.id);
+            case 'supreme': {
+              await this.subscriptionService.onPaymentSupremeMembership(
+                userDoc.id,
+              );
               break;
             }
           }
@@ -107,9 +107,7 @@ export class CryptoapisController {
             HttpStatus.BAD_REQUEST,
           );
         }
-      }
-      
-      else {
+      } else {
         Sentry.captureException('Inscripción: usuario no encontrado', {
           extra: {
             reference: body.referenceId,
@@ -122,9 +120,7 @@ export class CryptoapisController {
           HttpStatus.BAD_REQUEST,
         );
       }
-    }
-    
-    else {
+    } else {
       Sentry.captureException('Inscripción: peticion invalida', {
         extra: {
           reference: body.referenceId,
@@ -153,29 +149,28 @@ export class CryptoapisController {
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
-      
-      const {address} = body.data.item;
+      const { address } = body.data.item;
       const snap = await db
         .collection('users')
-        .where(`subscription.${type}.payment_link.address`, '==', address,
-        ).get();
+        .where(`subscription.${type}.payment_link.address`, '==', address)
+        .get();
 
       if (snap.size > 0) {
         const doc = snap.docs[0];
         const data = doc.data();
 
         // Guardar registro de la transaccion.
-        await addTransactionToUser(doc.id, {...body});
-        
+        await addTransactionToUser(doc.id, { ...body });
+
         // Verificar si el pago fue completado
-        const isPaid:boolean = await paymentIsComplete(
+        const isPaid: boolean = await paymentIsComplete(
           doc.id,
           address,
           Number.parseFloat(data.subscription[type]?.payment_link?.amount),
         );
 
         // Cambiar estado a 'confirming'
-        if(isPaid)
+        if (isPaid)
           await doc.ref.update({
             [`subscription.${type}.payment_link.status`]: 'confirming',
           });
@@ -187,17 +182,23 @@ export class CryptoapisController {
           body.data.item.address,
           type,
         );
-      
+
         return 'OK';
       } else {
-        Sentry.captureException(`Inscripción: Usuario con petición de ${type} no encontrado.`, {
-          extra: {
-            reference: body.referenceId,
-            address: body.data.item.address,
-            payload: JSON.stringify(body),
+        Sentry.captureException(
+          `Inscripción: Usuario con petición de ${type} no encontrado.`,
+          {
+            extra: {
+              reference: body.referenceId,
+              address: body.data.item.address,
+              payload: JSON.stringify(body),
+            },
           },
-        });
-        throw new HttpException('Usuario no encontrado.', HttpStatus.BAD_REQUEST);
+        );
+        throw new HttpException(
+          'Usuario no encontrado.',
+          HttpStatus.BAD_REQUEST,
+        );
       }
     } else {
       Sentry.captureException('Inscripción: peticion invalida', {
@@ -212,33 +213,31 @@ export class CryptoapisController {
   }
 }
 
-
 /**
  * Guardar registro de la transaccion
  * dentro de una subcoleccion llamada 'transactions'
  * perneteciente a 'users'.
  */
 const addTransactionToUser = async (
-  user_id: string, 
-  transactionBody: CallbackNewUnconfirmedCoins | CallbackNewConfirmedCoins)
-: Promise<Boolean> =>
-{
-  const {event} = transactionBody.data;
+  user_id: string,
+  transactionBody: CallbackNewUnconfirmedCoins | CallbackNewConfirmedCoins,
+): Promise<boolean> => {
+  const { event } = transactionBody.data;
 
-  try{
+  try {
     // Identificar el evento que guardara el registro.
-    let resultado : Boolean;
-    switch(event){
-      case "ADDRESS_COINS_TRANSACTION_UNCONFIRMED":{
-        resultado = await addTransactionUnconfirmed(
-          user_id,
-          {...transactionBody} as CallbackNewUnconfirmedCoins);
+    let resultado: boolean;
+    switch (event) {
+      case 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED': {
+        resultado = await addTransactionUnconfirmed(user_id, {
+          ...transactionBody,
+        } as CallbackNewUnconfirmedCoins);
         break;
       }
-      case "ADDRESS_COINS_TRANSACTION_CONFIRMED":{
-        resultado = await addTransactionConfirmed(
-          user_id,
-          {...transactionBody} as CallbackNewConfirmedCoins);
+      case 'ADDRESS_COINS_TRANSACTION_CONFIRMED': {
+        resultado = await addTransactionConfirmed(user_id, {
+          ...transactionBody,
+        } as CallbackNewConfirmedCoins);
         break;
       }
       default: {
@@ -248,10 +247,8 @@ const addTransactionToUser = async (
     }
 
     return resultado;
-  }
-
-  catch(e) {
-    console.warn("Error al agregar transacción: ", e);
+  } catch (e) {
+    console.warn('Error al agregar transacción: ', e);
     return false;
   }
 };
@@ -262,16 +259,14 @@ const addTransactionToUser = async (
  */
 const addTransactionUnconfirmed = async (
   user_id: string,
-  transactionBody: CallbackNewUnconfirmedCoins)
-: Promise<Boolean> =>
-{
+  transactionBody: CallbackNewUnconfirmedCoins,
+): Promise<boolean> => {
   // Comprobar si ya existe registro de la transaccion
-  const {transactionId} = transactionBody.data.item;
+  const { transactionId } = transactionBody.data.item;
   const transactionDoc = await getTransactionOfUser(user_id, transactionId);
 
   // Cancelar sí ya existe
-  if(transactionDoc.size > 0) 
-    return false;
+  if (transactionDoc.size > 0) return false;
 
   // Guardar registro
   await db.collection(`users/${user_id}/transactions`).add({
@@ -279,7 +274,7 @@ const addTransactionUnconfirmed = async (
     created_at: new Date(),
   });
   return true;
-}
+};
 
 /**
  * Guardar registro de la transaccion
@@ -287,110 +282,103 @@ const addTransactionUnconfirmed = async (
  */
 const addTransactionConfirmed = async (
   user_id: string,
-  transactionBody: CallbackNewConfirmedCoins)
-: Promise<Boolean> =>
-{
+  transactionBody: CallbackNewConfirmedCoins,
+): Promise<boolean> => {
   // Comprobar si ya existe registro de la transaccion
-  const {transactionId} = transactionBody.data.item;
+  const { transactionId } = transactionBody.data.item;
   const transactions = await getTransactionOfUser(user_id, transactionId);
 
   /**
    * Sí no existe el registro
    * La agrega
    */
-  if(transactions.size == 0) {
+  if (transactions.size == 0) {
     await db.collection(`users/${user_id}/transactions`).add({
       ...transactionBody,
       created_at: new Date(),
     });
-  }
-
-  /**
-   * Sí existe el registro
-   * Lo modifica
-   */
-  else{
+  } else {
+    /**
+     * Sí existe el registro
+     * Lo modifica
+     */
     const doc = transactions.docs[0];
 
     await doc.ref.update({
-      [`data.event`]: "ADDRESS_COINS_TRANSACTION_CONFIRMED",
+      [`data.event`]: 'ADDRESS_COINS_TRANSACTION_CONFIRMED',
       [`data.item.minedInBlock`]: transactionBody.data.item.minedInBlock,
       [`data.item.firstSeenInMempoolTimestamp`]: firestore.FieldValue.delete(),
     });
   }
 
   return true;
-}
+};
 
 /**
  * Obtener un 'transaction'
  * de 'user'
  * con el id de la transacción
  */
-const getTransactionOfUser
-= (user_id: string, transaction_id: string)
-: Promise<FirebaseFirestore.DocumentData> =>
-{
+const getTransactionOfUser = (
+  user_id: string,
+  transaction_id: string,
+): Promise<FirebaseFirestore.DocumentData> => {
   return db
-  .collection(`users/${user_id}/transactions`)
-  .where(
-    `data.item.transactionId`,
-    '==',
-    transaction_id,
-  )
-  .get();
-}
+    .collection(`users/${user_id}/transactions`)
+    .where(`data.item.transactionId`, '==', transaction_id)
+    .get();
+};
 
 /**
  * Obtener todos los 'transaction'
  * de 'user'
  * con la dirección del wallet
  */
-const getTransactionsOfUser
-= (user_id: string, addressWallet: string)
-: Promise<FirebaseFirestore.DocumentData> =>
-{
+const getTransactionsOfUser = (
+  user_id: string,
+  addressWallet: string,
+): Promise<FirebaseFirestore.DocumentData> => {
   // Calcular la fecha de hace un mes
   // const currentDate = new Date();
   // const oneMonthAgo = new Date();
   // oneMonthAgo.setMonth(currentDate.getMonth() - 1);
 
-  return db
-    .collection(`users/${user_id}/transactions`)
-    .where(`data.item.address`, '==', addressWallet)
-    //.where('created_at', '>', oneMonthAgo)
-    .get();
-}
+  return (
+    db
+      .collection(`users/${user_id}/transactions`)
+      .where(`data.item.address`, '==', addressWallet)
+      //.where('created_at', '>', oneMonthAgo)
+      .get()
+  );
+};
 
 /**
  * Verificar si un pago fue completado
  */
-const paymentIsComplete
-= async (id_user:string, addressWallet:string, totalAmount:number)
-: Promise<boolean> =>
-{
-  try{
+const paymentIsComplete = async (
+  id_user: string,
+  addressWallet: string,
+  totalAmount: number,
+): Promise<boolean> => {
+  try {
     // Obtener las transacciones
     const transactions = await getTransactionsOfUser(id_user, addressWallet);
-    const sizeT =  transactions.size;
+    const sizeT = transactions.size;
 
     // Obtener monto pagado
-    let paidAmount:number = 0;
-    for(let i=0; i<sizeT; i++){
+    let paidAmount = 0;
+    for (let i = 0; i < sizeT; i++) {
       const doc = transactions.docs[i];
       const data = doc.data();
       paidAmount += Number.parseFloat(data.data?.item?.amount);
     }
 
     // Sí el pago no fue completado
-    if(paidAmount < totalAmount)
-      return false;
-  }
-
-  catch(e){
-    console.log("Error al verificar si el pago fue completado: ", e);
+    if (paidAmount < totalAmount) return false;
+  } catch (e) {
+    console.log('Error al verificar si el pago fue completado: ', e);
     return false;
   }
 
   return true;
-}
+};
