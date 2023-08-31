@@ -30,33 +30,40 @@ export class SubscriptionsService {
   ) {}
 
   async createPaymentAddress(id_user: string, type: 'pro' | 'supreme' | 'ibo') {
+    // Obtener datos del usuario
     const userRef = await getDoc(doc(db, `users/${id_user}`));
     const userData = userRef.data();
     let address = '';
     let referenceId = '';
 
+    // Si no existe registro de la informacion de pago...
     if (
       !userData.subscription[type] ||
       !userData.subscription[type].payment_link
     ) {
+      // Obtener un nuevo wallet para el pago
       const newAddress = await this.cryptoapisService.createNewWalletAddress();
       address = newAddress;
 
+      // Crear primera confirmación de la transaccion
       const resConfirmation =
         await this.cryptoapisService.createFirstConfirmationTransaction(
           id_user,
           newAddress,
           type,
         );
-
       referenceId = resConfirmation.data.item.referenceId;
-    } else {
+    }
+
+    // Si existe registro...
+    else {
       address = userData.subscription[type].payment_link.address;
       referenceId = userData.subscription[type].payment_link.referenceId;
     }
 
     const amount: any = await this.cryptoapisService.getBTCExchange(177);
 
+    // Estructurar el campo payment_link
     const payment_link = {
       referenceId,
       address,
@@ -68,6 +75,7 @@ export class SubscriptionsService {
       expires_at: dayjs().add(15, 'minutes').toDate(),
     };
 
+    // Guardar payment_link
     await updateDoc(userRef.ref, {
       [`subscription.${type}.payment_link`]: payment_link,
     });
@@ -92,35 +100,107 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingProMembership(id_user: string) {
-    const isNew = await this.isNewMember(id_user);
-    await updateDoc(doc(db, `users/${id_user}`), {
-      'subscription.pro.payment_link': null,
-      'subscription.pro.start_at': dayjs().toDate(),
-      'subscription.pro.expires_at': dayjs()
-        .add(isNew ? 56 : 28, 'days')
-        .toDate(),
-      'subscription.pro.status': 'paid',
-      is_new: false,
-    });
+  async assingMembership(id_user:string, type:'pro'|'supreme'|'ibo')
+  {
+    // Obtener fechas
+    const startAt:Date = await this.calculateStartDate(id_user, type);
+    const expiresAt:Date = await this.calculateExpirationDate(id_user, type);
+
+    // Generar objeto con cambios a registrar
+    let changes = {};
+    switch(type){
+      case "pro":{
+        changes = {
+          'subscription.pro.payment_link': null,
+          'subscription.pro.start_at': startAt,
+          'subscription.pro.expires_at': expiresAt,
+          'subscription.pro.status': 'paid',
+          is_new: false,
+        };
+        break;
+      }
+      case "supreme":{
+        changes = {
+          'subscription.supreme.payment_link': null,
+          'subscription.supreme.start_at': startAt,
+          'subscription.supreme.expires_at': expiresAt,
+          'subscription.supreme.status': 'paid',
+        };
+        break;
+      }
+      case "ibo":{
+        changes = {
+          'subscription.ibo.payment_link': null,
+          'subscription.ibo.start_at': startAt,
+          'subscription.ibo.expires_at': expiresAt,
+          'subscription.ibo.status': 'paid',
+        };
+        break;
+      }
+    }
+
+    // Registrar cambios
+    await updateDoc(doc(db, `users/${id_user}`), changes);
   }
 
-  async assingIBOMembership(id_user: string) {
-    await updateDoc(doc(db, `users/${id_user}`), {
-      'subscription.ibo.payment_link': null,
-      'subscription.ibo.start_at': dayjs().toDate(),
-      'subscription.ibo.expires_at': dayjs().add(112, 'days').toDate(),
-      'subscription.ibo.status': 'paid',
-    });
+  /**
+   * Obtener fecha de inicio.
+   * Fecha en la que iniciara la membresia del 'type' enviado.
+   */
+  async calculateStartDate(id_user:string, type:'pro'|'supreme'|'ibo')
+  : Promise<Date>
+  {
+    // Obtener la información del usuario
+    const userDoc = await getDoc(doc(db, `users/${id_user}`));
+    const {status, expires_at} = userDoc.data().subscription[type];
+
+    // Obtener fecha de inicio
+    let date:dayjs.Dayjs;
+    if(status && status == "paid"){
+      console.log("Entro bien");
+      date= dayjs((expires_at?.seconds || 0)*1000 || new Date());
+    }
+    else{
+      console.log("Entro donde no deberia");
+      date = dayjs();
+    }
+
+    return date.toDate()
   }
 
-  async assingSupremeMembership(id_user: string) {
-    await updateDoc(doc(db, `users/${id_user}`), {
-      'subscription.supreme.payment_link': null,
-      'subscription.supreme.start_at': dayjs().toDate(),
-      'subscription.supreme.expires_at': dayjs().add(168, 'days').toDate(),
-      'subscription.supreme.status': 'paid',
-    });
+  /**
+   * Obtener fecha de expiración.
+   * Fecha en la que finalizara la membresia del 'type' enviado.
+   */
+  async calculateExpirationDate(id_user:string, type:'pro'|'supreme'|'ibo')
+  : Promise<Date>
+  {
+    // Obtener los días de membresia.
+    let days:number = 0;
+    switch(type){
+      case "pro":{
+        const isNew = await this.isNewMember(id_user);
+        days = (isNew) ? 56 : 28;
+        break;
+      }
+      case "supreme":{
+        days = 168;
+        break;
+      }
+      case "ibo":{
+        days = 112;
+        break;
+      }
+    }
+
+    // Obtener la fecha de expiración
+    const date:Date = dayjs(
+      await this.calculateStartDate(id_user, type))
+      .add(days, 'days')
+      .toDate();
+
+    console.log("Fecha de expiración: ", date.toISOString());
+    return date;
   }
 
   async isNewMember(id_user: string) {
@@ -130,11 +210,11 @@ export class SubscriptionsService {
   }
 
   async onPaymentIBOMembership(id_user: string) {
-    await this.assingIBOMembership(id_user);
+    await this.assingMembership(id_user, 'ibo');
   }
 
   async onPaymentSupremeMembership(id_user: string) {
-    await this.assingSupremeMembership(id_user);
+    await this.assingMembership(id_user, 'supreme');
     await this.bondService.execSupremeBond(id_user);
   }
 
@@ -221,7 +301,7 @@ export class SubscriptionsService {
     /**
      * Se activa la membresia
      */
-    await this.assingProMembership(id_user);
+    await this.assingMembership(id_user, 'pro');
 
     /**
      * se crea un registro en la subcoleccion users/{id}/sanguine_users
