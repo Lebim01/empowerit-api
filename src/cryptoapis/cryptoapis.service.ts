@@ -1,11 +1,15 @@
 import * as https from 'https';
 import { Injectable } from '@nestjs/common';
+import { db } from '../firebase/admin';
 import {
   ResponseCreateWalletAddress,
   ResponseNewUnconfirmedCoinsTransactions,
   ResponseNewConfirmedCoinsTransactions,
+  CallbackNewUnconfirmedCoins,
+  CallbackNewConfirmedCoins,
 } from './types';
 import axios from 'axios';
+import { firestore } from 'firebase-admin';
 
 const default_options = {
   hostname: 'rest.cryptoapis.io',
@@ -169,4 +173,197 @@ export class CryptoapisService {
       },
     });
   }
+
+  /**
+ * Guardar registro de la transaccion
+ * dentro de una subcoleccion llamada 'transactions'
+ * perneteciente a 'users'.
+ */
+addTransactionToUser = async (
+  user_id: string,
+  transactionBody: CallbackNewUnconfirmedCoins | CallbackNewConfirmedCoins,
+): Promise<boolean> => {
+  const { event } = transactionBody.data;
+
+  try {
+    // Identificar el evento que guardara el registro.
+    let resultado: boolean;
+    switch (event) {
+      case 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED': {
+        resultado = await this.addTransactionUnconfirmed(user_id, {
+          ...transactionBody,
+        } as CallbackNewUnconfirmedCoins);
+        break;
+      }
+      case 'ADDRESS_COINS_TRANSACTION_CONFIRMED': {
+        resultado = await this.addTransactionConfirmed(user_id, {
+          ...transactionBody,
+        } as CallbackNewConfirmedCoins);
+        break;
+      }
+      default: {
+        resultado = false;
+        break;
+      }
+    }
+
+    return resultado;
+  } catch (e) {
+    console.warn('Error al agregar transacción: ', e);
+    return false;
+  }
+};
+
+  /**
+ * Guardar registro de la transaccion
+ * con evento ..._UNCONFIRMED
+ */
+addTransactionUnconfirmed = async (
+  user_id: string,
+  transactionBody: CallbackNewUnconfirmedCoins,
+): Promise<boolean> => {
+  // Comprobar si ya existe registro de la transaccion
+  const { transactionId } = transactionBody.data.item;
+  const transactionDoc = await this.getTransactionOfUser(user_id, transactionId);
+
+  // Cancelar sí ya existe
+  if (transactionDoc.size > 0) return false;
+
+  // Guardar registro
+  await db.collection(`users/${user_id}/transactions`).add({
+    ...transactionBody,
+    created_at: new Date(),
+  });
+  return true;
+};
+
+/**
+ * Guardar registro de la transaccion
+ * con evento ..._CONFIRMED
+ */
+addTransactionConfirmed = async (
+  user_id: string,
+  transactionBody: CallbackNewConfirmedCoins,
+): Promise<boolean> => {
+  // Comprobar si ya existe registro de la transaccion
+  const { transactionId } = transactionBody.data.item;
+  const transactions = await this.getTransactionOfUser(user_id, transactionId);
+
+  /**
+   * Sí no existe el registro
+   * La agrega
+   */
+  if (transactions.size == 0) {
+    await db.collection(`users/${user_id}/transactions`).add({
+      ...transactionBody,
+      created_at: new Date(),
+    });
+  } else {
+    /**
+     * Sí existe el registro
+     * Lo modifica
+     */
+    const doc = transactions.docs[0];
+
+    await doc.ref.update({
+      [`data.event`]: 'ADDRESS_COINS_TRANSACTION_CONFIRMED',
+      [`data.item.minedInBlock`]: transactionBody.data.item.minedInBlock,
+      [`data.item.firstSeenInMempoolTimestamp`]: firestore.FieldValue.delete(),
+    });
+  }
+
+  return true;
+};
+
+  /**
+   * Obtener un 'transaction'
+   * de 'user'
+   * con el id de la transacción
+   */
+  getTransactionOfUser = (
+    user_id: string,
+    transaction_id: string,
+  ): Promise<FirebaseFirestore.DocumentData> => {
+    return db
+      .collection(`users/${user_id}/transactions`)
+      .where(`data.item.transactionId`, '==', transaction_id)
+      .get();
+  };
+
+  /**
+   * Obtener todos los 'transaction'
+   * de 'user'
+   * con la dirección del wallet
+   */
+  getTransactionsOfUser = (
+    user_id: string,
+    addressWallet: string,
+  ): Promise<FirebaseFirestore.DocumentData> => {
+    // Calcular la fecha de hace un mes
+    // const currentDate = new Date();
+    // const oneMonthAgo = new Date();
+    // oneMonthAgo.setMonth(currentDate.getMonth() - 1);
+
+    return (
+      db
+        .collection(`users/${user_id}/transactions`)
+        .where(`data.item.address`, '==', addressWallet)
+        //.where('created_at', '>', oneMonthAgo)
+        .get()
+    );
+  };
+
+  /**
+   * Calcular el monto pendiente a pagar.
+   */
+  calculatePendingAmount = async (
+    id_user: string,
+    addressWallet: string,
+    totalAmount: number,
+  ): Promise<number> => {
+    try {
+      // Calcular el monto ya pagado
+      const paidAmount:number = await this.calculatePaidAmount(id_user, addressWallet);
+      // Sí el pago no fue completado
+      return totalAmount-paidAmount;
+    } catch (e) {
+      console.log('Error al calcular el monto pendiente: ', e);
+      return totalAmount;
+    }
+  };
+
+  /**
+   * Calcular el monto ya pagado.
+   */
+  calculatePaidAmount = async (
+    id_user: string,
+    addressWallet: string,
+  ): Promise<number> =>{
+    try{
+      // Obtener las transacciones
+      const transactions = await this.getTransactionsOfUser(id_user, addressWallet);
+      const sizeT = transactions.size;
+    
+      // Obtener monto pagado
+      let paidAmount = 0;
+      for (let i = 0; i < sizeT; i++) {
+        const doc = transactions.docs[i];
+        const data = doc.data();
+        paidAmount += Number.parseFloat(data.data?.item?.amount);
+      }
+    
+      return paidAmount;
+    }
+    catch(e){
+      console.log('Error al calcular el monto pagado: ', e);
+      return 0;
+    }
+  }
+
+  generateQrUrl = (
+    address:string,
+    amount:number
+  ): string => (
+    `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amount}`
+  );
 }
