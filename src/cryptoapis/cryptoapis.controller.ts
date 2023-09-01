@@ -44,7 +44,7 @@ export class CryptoapisController {
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
-      // body.data.item.network == network &&
+      body.data.item.network == network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
