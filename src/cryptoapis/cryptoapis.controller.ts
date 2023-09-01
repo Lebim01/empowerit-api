@@ -44,7 +44,7 @@ export class CryptoapisController {
       process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
-      body.data.item.network == network &&
+      // body.data.item.network == network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
@@ -99,7 +99,7 @@ export class CryptoapisController {
           // Actualizar QR
           const qr: string = this.cryptoapisService.generateQrUrl(
             address,
-            pendingAmount,
+            pendingAmount.toFixed(8),
           );
           await userDoc.ref.update({
             [`subscription.${type}.payment_link.qr`]: qr,
@@ -188,7 +188,7 @@ export class CryptoapisController {
         // Actualizar QR
         const qr: string = this.cryptoapisService.generateQrUrl(
           address,
-          pendingAmount,
+          pendingAmount.toFixed(8),
         );
         await doc.ref.update({
           [`subscription.${type}.payment_link.qr`]: qr,
