@@ -66,6 +66,7 @@ export class RanksService {
         collectionRef,
         queryCondition_,
         queryCondition__,
+        where('created_at', '>=', dayjs('2023-09-01 00:00:00').toDate()),
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
@@ -140,6 +141,7 @@ export class RanksService {
         queryCondition_,
         queryCondition__,
         queryCondition___,
+        where('created_at', '>=', dayjs('2023-09-01 00:00:00').toDate()),
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
@@ -181,6 +183,7 @@ export class RanksService {
         subCollectionRefpayroll,
         queryConditionPayroll,
         queryConditionPayroll_,
+        where('created_at', '>=', dayjs('2023-09-01 00:00:00').toDate()),
       );
 
       // Obtén los documentos de la subcolección

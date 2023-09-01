@@ -87,6 +87,10 @@ export class ScriptsService {
 
       const { docId, expiresAfter28Days, subscription_expires_at } = user;
 
+      if (subscription_expires_at) {
+        continue;
+      }
+
       let startAt = dayjs(subscription_expires_at).subtract(28, 'day');
       if (expiresAfter28Days) {
         startAt = dayjs(subscription_expires_at).subtract(56, 'day');
@@ -149,6 +153,9 @@ export class ScriptsService {
         count_direct_people_this_cycle: 0,
         has_scholarship: false,
         is_new: false,
+        profits: 0,
+        left_points: 0,
+        right_points: 0,
       });
 
       console.log('Rank Updated: ', 'vanguard', 'from user: ', user.id);
@@ -162,22 +169,35 @@ export class ScriptsService {
     const users = await this.getAllUsers();
 
     const updatePromises = users.map(async (user: any) => {
+      const date = dayjs(user.subscription_expires_at?.seconds * 1000);
+      const is_active = date.isValid() && date.isAfter(dayjs());
+
       const subscription = {
         pro: {
           expires_at: user.subscription_expires_at || null,
           start_at: user.subscription_start_at || null,
-          status: user.subscription_status || null,
+          status: user.subscription_expires_at
+            ? is_active
+              ? 'paid'
+              : 'expired'
+            : null,
         },
         supreme: {
           expires_at: null,
           start_at: null,
           status: null,
         },
-        ibo: {
-          expires_at: null,
-          start_at: null,
-          status: null,
-        },
+        ibo: is_active
+          ? {
+              expires_at: dayjs().add(15, 'days').toDate(),
+              start_at: dayjs().toDate(),
+              status: 'paid',
+            }
+          : {
+              expires_at: null,
+              start_at: null,
+              status: null,
+            },
       };
 
       const userRef = doc(db, 'users', user.id);
@@ -185,6 +205,9 @@ export class ScriptsService {
       try {
         await updateDoc(userRef, {
           subscription,
+          profits: 0,
+          left_points: 0,
+          right_points: 0,
         });
         console.log(`Updated subscription for user with ID ${user.id}`);
       } catch (error) {
@@ -318,5 +341,3 @@ export class ScriptsService {
     }
   }
 }
-
-//deleteExpiredPoints();

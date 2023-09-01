@@ -58,14 +58,17 @@ export class CryptoapisController {
         const data = userDoc.data();
 
         // Agregar registro de la transaccion
-        await this.cryptoapisService.addTransactionToUser(userDoc.id, { ...body });
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, {
+          ...body,
+        });
 
         // Verificar si el pago se completo
-        const pendingAmount:number = await this.cryptoapisService.calculatePendingAmount(
-          userDoc.id,
-          address,
-          Number(data.subscription[type].payment_link.amount),
-        );
+        const pendingAmount: number =
+          await this.cryptoapisService.calculatePendingAmount(
+            userDoc.id,
+            address,
+            Number(data.subscription[type].payment_link.amount),
+          );
 
         if (pendingAmount <= 0) {
           switch (type) {
@@ -94,7 +97,10 @@ export class CryptoapisController {
         // Sí el pago esta incompleto
         else {
           // Actualizar QR
-          const qr:string = this.cryptoapisService.generateQrUrl(address, pendingAmount);
+          const qr: string = this.cryptoapisService.generateQrUrl(
+            address,
+            pendingAmount,
+          );
           await userDoc.ref.update({
             [`subscription.${type}.payment_link.qr`]: qr,
           });
@@ -166,11 +172,12 @@ export class CryptoapisController {
         await this.cryptoapisService.addTransactionToUser(doc.id, { ...body });
 
         // Verificar si el pago fue completado
-        const pendingAmount:number = await this.cryptoapisService.calculatePendingAmount(
-          doc.id,
-          address,
-          Number.parseFloat(data.subscription[type]?.payment_link?.amount),
-        );
+        const pendingAmount: number =
+          await this.cryptoapisService.calculatePendingAmount(
+            doc.id,
+            address,
+            Number.parseFloat(data.subscription[type]?.payment_link?.amount),
+          );
 
         // Actualizar estado a 'confirming'
         if (pendingAmount <= 0)
@@ -179,7 +186,10 @@ export class CryptoapisController {
           });
 
         // Actualizar QR
-        const qr:string = this.cryptoapisService.generateQrUrl(address, pendingAmount);
+        const qr: string = this.cryptoapisService.generateQrUrl(
+          address,
+          pendingAmount,
+        );
         await doc.ref.update({
           [`subscription.${type}.payment_link.qr`]: qr,
         });

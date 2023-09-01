@@ -42,9 +42,4 @@ export class ScriptsController {
   removePoints() {
     return this.scriptsService.deleteExpiredPoints();
   }
-
-  @Post('deleteUsers')
-  deleteUsers() {
-    return this.scriptsService.deleteUsers();
-  }
 }
