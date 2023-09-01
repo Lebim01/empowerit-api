@@ -10,6 +10,7 @@ import {
   addDoc,
   collectionGroup,
   deleteDoc,
+  getCountFromServer,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UsersService } from 'src/users/users.service';
@@ -37,13 +38,12 @@ export class ScriptsService {
   async getUsersWithoutRank() {
     const data = await getDocs(this.usersCollectionRef);
     const filteredData = data.docs.map((doc) => {
-      const docData = doc.data();
-      if (!docData.rank) {
-        return {
-          id: doc.id,
-          ...docData,
-        };
-      }
+      const docData = doc.data() as any;
+
+      return {
+        id: doc.id,
+        ...docData,
+      };
     });
     const validData = filteredData.filter((data) => data !== undefined);
     return validData;
@@ -139,6 +139,9 @@ export class ScriptsService {
     for (const user of users) {
       if (!user) continue;
       const userDoc = doc(db, 'users', user.id);
+      const transactions = await getCountFromServer(
+        collection(db, `users/${user.id}/transactions`),
+      );
       await updateDoc(userDoc, {
         rank: 'vanguard',
         bond_residual_level_1: 0,
@@ -149,10 +152,10 @@ export class ScriptsService {
         bond_scholarship_level_1: 0,
         bond_scholarship_level_2: 0,
         bond_scholarship_level_3: 0,
-        count_scholarship_people: 0,
+        count_scholarship_people: user.is_admin ? 2 : 0,
         count_direct_people_this_cycle: 0,
-        has_scholarship: false,
-        is_new: false,
+        has_scholarship: user.is_admin ? true : false,
+        is_new: transactions.data().count == 0 ? true : false,
         profits: 0,
         left_points: 0,
         right_points: 0,
