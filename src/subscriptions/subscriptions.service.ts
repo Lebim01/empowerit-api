@@ -61,7 +61,14 @@ export class SubscriptionsService {
       referenceId = userData.subscription[type].payment_link.referenceId;
     }
 
-    const amount: any = await this.cryptoapisService.getBTCExchange(177);
+    const amount_type = {
+      supreme: 100,
+      pro: 177,
+      ibo: 30,
+    };
+    const amount: any = await this.cryptoapisService.getBTCExchange(
+      amount_type[type],
+    );
 
     // Estructurar el campo payment_link
     const payment_link = {
