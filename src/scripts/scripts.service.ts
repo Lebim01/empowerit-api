@@ -154,6 +154,8 @@ export class ScriptsService {
         bond_scholarship_level_3: 0,
         count_scholarship_people: user.is_admin ? 2 : 0,
         count_direct_people_this_cycle: 0,
+        count_direct_people_this_month: 0,
+        profits_this_month: 0,
         has_scholarship: user.is_admin ? true : false,
         is_new: transactions.data().count == 0 ? true : false,
         profits: 0,

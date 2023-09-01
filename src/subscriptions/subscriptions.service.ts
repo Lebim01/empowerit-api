@@ -100,16 +100,15 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingMembership(id_user:string, type:'pro'|'supreme'|'ibo')
-  {
+  async assingMembership(id_user: string, type: 'pro' | 'supreme' | 'ibo') {
     // Obtener fechas
-    const startAt:Date = await this.calculateStartDate(id_user, type);
-    const expiresAt:Date = await this.calculateExpirationDate(id_user, type);
+    const startAt: Date = await this.calculateStartDate(id_user, type);
+    const expiresAt: Date = await this.calculateExpirationDate(id_user, type);
 
     // Generar objeto con cambios a registrar
     let changes = {};
-    switch(type){
-      case "pro":{
+    switch (type) {
+      case 'pro': {
         changes = {
           'subscription.pro.payment_link': null,
           'subscription.pro.start_at': startAt,
@@ -119,7 +118,7 @@ export class SubscriptionsService {
         };
         break;
       }
-      case "supreme":{
+      case 'supreme': {
         changes = {
           'subscription.supreme.payment_link': null,
           'subscription.supreme.start_at': startAt,
@@ -128,7 +127,7 @@ export class SubscriptionsService {
         };
         break;
       }
-      case "ibo":{
+      case 'ibo': {
         changes = {
           'subscription.ibo.payment_link': null,
           'subscription.ibo.start_at': startAt,
@@ -147,59 +146,59 @@ export class SubscriptionsService {
    * Obtener fecha de inicio.
    * Fecha en la que iniciara la membresia del 'type' enviado.
    */
-  async calculateStartDate(id_user:string, type:'pro'|'supreme'|'ibo')
-  : Promise<Date>
-  {
+  async calculateStartDate(
+    id_user: string,
+    type: 'pro' | 'supreme' | 'ibo',
+  ): Promise<Date> {
     // Obtener la información del usuario
     const userDoc = await getDoc(doc(db, `users/${id_user}`));
-    const {status, expires_at} = userDoc.data().subscription[type];
+    const { status, expires_at } = userDoc.data().subscription[type];
 
     // Obtener fecha de inicio
-    let date:dayjs.Dayjs;
-    if(status && status == "paid"){
-      console.log("Entro bien");
-      date= dayjs((expires_at?.seconds || 0)*1000 || new Date());
-    }
-    else{
-      console.log("Entro donde no deberia");
+    let date: dayjs.Dayjs;
+    if (status && status == 'paid') {
+      console.log('Entro bien');
+      date = dayjs((expires_at?.seconds || 0) * 1000 || new Date());
+    } else {
+      console.log('Entro donde no deberia');
       date = dayjs();
     }
 
-    return date.toDate()
+    return date.toDate();
   }
 
   /**
    * Obtener fecha de expiración.
    * Fecha en la que finalizara la membresia del 'type' enviado.
    */
-  async calculateExpirationDate(id_user:string, type:'pro'|'supreme'|'ibo')
-  : Promise<Date>
-  {
+  async calculateExpirationDate(
+    id_user: string,
+    type: 'pro' | 'supreme' | 'ibo',
+  ): Promise<Date> {
     // Obtener los días de membresia.
-    let days:number = 0;
-    switch(type){
-      case "pro":{
+    let days = 0;
+    switch (type) {
+      case 'pro': {
         const isNew = await this.isNewMember(id_user);
-        days = (isNew) ? 56 : 28;
+        days = isNew ? 56 : 28;
         break;
       }
-      case "supreme":{
+      case 'supreme': {
         days = 168;
         break;
       }
-      case "ibo":{
+      case 'ibo': {
         days = 112;
         break;
       }
     }
 
     // Obtener la fecha de expiración
-    const date:Date = dayjs(
-      await this.calculateStartDate(id_user, type))
+    const date: Date = dayjs(await this.calculateStartDate(id_user, type))
       .add(days, 'days')
       .toDate();
 
-    console.log("Fecha de expiración: ", date.toISOString());
+    console.log('Fecha de expiración: ', date.toISOString());
     return date;
   }
 
@@ -333,6 +332,7 @@ export class SubscriptionsService {
     if (isNew) {
       await updateDoc(sponsorRef.ref, {
         count_direct_people: increment(1),
+        count_direct_people_this_month: increment(1),
       });
     }
 
