@@ -17,4 +17,29 @@ export class ScriptsController {
   ) {
     return this.scriptsService.duplicateUserDoc(userDocID, newId);
   }
+
+  @Post('assignInitialRank')
+  assignInitialRank() {
+    return this.scriptsService.assignInitialRank();
+  }
+
+  @Post('assignNewSubscriptionsObject')
+  assignNewSubscriptionsObject() {
+    return this.scriptsService.assignNewSubscriptionsObject();
+  }
+
+  @Post('assingSaguineUsers')
+  assingSaguineUsers() {
+    return this.scriptsService.assingSanguineUsers();
+  }
+
+  @Post('assignLeftRightUsers')
+  assignLeftRightUsers() {
+    return this.scriptsService.assignLeftRightUsers();
+  }
+
+  @Post('removePoints')
+  removePoints() {
+    return this.scriptsService.deleteExpiredPoints();
+  }
 }
