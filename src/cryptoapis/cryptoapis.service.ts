@@ -360,9 +360,15 @@ export class CryptoapisService {
 
       // Calcular el monto pendiente y redondearlo
       const decimals = 8;
-      let pendingAmount:number = totalAmount - paidAmount;
-      const result:number
-        = Math.ceil(pendingAmount * Math.pow(10, decimals)) / Math.pow(10, decimals);
+      const pendingAmount = totalAmount - paidAmount;
+      const result: number =
+        Math.ceil(pendingAmount * Math.pow(10, decimals)) /
+        Math.pow(10, decimals);
+
+      console.log({
+        pendingAmount,
+        result,
+      });
 
       return result;
     } catch (e) {

@@ -80,15 +80,18 @@ export class CryptoapisController {
               await this.subscriptionService.onPaymentIBOMembership(userDoc.id);
               break;
             }
-            case 'supreme': {
-              await this.subscriptionService.onPaymentSupremeMembership(
-                userDoc.id,
-              );
-              break;
-            }
+            case 'supreme':
+              {
+                await this.subscriptionService.onPaymentSupremeMembership(
+                  userDoc.id,
+                );
+                break;
+              }
 
-            // Eliminar el evento que esta en el servicio de la wallet
-            await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+              // Eliminar el evento que esta en el servicio de la wallet
+              await this.cryptoapisService.removeCallbackEvent(
+                body.referenceId,
+              );
           }
 
           return 'transaccion correcta';
@@ -180,11 +183,11 @@ export class CryptoapisController {
           );
 
         // Si se cubrio el pago completo
-        if (pendingAmount <= 0){
+        if (pendingAmount <= 0) {
           await doc.ref.update({
             [`subscription.${type}.payment_link.status`]: 'confirming',
           });
-          
+
           await this.cryptoapisService.removeCallbackEvent(body.referenceId);
           await this.cryptoapisService.createCallbackConfirmation(
             data.id,
