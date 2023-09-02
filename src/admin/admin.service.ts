@@ -41,6 +41,7 @@ export class AdminService {
           wallet_bitcoin: docData.wallet_bitcoin,
           profits: docData.profits || 0,
           rank: docData.rank,
+          profits_this_month: docData.profits_this_month || 0,
         };
       })
       .map((doc) => ({
@@ -110,7 +111,7 @@ export class AdminService {
         bond_supreme_level_1: 0,
         bond_supreme_level_2: 0,
         bond_supreme_level_3: 0,
-        profits_this_month: increment(doc.total),
+        profits_this_month: doc.profits_this_month + doc.total,
       });
     }
 
