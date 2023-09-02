@@ -208,6 +208,12 @@ export class CryptoapisService {
   ): Promise<boolean> => {
     const { event } = transactionBody.data;
 
+    console.log(
+      'addTransactionToUser',
+      event,
+      transactionBody.data.item.address,
+    );
+
     try {
       // Identificar el evento que guardara el registro.
       let resultado: boolean;

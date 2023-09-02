@@ -58,9 +58,7 @@ export class CryptoapisController {
         const data = userDoc.data();
 
         // Agregar registro de la transaccion
-        await this.cryptoapisService.addTransactionToUser(userDoc.id, {
-          ...body,
-        });
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
 
         // Verificar si el pago se completo
         const pendingAmount: number =
