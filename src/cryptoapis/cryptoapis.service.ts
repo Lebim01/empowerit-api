@@ -357,8 +357,14 @@ export class CryptoapisService {
         id_user,
         addressWallet,
       );
-      // Sí el pago no fue completado
-      return totalAmount - paidAmount;
+
+      // Calcular el monto pendiente y redondearlo
+      const decimals = 8;
+      let pendingAmount:number = totalAmount - paidAmount;
+      const result:number
+        = Math.ceil(pendingAmount * Math.pow(10, decimals)) / Math.pow(10, decimals);
+
+      return result;
     } catch (e) {
       console.log('Error al calcular el monto pendiente: ', e);
       return totalAmount;
@@ -395,6 +401,6 @@ export class CryptoapisService {
     }
   };
 
-  generateQrUrl = (address: string, amount: number): string =>
+  generateQrUrl = (address: string, amount: string): string =>
     `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amount}`;
 }
