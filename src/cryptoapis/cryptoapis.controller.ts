@@ -86,10 +86,10 @@ export class CryptoapisController {
               );
               break;
             }
-          }
 
-          // Eliminar el evento que esta en el servicio de la wallet
-          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+            // Eliminar el evento que esta en el servicio de la wallet
+            await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          }
 
           return 'transaccion correcta';
         }
@@ -99,7 +99,7 @@ export class CryptoapisController {
           // Actualizar QR
           const qr: string = this.cryptoapisService.generateQrUrl(
             address,
-            pendingAmount,
+            pendingAmount.toFixed(8),
           );
           await userDoc.ref.update({
             [`subscription.${type}.payment_link.qr`]: qr,
@@ -179,28 +179,28 @@ export class CryptoapisController {
             Number.parseFloat(data.subscription[type]?.payment_link?.amount),
           );
 
-        // Actualizar estado a 'confirming'
-        if (pendingAmount <= 0)
+        // Si se cubrio el pago completo
+        if (pendingAmount <= 0){
           await doc.ref.update({
             [`subscription.${type}.payment_link.status`]: 'confirming',
           });
+          
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.createCallbackConfirmation(
+            data.id,
+            body.data.item.address,
+            type,
+          );
+        }
 
         // Actualizar QR
         const qr: string = this.cryptoapisService.generateQrUrl(
           address,
-          pendingAmount,
+          pendingAmount.toFixed(8),
         );
         await doc.ref.update({
           [`subscription.${type}.payment_link.qr`]: qr,
         });
-
-        await this.cryptoapisService.removeCallbackEvent(body.referenceId);
-
-        await this.cryptoapisService.createCallbackConfirmation(
-          data.id,
-          body.data.item.address,
-          type,
-        );
 
         return 'OK';
       } else {
