@@ -41,6 +41,7 @@ export class AdminService {
           wallet_bitcoin: docData.wallet_bitcoin,
           profits: docData.profits || 0,
           rank: docData.rank,
+          profits_this_month: docData.profits_this_month || 0,
         };
       })
       .map((doc) => ({
@@ -82,7 +83,7 @@ export class AdminService {
   async payroll() {
     const payroll_data = await this.getPayroll();
 
-    const ref = await db.collection('payroll').add({
+    /*const ref = await db.collection('payroll').add({
       total_usd: payroll_data.reduce((a, b) => a + b.total, 0),
       total_btc: payroll_data.reduce((a, b) => a + b.btc_amount, 0),
       created_at: new Date(),
@@ -95,7 +96,7 @@ export class AdminService {
           created_at: new Date(),
         });
       }),
-    );
+    );*/
 
     for (const doc of payroll_data) {
       await db.doc('users/' + doc.id).update({
@@ -110,7 +111,7 @@ export class AdminService {
         bond_supreme_level_1: 0,
         bond_supreme_level_2: 0,
         bond_supreme_level_3: 0,
-        profits_this_month: increment(doc.total),
+        profits_this_month: doc.profits_this_month + doc.total,
       });
     }
 
