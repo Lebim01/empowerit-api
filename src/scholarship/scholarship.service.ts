@@ -107,6 +107,10 @@ export class ScholarshipService {
       return 'El usuario no tiene beca';
     }
 
+    if (user.get('is_admin') === true) {
+      return 'El usuario Es admin';
+    }
+
     const initialDate = dayjs().toDate();
     const finalDate = dayjs()
       .add(user.data().is_new ? 56 : 28, 'days')
