@@ -1,4 +1,12 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import { ReportService } from './report.service';
 
 @Controller('report')
-export class ReportController {}
+export class ReportController {
+  constructor(private readonly reportService: ReportService) {}
+
+  @Get('topProfits')
+  topProfits() {
+    return this.reportService.getTopProfitsMonth(8);
+  }
+}

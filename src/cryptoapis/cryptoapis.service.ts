@@ -232,6 +232,7 @@ export class CryptoapisService {
         }
         default: {
           resultado = false;
+          console.log('evento no reconocido');
           break;
         }
       }

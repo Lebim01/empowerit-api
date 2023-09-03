@@ -1,5 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import dayjs from 'dayjs';
 
@@ -66,11 +75,20 @@ export class ScholarshipService {
     return false;
   }
 
-
   async useAllScholarship() {
-    const q = query(collection(db, "users"), where("subscription.pro.expires_at", "<=", new Date()), where("has_scholarship", "==", true))
+    const q = query(
+      collection(db, 'users'),
+      where('subscription.pro.expires_at', '<=', new Date()),
+      where('has_scholarship', '==', true),
+      orderBy('subscription.pro.expires_at', 'asc'),
+    );
     const users = await getDocs(q);
-    return users.docs.map((d:any) => {d.data()});
+
+    for (const u of users.docs) {
+      await this.useSchorlarship(u.id);
+    }
+
+    return users.docs.map((d) => d.id);
   }
 
   /**
@@ -90,12 +108,15 @@ export class ScholarshipService {
     }
 
     const initialDate = dayjs().toDate();
-    const finalDate = dayjs().add(28, 'days').toDate();
+    const finalDate = dayjs()
+      .add(user.data().is_new ? 56 : 28, 'days')
+      .toDate();
     const scholarship = {
       has_scholarship: false,
       count_scholarship_people: 0,
       'subscription.pro.start_at': initialDate,
       'subscription.pro.expires_at': finalDate,
+      is_new: false,
     };
     await updateDoc(docRef, scholarship);
     return 'Se utilizo la beca';
