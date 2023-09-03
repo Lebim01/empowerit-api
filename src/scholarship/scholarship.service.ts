@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
@@ -11,9 +12,12 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import dayjs from 'dayjs';
+import { BondsService } from '@/bonds/bonds.service';
 
 @Injectable()
 export class ScholarshipService {
+  constructor(private readonly bondService: BondsService) {}
+
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, 'users/' + id_user));
     const expires_at = user.get('subscription.pro.expires_at');
@@ -124,6 +128,13 @@ export class ScholarshipService {
       is_new: false,
     };
     await updateDoc(docRef, scholarship);
+    await this.bondService.execUserResidualBond(user.get('sponsor_id'));
+    await addDoc(collection(db, 'scholarship_activations'), {
+      id_user: user.id,
+      start_at: initialDate,
+      expires_at: finalDate,
+      created_at: new Date(),
+    });
     return 'Se utilizo la beca';
   }
 
