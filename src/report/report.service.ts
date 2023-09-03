@@ -1,4 +1,4 @@
-import { db } from '@/firebase/admin';
+import { db } from '../firebase/admin';
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 
