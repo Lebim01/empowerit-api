@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import dayjs from 'dayjs';
-import { BondsService } from '@/bonds/bonds.service';
+import { BondsService } from '../bonds/bonds.service';
 
 @Injectable()
 export class ScholarshipService {
