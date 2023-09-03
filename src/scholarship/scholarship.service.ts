@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import dayjs from 'dayjs';
 
@@ -64,6 +64,13 @@ export class ScholarshipService {
     }
 
     return false;
+  }
+
+
+  async useAllScholarship() {
+    const q = query(collection(db, "users"), where("subscription.pro.expires_at", "<=", new Date()), where("has_scholarship", "==", true))
+    const users = await getDocs(q);
+    return users.docs.map((d:any) => {d.data()});
   }
 
   /**

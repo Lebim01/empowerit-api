@@ -24,4 +24,9 @@ export class ScholarshipController {
   distributeBond(@Param('idUser') idUser: string) {
     return this.scholarshipService.distributeBond(idUser);
   }
+
+  @Post('users')
+  useScholarship() {
+    return this.scholarshipService.useAllScholarship();
+  }
 }
