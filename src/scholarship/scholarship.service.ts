@@ -70,7 +70,7 @@ export class ScholarshipService {
   async useAllScholarship() {
     const q = query(collection(db, "users"), where("subscription.pro.expires_at", "<=", new Date()), where("has_scholarship", "==", true))
     const users = await getDocs(q);
-    return users.docs.map((d:any) => {id:d.id, d.data()});
+    return users.docs.map((d:any) => {d.data()});
   }
 
   /**
