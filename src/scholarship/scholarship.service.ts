@@ -120,6 +120,7 @@ export class ScholarshipService {
       count_scholarship_people: 0,
       'subscription.pro.start_at': initialDate,
       'subscription.pro.expires_at': finalDate,
+      'subscription.pro.status': 'paid',
       is_new: false,
     };
     await updateDoc(docRef, scholarship);
