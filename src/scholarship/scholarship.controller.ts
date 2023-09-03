@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
 import { ScholarshipService } from './scholarship.service';
-import { BondsService } from '@/bonds/bonds.service';
+import { BondsService } from '../bonds/bonds.service';
 
 @Controller('scholarship')
 export class ScholarshipController {
