@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
@@ -128,6 +129,12 @@ export class ScholarshipService {
     };
     await updateDoc(docRef, scholarship);
     await this.bondService.execUserResidualBond(user.get('sponsor_id'));
+    await addDoc(collection(db, 'scholarship_activations'), {
+      id_user: user.id,
+      start_at: initialDate,
+      expires_at: finalDate,
+      created_at: new Date(),
+    });
     return 'Se utilizo la beca';
   }
 
