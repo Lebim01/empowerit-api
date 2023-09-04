@@ -30,6 +30,7 @@
     "@sentry/tracing": "^7.64.0",
     "@types/nodemailer": "^6.4.9",
     "axios": "^1.4.0",
+    "country-state-city": "^3.2.0",
     "dayjs": "^1.11.9",
     "firebase": "^10.1.0",
     "firebase-admin": "^11.10.1",
