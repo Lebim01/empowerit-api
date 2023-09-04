@@ -74,7 +74,7 @@ export class BondsService {
     const sequence = Number(sponsorRef.get('supreme_sequence') ?? 0);
 
     let nextBond = sequence + 1;
-    if (nextBond == 4) {
+    if (nextBond > 3) {
       nextBond = 1;
     }
 
@@ -141,7 +141,7 @@ export class BondsService {
     }
 
     await updateDoc(sponsorRef.ref, {
-      supreme_sequence: increment(1),
+      supreme_sequence: nextBond,
     });
   }
 }

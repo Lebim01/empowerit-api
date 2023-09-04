@@ -1,10 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import dayjs from 'dayjs';
+import { BondsService } from '../bonds/bonds.service';
 
 @Injectable()
 export class ScholarshipService {
+  constructor(private readonly bondService: BondsService) {}
+
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, 'users/' + id_user));
     const expires_at = user.get('subscription.pro.expires_at');
@@ -66,6 +79,22 @@ export class ScholarshipService {
     return false;
   }
 
+  async useAllScholarship() {
+    const q = query(
+      collection(db, 'users'),
+      where('subscription.pro.expires_at', '<=', new Date()),
+      where('has_scholarship', '==', true),
+      orderBy('subscription.pro.expires_at', 'asc'),
+    );
+    const users = await getDocs(q);
+
+    for (const u of users.docs) {
+      await this.useSchorlarship(u.id);
+    }
+
+    return users.docs.map((d) => d.id);
+  }
+
   /**
    * Activar la beca, se agregan 28 dias
    * y se reinicia el status de la beca a "false"
@@ -82,15 +111,30 @@ export class ScholarshipService {
       return 'El usuario no tiene beca';
     }
 
+    if (user.get('is_admin') === true) {
+      return 'El usuario Es admin';
+    }
+
     const initialDate = dayjs().toDate();
-    const finalDate = dayjs().add(28, 'days').toDate();
+    const finalDate = dayjs()
+      .add(user.data().is_new ? 56 : 28, 'days')
+      .toDate();
     const scholarship = {
       has_scholarship: false,
       count_scholarship_people: 0,
       'subscription.pro.start_at': initialDate,
       'subscription.pro.expires_at': finalDate,
+      'subscription.pro.status': 'paid',
+      is_new: false,
     };
     await updateDoc(docRef, scholarship);
+    await this.bondService.execUserResidualBond(user.get('sponsor_id'));
+    await addDoc(collection(db, 'scholarship_activations'), {
+      id_user: user.id,
+      start_at: initialDate,
+      expires_at: finalDate,
+      created_at: new Date(),
+    });
     return 'Se utilizo la beca';
   }
 

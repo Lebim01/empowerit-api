@@ -10,6 +10,7 @@ import {
   addDoc,
   collectionGroup,
   deleteDoc,
+  getCountFromServer,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UsersService } from 'src/users/users.service';
@@ -37,13 +38,12 @@ export class ScriptsService {
   async getUsersWithoutRank() {
     const data = await getDocs(this.usersCollectionRef);
     const filteredData = data.docs.map((doc) => {
-      const docData = doc.data();
-      if (!docData.rank) {
-        return {
-          id: doc.id,
-          ...docData,
-        };
-      }
+      const docData = doc.data() as any;
+
+      return {
+        id: doc.id,
+        ...docData,
+      };
     });
     const validData = filteredData.filter((data) => data !== undefined);
     return validData;
@@ -86,6 +86,10 @@ export class ScriptsService {
       if (!user) continue;
 
       const { docId, expiresAfter28Days, subscription_expires_at } = user;
+
+      if (subscription_expires_at) {
+        continue;
+      }
 
       let startAt = dayjs(subscription_expires_at).subtract(28, 'day');
       if (expiresAfter28Days) {
@@ -135,6 +139,9 @@ export class ScriptsService {
     for (const user of users) {
       if (!user) continue;
       const userDoc = doc(db, 'users', user.id);
+      const transactions = await getCountFromServer(
+        collection(db, `users/${user.id}/transactions`),
+      );
       await updateDoc(userDoc, {
         rank: 'vanguard',
         bond_residual_level_1: 0,
@@ -145,10 +152,15 @@ export class ScriptsService {
         bond_scholarship_level_1: 0,
         bond_scholarship_level_2: 0,
         bond_scholarship_level_3: 0,
-        count_scholarship_people: 0,
+        count_scholarship_people: user.is_admin ? 2 : 0,
         count_direct_people_this_cycle: 0,
-        has_scholarship: false,
-        is_new: false,
+        count_direct_people_this_month: 0,
+        profits_this_month: 0,
+        has_scholarship: user.is_admin ? true : false,
+        is_new: transactions.data().count == 0 ? true : false,
+        profits: 0,
+        left_points: 0,
+        right_points: 0,
       });
 
       console.log('Rank Updated: ', 'vanguard', 'from user: ', user.id);
@@ -162,22 +174,35 @@ export class ScriptsService {
     const users = await this.getAllUsers();
 
     const updatePromises = users.map(async (user: any) => {
+      const date = dayjs(user.subscription_expires_at?.seconds * 1000);
+      const is_active = date.isValid() && date.isAfter(dayjs());
+
       const subscription = {
         pro: {
           expires_at: user.subscription_expires_at || null,
           start_at: user.subscription_start_at || null,
-          status: user.subscription_status || null,
+          status: user.subscription_expires_at
+            ? is_active
+              ? 'paid'
+              : 'expired'
+            : null,
         },
         supreme: {
           expires_at: null,
           start_at: null,
           status: null,
         },
-        ibo: {
-          expires_at: null,
-          start_at: null,
-          status: null,
-        },
+        ibo: is_active
+          ? {
+              expires_at: dayjs().add(15, 'days').toDate(),
+              start_at: dayjs().toDate(),
+              status: 'paid',
+            }
+          : {
+              expires_at: null,
+              start_at: null,
+              status: null,
+            },
       };
 
       const userRef = doc(db, 'users', user.id);
@@ -185,6 +210,9 @@ export class ScriptsService {
       try {
         await updateDoc(userRef, {
           subscription,
+          profits: 0,
+          left_points: 0,
+          right_points: 0,
         });
         console.log(`Updated subscription for user with ID ${user.id}`);
       } catch (error) {
@@ -318,5 +346,3 @@ export class ScriptsService {
     }
   }
 }
-
-//deleteExpiredPoints();
