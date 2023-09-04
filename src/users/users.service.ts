@@ -163,7 +163,7 @@ export class UsersService {
     return validDataSorted;
   }
 
-  async getMXUsers() {
+  getMXStates() {
     type HexColor = `#${string}`;
     type Coordinates = [number, number];
     type MXStateCode = `${string}-MX`;
@@ -374,6 +374,11 @@ export class UsersService {
       },
     };
 
+    return states;
+  }
+
+  async getMXUsers() {
+    const states = this.getMXStates();
     const snap = await getDocs(
       query(collection(db, 'users'), where('country.value', '==', 'MX')),
     );
