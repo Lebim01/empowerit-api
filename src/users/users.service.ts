@@ -414,4 +414,70 @@ export class UsersService {
 
     return states;
   }
+
+  async getOrganization(user_id: string): Promise<string> {
+    const csv = [
+      'ID,Nombre,Email,Lado,Fecha Inicio Membresia PRO,Estatus Membresia PRO',
+    ];
+
+    const user = await getDoc(doc(db, `users/${user_id}`));
+
+    // left
+    const leftQueue = [user.get('left_binary_user_id')].filter(Boolean);
+    while (leftQueue.length > 0) {
+      const currentLeftUser = leftQueue[0];
+      const leftUser = await getDoc(doc(db, `users/${currentLeftUser}`));
+
+      csv.push(
+        [
+          leftUser.id,
+          leftUser.get('name'),
+          leftUser.get('email'),
+          'Izquierda',
+          dayjs(leftUser.get('subscription.pro.start_at').toDate()).format(
+            'DD/MM/YYYY',
+          ),
+          leftUser.get('subscription.pro.status'),
+        ].join(','),
+      );
+
+      if (leftUser.get('left_binary_user_id')) {
+        leftQueue.push(leftUser.get('left_binary_user_id'));
+      }
+      if (leftUser.get('right_binary_user_id')) {
+        leftQueue.push(leftUser.get('right_binary_user_id'));
+      }
+      leftQueue.splice(0, 1);
+    }
+
+    // right
+    const rightQueue = [user.get('right_binary_user_id')].filter(Boolean);
+    while (rightQueue.length > 0) {
+      const currentRightUser = rightQueue[0];
+      const rightUser = await getDoc(doc(db, `users/${currentRightUser}`));
+
+      csv.push(
+        [
+          rightUser.id,
+          rightUser.get('name'),
+          rightUser.get('email'),
+          'Derecha',
+          dayjs(rightUser.get('subscription.pro.start_at').toDate()).format(
+            'DD/MM/YYYY',
+          ),
+          rightUser.get('subscription.pro.status'),
+        ].join(','),
+      );
+
+      if (rightUser.get('left_binary_user_id')) {
+        rightQueue.push(rightUser.get('left_binary_user_id'));
+      }
+      if (rightUser.get('right_binary_user_id')) {
+        rightQueue.push(rightUser.get('right_binary_user_id'));
+      }
+      rightQueue.splice(0, 1);
+    }
+
+    return csv.join('\n');
+  }
 }

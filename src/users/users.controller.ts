@@ -29,4 +29,9 @@ export class UsersController {
   getMxUsersSanguine(@Param('user_id') user_id: string) {
     return this.usersService.getMXUsersSanguine(user_id);
   }
+
+  @Get('getOrganization/:user_id')
+  getOrganization(@Param('user_id') user_id: string) {
+    return this.usersService.getOrganization(user_id);
+  }
 }

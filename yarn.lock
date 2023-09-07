@@ -2662,6 +2662,11 @@ cosmiconfig@^7.0.1:
     path-type "^4.0.0"
     yaml "^1.10.0"
 
+country-state-city@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/country-state-city/-/country-state-city-3.2.0.tgz#b8193f7f2bdcba2e626c3ec7858ffcc543f604b5"
+  integrity sha512-dKbqChbddhaFx4WzjKRBG+U7yoTSR4MI6pyDyxBGqLG4X2SMmvJy+ZRpO3UgKFOSsPxcHgs/KG5iGrtaDOOAEw==
+
 create-require@^1.1.0:
   version "1.1.1"
   resolved "https://registry.npmjs.org/create-require/-/create-require-1.1.1.tgz"
