@@ -107,7 +107,7 @@ export class BinaryService {
 
           batch.set(subCollectionRef, {
             points: 100,
-            user_id: currentUser,
+            user_id: registerUserId,
           });
         }
       } else {
