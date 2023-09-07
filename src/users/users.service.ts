@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import {
-  DocumentData,
-  QueryDocumentSnapshot,
   collection,
   doc,
   getDoc,
@@ -163,7 +161,7 @@ export class UsersService {
     return validDataSorted;
   }
 
-  async getMXUsers() {
+  getMXStates() {
     type HexColor = `#${string}`;
     type Coordinates = [number, number];
     type MXStateCode = `${string}-MX`;
@@ -374,15 +372,45 @@ export class UsersService {
       },
     };
 
+    return states;
+  }
+
+  async getMXUsers() {
+    const states = this.getMXStates();
     const snap = await getDocs(
       query(collection(db, 'users'), where('country.value', '==', 'MX')),
     );
+    if (snap.empty) return states;
     snap.docs.map((doc) => {
       const user = doc.data();
       if (states[user.state.value]) {
         states[user.state.value].value++;
       }
     });
+
+    return states;
+  }
+
+  async getMXUsersSanguine(user_id) {
+    const states = this.getMXStates();
+
+    const sanguineUsersRef = await collection(
+      db,
+      `users/${user_id}/sanguine_users`,
+    );
+    const snap = await getDocs(sanguineUsersRef);
+    if (snap.empty) return states;
+
+    const sanguineUsers = snap.docs.map((doc) => doc.data().id_user);
+    await Promise.all(
+      sanguineUsers.map(async (id) => {
+        const userRef = await getDoc(doc(db, `users/${id}`));
+        const userData = userRef.data();
+        if (states[userData?.state?.value]) {
+          states[userData.state.value].value++;
+        }
+      }),
+    );
 
     return states;
   }

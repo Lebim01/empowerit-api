@@ -1,9 +1,13 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
 import { ScholarshipService } from './scholarship.service';
+import { BondsService } from '../bonds/bonds.service';
 
 @Controller('scholarship')
 export class ScholarshipController {
-  constructor(private scholarshipService: ScholarshipService) {}
+  constructor(
+    private scholarshipService: ScholarshipService,
+    private readonly bondService: BondsService,
+  ) {}
 
   @Get(':idUser')
   hasScholarship(@Param('idUser') idUser: string) {
