@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -23,5 +23,10 @@ export class UsersController {
   @Get('mx-users')
   getMxUsers() {
     return this.usersService.getMXUsers();
+  }
+
+  @Get('mx-users-sanguine/:user_id')
+  getMxUsersSanguine(@Param('user_id') user_id: string) {
+    return this.usersService.getMXUsersSanguine(user_id);
   }
 }

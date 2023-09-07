@@ -72,6 +72,7 @@ export class BinaryService {
   async increaseBinaryPoints(registerUserId: string) {
     const batch = writeBatch(db);
 
+    let registerUser = await getDoc(doc(db, `users/${registerUserId}`))
     let currentUser = registerUserId;
 
     do {
@@ -107,7 +108,8 @@ export class BinaryService {
 
           batch.set(subCollectionRef, {
             points: 100,
-            user_id: currentUser,
+            user_id: registerUserId,
+            name: registerUser.get('name'),
           });
         }
       } else {
