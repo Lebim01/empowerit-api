@@ -61,6 +61,8 @@ export class CryptoapisController {
         await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
 
         // Verificar si el pago se completo
+        const tolerance =
+          Number(data.subscription[type].payment_link.amount) * 0.003;
         const pendingAmount: number =
           await this.cryptoapisService.calculatePendingAmount(
             userDoc.id,
@@ -68,7 +70,7 @@ export class CryptoapisController {
             Number(data.subscription[type].payment_link.amount),
           );
 
-        if (pendingAmount <= 0) {
+        if (pendingAmount - tolerance <= 0) {
           switch (type) {
             case 'pro': {
               await this.subscriptionService.onPaymentProMembership(userDoc.id);
@@ -78,19 +80,16 @@ export class CryptoapisController {
               await this.subscriptionService.onPaymentIBOMembership(userDoc.id);
               break;
             }
-            case 'supreme':
-              {
-                await this.subscriptionService.onPaymentSupremeMembership(
-                  userDoc.id,
-                );
-                break;
-              }
-
-              // Eliminar el evento que esta en el servicio de la wallet
-              await this.cryptoapisService.removeCallbackEvent(
-                body.referenceId,
+            case 'supreme': {
+              await this.subscriptionService.onPaymentSupremeMembership(
+                userDoc.id,
               );
+              break;
+            }
           }
+
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
 
           return 'transaccion correcta';
         }
