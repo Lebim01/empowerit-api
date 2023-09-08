@@ -483,8 +483,12 @@ export class UsersService {
 
   async changeEmail(from: string, to: string) {
     const user = await auth.getUserByEmail(from);
-    return auth.updateUser(user.uid, {
+    const response = await auth.updateUser(user.uid, {
       email: to,
     });
+    await admin.collection('users').doc(user.uid).update({
+      email: to,
+    });
+    return response;
   }
 }
