@@ -11,7 +11,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { db as admin } from '../firebase/admin';
+import { db as admin, auth } from '../firebase/admin';
 import * as Sentry from '@sentry/node';
 
 @Injectable()
@@ -479,5 +479,16 @@ export class UsersService {
     }
 
     return csv.join('\n');
+  }
+
+  async changeEmail(from: string, to: string) {
+    const user = await auth.getUserByEmail(from);
+    const response = await auth.updateUser(user.uid, {
+      email: to,
+    });
+    await admin.collection('users').doc(user.uid).update({
+      email: to,
+    });
+    return response;
   }
 }
