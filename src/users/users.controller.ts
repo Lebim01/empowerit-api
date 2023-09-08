@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -33,5 +33,10 @@ export class UsersController {
   @Get('getOrganization/:user_id')
   getOrganization(@Param('user_id') user_id: string) {
     return this.usersService.getOrganization(user_id);
+  }
+
+  @Post('changeEmail')
+  changeEmail(@Body() payload) {
+    return this.usersService.changeEmail(payload.from, payload.to);
   }
 }

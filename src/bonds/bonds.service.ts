@@ -67,17 +67,18 @@ export class BondsService {
 
   async execSupremeBond(id_user: string) {
     const userRef = await getDoc(doc(db, `users/${id_user}`));
-    
+
     // Comprobar que el usuario tenga sponsor
     const id_sponsor = userRef.get('sponsor_id');
-    if(!id_sponsor) {
-      console.log('\x1b[33m%s\x1b[0m', `El usuario ${userRef.get('email')} no cuenta con un patrocinador.`);
+    if (!id_sponsor) {
+      console.log(
+        '\x1b[33m%s\x1b[0m',
+        `El usuario ${userRef.get('email')} no cuenta con un patrocinador.`,
+      );
       return;
     }
 
-    const sponsorRef = await getDoc(
-      doc(db, `users/${id_sponsor}`),
-    );
+    const sponsorRef = await getDoc(doc(db, `users/${id_sponsor}`));
     const sequence = Number(sponsorRef.get('supreme_sequence') ?? 0);
 
     let nextBond = sequence + 1;
