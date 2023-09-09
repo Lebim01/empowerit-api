@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Param, Post } from '@nestjs/common';
 import { RanksService } from './ranks.service';
 @Controller('ranks')
 export class RanksController {

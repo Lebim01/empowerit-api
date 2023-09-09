@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { doc, getDoc, increment, updateDoc } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  increment,
+  updateDoc,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import { UsersService } from 'src/users/users.service';
 import * as Sentry from '@sentry/node';
@@ -11,7 +18,10 @@ export class BondsService {
   /**
    * solo se reparte este bono a los usuarios activos
    */
-  async execUserDirectBond(sponsor_id: string) {
+  async execUserDirectBond(registerUserId: string) {
+    const user = await getDoc(doc(db, `users/${registerUserId}`));
+
+    const sponsor_id = user.get('sponsor_id');
     const sponsorRef = doc(db, `users/${sponsor_id}`);
     const sponsor = await getDoc(sponsorRef).then((r) => r.data());
 
@@ -19,8 +29,16 @@ export class BondsService {
     if (sponsor) {
       const isActive = await this.userService.isActiveUser(sponsor_id);
       if (isActive) {
+        const amount = sponsor && sponsor.sponsor_id ? 50 : 60;
         await updateDoc(sponsorRef, {
-          bond_direct: increment(sponsor && sponsor.sponsor_id ? 50 : 60),
+          bond_direct: increment(amount),
+        });
+        await addDoc(collection(db, `users/${sponsorRef.id}/profits_details`), {
+          description: `Bono directo primer nivel: ${user.get('name')}`,
+          id_user: user.id,
+          amount,
+          created_at: new Date(),
+          type: 'bond_direct_level_1',
         });
       }
     }
@@ -30,14 +48,25 @@ export class BondsService {
       const isActive = await this.userService.isActiveUser(sponsor.sponsor_id);
       if (isActive) {
         const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
+        const amount = 10;
         await updateDoc(sponsor2Ref, {
-          bond_direct_second_level: increment(10),
+          bond_direct_second_level: increment(amount),
+        });
+        await addDoc(collection(db, `users/${sponsorRef.id}/profits_details`), {
+          description: `Bono directo segundo nivel: ${user.get('name')}`,
+          id_user: user.id,
+          amount,
+          created_at: new Date(),
+          type: 'bond_direct_level_2',
         });
       }
     }
   }
 
-  async execUserResidualBond(sponsor_id: string) {
+  async execUserResidualBond(registerUserId: string) {
+    const user = await getDoc(doc(db, `users/${registerUserId}`));
+
+    const sponsor_id = user.get('sponsor_id');
     const sponsorRef = doc(db, `users/${sponsor_id}`);
     const sponsor = await getDoc(sponsorRef).then((r) => r.data());
 
@@ -45,10 +74,16 @@ export class BondsService {
     if (sponsor) {
       const isActive = await this.userService.isActiveUser(sponsor_id);
       if (isActive) {
+        const amount = sponsor && sponsor.sponsor_id ? 30 : 50;
         await updateDoc(sponsorRef, {
-          bond_residual_level_1: increment(
-            sponsor && sponsor.sponsor_id ? 30 : 50,
-          ),
+          bond_residual_level_1: increment(amount),
+        });
+        await addDoc(collection(db, `users/${sponsorRef.id}/profits_details`), {
+          description: `Bono residual primer nivel: ${user.get('name')}`,
+          id_user: user.id,
+          amount,
+          created_at: new Date(),
+          type: 'bond_residual_level_1',
         });
       }
     }
@@ -57,9 +92,17 @@ export class BondsService {
     if (sponsor && sponsor.sponsor_id) {
       const isActive = await this.userService.isActiveUser(sponsor.sponsor_id);
       if (isActive) {
+        const amount = 20;
         const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
         await updateDoc(sponsor2Ref, {
-          bond_residual_level_2: increment(20),
+          bond_residual_level_2: increment(amount),
+        });
+        await addDoc(collection(db, `users/${sponsorRef.id}/profits_details`), {
+          description: `Bono residual segundo nivel: ${user.get('name')}`,
+          id_user: user.id,
+          amount,
+          created_at: new Date(),
+          type: 'bond_residual_level_2',
         });
       }
     }
@@ -67,6 +110,7 @@ export class BondsService {
 
   async execSupremeBond(id_user: string) {
     const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const user_name = userRef.get('name');
 
     // Comprobar que el usuario tenga sponsor
     const id_sponsor = userRef.get('sponsor_id');
@@ -93,9 +137,20 @@ export class BondsService {
         );
         // El usuario debe ser supreme tambien
         if (is_active) {
+          const amount = 100;
           await updateDoc(sponsorRef.ref, {
-            bond_supreme_level_1: increment(100),
+            bond_supreme_level_1: increment(amount),
           });
+          await addDoc(
+            collection(db, `users/${sponsorRef.id}/profits_details`),
+            {
+              description: `Bono supreme primer nivel: ${user_name}`,
+              id_user: userRef.id,
+              amount,
+              created_at: new Date(),
+              type: 'bond_supreme_level_1',
+            },
+          );
         }
         break;
       case 2:
@@ -106,9 +161,20 @@ export class BondsService {
           );
           // El usuario debe ser supreme tambien
           if (is_active) {
+            const amount = 50;
             await updateDoc(sponsorRef.ref, {
-              bond_supreme_level_1: increment(50),
+              bond_supreme_level_1: increment(amount),
             });
+            await addDoc(
+              collection(db, `users/${sponsorRef.id}/profits_details`),
+              {
+                description: `Bono supreme primer nivel: ${user_name}`,
+                id_user: userRef.id,
+                amount,
+                created_at: new Date(),
+                type: 'bond_supreme_level_1',
+              },
+            );
           }
 
           const sponsor2 = await getDoc(
@@ -119,9 +185,20 @@ export class BondsService {
           );
           // El usuario debe ser supreme tambien
           if (is_active_2) {
+            const amount = 20;
             await updateDoc(sponsor2.ref, {
-              bond_supreme_level_2: increment(20),
+              bond_supreme_level_2: increment(amount),
             });
+            await addDoc(
+              collection(db, `users/${sponsorRef.id}/profits_details`),
+              {
+                description: `Bono supreme segundo nivel: ${user_name}`,
+                id_user: userRef.id,
+                amount,
+                created_at: new Date(),
+                type: 'bond_supreme_level_2',
+              },
+            );
           }
 
           const sponsor3 = await getDoc(
@@ -132,9 +209,20 @@ export class BondsService {
           );
           // El usuario debe ser supreme tambien
           if (is_active_3) {
+            const amount = 10;
             await updateDoc(sponsor3.ref, {
-              bond_supreme_level_3: increment(10),
+              bond_supreme_level_3: increment(amount),
             });
+            await addDoc(
+              collection(db, `users/${sponsorRef.id}/profits_details`),
+              {
+                description: `Bono supreme tercel nivel: ${user_name}`,
+                id_user: userRef.id,
+                amount,
+                created_at: new Date(),
+                type: 'bond_supreme_level_3',
+              },
+            );
           }
         } catch (err) {
           Sentry.configureScope((scope) => {
