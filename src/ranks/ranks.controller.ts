@@ -19,6 +19,6 @@ export class RanksController {
 
   @Get('test')
   test() {
-    return this.ranksService.test();
+    return this.ranksService.getWeeks();
   }
 }
