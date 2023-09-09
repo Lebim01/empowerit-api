@@ -1,4 +1,4 @@
-import { Controller, Param, Post } from '@nestjs/common';
+import { Controller, Param, Post, Get } from '@nestjs/common';
 import { RanksService } from './ranks.service';
 @Controller('ranks')
 export class RanksController {
@@ -15,5 +15,10 @@ export class RanksController {
   @Post('getRankKey/:key')
   async getRankKey(@Param('key') key: string) {
     return await this.ranksService.getRankKey(key);
+  }
+
+  @Get('test')
+  test() {
+    return this.ranksService.test();
   }
 }

@@ -353,4 +353,26 @@ export class RanksService {
   async getRankKey(key: string) {
     return ranks_object[key];
   }
+
+  async test() {
+    const sunday_this_week = dayjs().startOf('week').hour(23);
+    const sunday_2_weeks = sunday_this_week.subtract(1, 'week');
+    const sunday_3_weeks = sunday_this_week.subtract(2, 'week');
+    const sunday_4_weeks = sunday_this_week.subtract(3, 'week');
+
+    const dates = [
+      [sunday_this_week, sunday_this_week.add(7, 'days')],
+      [sunday_2_weeks, sunday_2_weeks.add(7, 'days')],
+      [sunday_3_weeks, sunday_3_weeks.add(7, 'days')],
+      [sunday_4_weeks, sunday_4_weeks.add(7, 'days')],
+    ];
+
+    for (const [start, end] of dates) {
+      console.log(
+        start.format('YYYY-MM-DD HH:mm'),
+        '-',
+        end.format('YYYY-MM-DD HH:mm'),
+      );
+    }
+  }
 }
