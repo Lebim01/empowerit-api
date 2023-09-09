@@ -385,7 +385,7 @@ export class SubscriptionsService {
      */
     if (isNew) {
       try {
-        await this.bondService.execUserDirectBond(data.sponsor_id);
+        await this.bondService.execUserDirectBond(id_user);
       } catch (err) {
         Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);
