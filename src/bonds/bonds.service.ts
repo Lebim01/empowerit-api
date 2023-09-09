@@ -11,6 +11,18 @@ import { db } from '../firebase';
 import { UsersService } from 'src/users/users.service';
 import * as Sentry from '@sentry/node';
 
+const messages = {
+  bond_direct_level_1: 'Bono directo primer nivel',
+  bond_direct_level_2: 'Bono directo segundo nivel',
+  bond_residual_level_1: 'Bono residual primer nivel',
+  bond_residual_level_2: 'Bono residual segundo nivel',
+  bond_supreme_level_1: 'Bono supreme primer nivel',
+  bond_supreme_level_2: 'Bono supreme segundo nivel',
+  bond_supreme_level_3: 'Bono supreme tercel nivel',
+};
+type Messages = typeof messages;
+type Types = keyof Messages;
+
 @Injectable()
 export class BondsService {
   constructor(private readonly userService: UsersService) {}
@@ -33,13 +45,12 @@ export class BondsService {
         await updateDoc(sponsorRef, {
           bond_direct: increment(amount),
         });
-        await addDoc(collection(db, `users/${sponsorRef.id}/profits_details`), {
-          description: `Bono directo primer nivel: ${user.get('name')}`,
-          id_user: user.id,
+        await this.addProfitDetail(
+          sponsorRef.id,
+          'bond_direct_level_1',
           amount,
-          created_at: new Date(),
-          type: 'bond_direct_level_1',
-        });
+          user.id,
+        );
       }
     }
 
@@ -52,13 +63,12 @@ export class BondsService {
         await updateDoc(sponsor2Ref, {
           bond_direct_second_level: increment(amount),
         });
-        await addDoc(collection(db, `users/${sponsorRef.id}/profits_details`), {
-          description: `Bono directo segundo nivel: ${user.get('name')}`,
-          id_user: user.id,
+        await this.addProfitDetail(
+          sponsor2Ref.id,
+          'bond_direct_level_2',
           amount,
-          created_at: new Date(),
-          type: 'bond_direct_level_2',
-        });
+          user.id,
+        );
       }
     }
   }
@@ -78,13 +88,12 @@ export class BondsService {
         await updateDoc(sponsorRef, {
           bond_residual_level_1: increment(amount),
         });
-        await addDoc(collection(db, `users/${sponsorRef.id}/profits_details`), {
-          description: `Bono residual primer nivel: ${user.get('name')}`,
-          id_user: user.id,
+        await this.addProfitDetail(
+          sponsorRef.id,
+          'bond_residual_level_1',
           amount,
-          created_at: new Date(),
-          type: 'bond_residual_level_1',
-        });
+          user.id,
+        );
       }
     }
 
@@ -97,20 +106,18 @@ export class BondsService {
         await updateDoc(sponsor2Ref, {
           bond_residual_level_2: increment(amount),
         });
-        await addDoc(collection(db, `users/${sponsorRef.id}/profits_details`), {
-          description: `Bono residual segundo nivel: ${user.get('name')}`,
-          id_user: user.id,
+        await this.addProfitDetail(
+          sponsor2Ref.id,
+          'bond_residual_level_2',
           amount,
-          created_at: new Date(),
-          type: 'bond_residual_level_2',
-        });
+          user.id,
+        );
       }
     }
   }
 
   async execSupremeBond(id_user: string) {
     const userRef = await getDoc(doc(db, `users/${id_user}`));
-    const user_name = userRef.get('name');
 
     // Comprobar que el usuario tenga sponsor
     const id_sponsor = userRef.get('sponsor_id');
@@ -141,15 +148,11 @@ export class BondsService {
           await updateDoc(sponsorRef.ref, {
             bond_supreme_level_1: increment(amount),
           });
-          await addDoc(
-            collection(db, `users/${sponsorRef.id}/profits_details`),
-            {
-              description: `Bono supreme primer nivel: ${user_name}`,
-              id_user: userRef.id,
-              amount,
-              created_at: new Date(),
-              type: 'bond_supreme_level_1',
-            },
+          await this.addProfitDetail(
+            sponsorRef.id,
+            'bond_supreme_level_1',
+            amount,
+            userRef.id,
           );
         }
         break;
@@ -165,15 +168,11 @@ export class BondsService {
             await updateDoc(sponsorRef.ref, {
               bond_supreme_level_1: increment(amount),
             });
-            await addDoc(
-              collection(db, `users/${sponsorRef.id}/profits_details`),
-              {
-                description: `Bono supreme primer nivel: ${user_name}`,
-                id_user: userRef.id,
-                amount,
-                created_at: new Date(),
-                type: 'bond_supreme_level_1',
-              },
+            await this.addProfitDetail(
+              sponsorRef.id,
+              'bond_supreme_level_1',
+              amount,
+              userRef.id,
             );
           }
 
@@ -189,15 +188,11 @@ export class BondsService {
             await updateDoc(sponsor2.ref, {
               bond_supreme_level_2: increment(amount),
             });
-            await addDoc(
-              collection(db, `users/${sponsorRef.id}/profits_details`),
-              {
-                description: `Bono supreme segundo nivel: ${user_name}`,
-                id_user: userRef.id,
-                amount,
-                created_at: new Date(),
-                type: 'bond_supreme_level_2',
-              },
+            await this.addProfitDetail(
+              sponsor2.id,
+              'bond_supreme_level_2',
+              amount,
+              userRef.id,
             );
           }
 
@@ -213,15 +208,11 @@ export class BondsService {
             await updateDoc(sponsor3.ref, {
               bond_supreme_level_3: increment(amount),
             });
-            await addDoc(
-              collection(db, `users/${sponsorRef.id}/profits_details`),
-              {
-                description: `Bono supreme tercel nivel: ${user_name}`,
-                id_user: userRef.id,
-                amount,
-                created_at: new Date(),
-                type: 'bond_supreme_level_3',
-              },
+            await this.addProfitDetail(
+              sponsor3.id,
+              'bond_supreme_level_3',
+              amount,
+              userRef.id,
             );
           }
         } catch (err) {
@@ -238,6 +229,24 @@ export class BondsService {
 
     await updateDoc(sponsorRef.ref, {
       supreme_sequence: nextBond,
+    });
+  }
+
+  async addProfitDetail(
+    id_user: string,
+    type: Types,
+    amount: number,
+    registerUserId: string,
+  ) {
+    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const user_name = userRef.get('name');
+    await addDoc(collection(db, `users/${id_user}/profits_details`), {
+      description: messages[type],
+      id_user: registerUserId,
+      user_name,
+      amount,
+      created_at: new Date(),
+      type,
     });
   }
 }
