@@ -45,23 +45,18 @@ export class RanksService {
     const left_week = [];
     const right_week = [];
 
-    for (let i = 0; i <= 3; i++) {
+    const dates = await this.getWeeks();
+
+    for (const [start, end] of dates) {
+      console.log(
+        dayjs(start).format('DD/MM/YYYY hh:mm:ss'),
+        dayjs(end).format('DD/MM/YYYY hh:mm:ss'),
+      );
       let left = 0;
       let right = 0;
-      const days_start =
-        i == 0 ? 28 : i == 1 ? 21 : i == 2 ? 14 : i == 3 ? 7 : 0;
-      const days_end = i == 0 ? 21 : i == 1 ? 14 : i == 2 ? 7 : i == 3 ? 0 : 0;
       const collectionRef = collection(db, `users/${_user.id}/sanguine_users`);
-      const queryCondition_ = where(
-        'created_at',
-        '>=',
-        dayjs().add(-days_start, 'days').toDate(),
-      );
-      const queryCondition__ = where(
-        'created_at',
-        '<=',
-        dayjs().add(-days_end, 'days').toDate(),
-      );
+      const queryCondition_ = where('created_at', '>=', dayjs(start).toDate());
+      const queryCondition__ = where('created_at', '<=', dayjs(end).toDate());
       const filteredQuery = query(
         collectionRef,
         queryCondition_,
@@ -118,22 +113,14 @@ export class RanksService {
   async getDirectFirms(id) {
     /* Obtener firmas  directas*/
     const firm_week = [];
-    for (let i = 0; i <= 3; i++) {
+    const dates = await this.getWeeks();
+
+    for (const [start, end] of dates) {
       let firm = 0;
-      const days_start =
-        i == 0 ? 28 : i == 1 ? 21 : i == 2 ? 14 : i == 3 ? 7 : 0;
-      const days_end = i == 0 ? 21 : i == 1 ? 14 : i == 2 ? 7 : i == 3 ? 0 : 0;
+
       const collectionRef = collection(db, `users`);
-      const queryCondition_ = where(
-        'created_at',
-        '>=',
-        dayjs().add(-days_start, 'days').toDate(),
-      );
-      const queryCondition__ = where(
-        'created_at',
-        '<=',
-        dayjs().add(-days_end, 'days').toDate(),
-      );
+      const queryCondition_ = where('created_at', '>=', dayjs(start).toDate());
+      const queryCondition__ = where('created_at', '<=', dayjs(end).toDate());
       const queryCondition___ = where('sponsor_id', '==', id);
 
       const filteredQuery = query(
@@ -160,23 +147,21 @@ export class RanksService {
     const subCollectionRefpayroll = collection(db, 'users', id, 'payroll');
     const total_week = [];
     let totalUSD = 0;
+    const dates = await this.getWeeks();
 
-    for (let i = 0; i <= 3; i++) {
+    for (const [start, end] of dates) {
       let totalUSD_week = 0;
 
-      const days_start =
-        i == 0 ? 28 : i == 1 ? 21 : i == 2 ? 14 : i == 3 ? 7 : 0;
-      const days_end = i == 0 ? 21 : i == 1 ? 14 : i == 2 ? 7 : i == 3 ? 0 : 0;
       const queryConditionPayroll = where(
         'created_at',
         '>=',
-        dayjs().add(-days_start, 'days').toDate(),
+        dayjs(start).toDate(),
       );
 
       const queryConditionPayroll_ = where(
         'created_at',
         '<=',
-        dayjs().add(-days_end, 'days').toDate(),
+        dayjs(end).toDate(),
       );
 
       const filteredQueryPayroll = query(
@@ -352,5 +337,29 @@ export class RanksService {
 
   async getRankKey(key: string) {
     return ranks_object[key];
+  }
+
+  async getWeeks() {
+    const sunday_this_week = dayjs().startOf('week').hour(23);
+    const sunday_2_weeks = sunday_this_week.subtract(1, 'week');
+    const sunday_3_weeks = sunday_this_week.subtract(2, 'week');
+    const sunday_4_weeks = sunday_this_week.subtract(3, 'week');
+
+    const dates = [
+      [sunday_this_week, sunday_this_week.add(7, 'days')],
+      [sunday_2_weeks, sunday_2_weeks.add(7, 'days')],
+      [sunday_3_weeks, sunday_3_weeks.add(7, 'days')],
+      [sunday_4_weeks, sunday_4_weeks.add(7, 'days')],
+    ];
+
+    return dates;
+
+    /*  for (const [start, end] of dates) {
+      console.log(
+        start.format('YYYY-MM-DD HH:mm'),
+        '-',
+        end.format('YYYY-MM-DD HH:mm'),
+      );
+    } */
   }
 }
