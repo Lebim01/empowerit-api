@@ -47,7 +47,11 @@ export class ScriptsService {
 
   async getDuplicatedPayroll() {
     const res = await getDocs(collectionGroup(db, 'profits_details'));
-    const docs: any[] = res.docs.map((r) => ({ id: r.id, ...r.data() }));
+    const docs: any[] = res.docs.map((r) => ({
+      id: r.id,
+      ...r.data(),
+      path: r.ref.path,
+    }));
 
     const repeat = [];
 
