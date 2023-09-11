@@ -19,6 +19,7 @@ import { join } from 'path';
 import { AdminModule } from './admin/admin.module';
 import { ReportModule } from './report/report.module';
 import { LocationModule } from './location/location.module';
+import { GoogletaskModule } from './googletask/googletask.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { LocationModule } from './location/location.module';
     AdminModule,
     ReportModule,
     LocationModule,
+    GoogletaskModule,
   ],
   controllers: [AppController],
   providers: [AppService, BinaryService, UsersService, RanksService],

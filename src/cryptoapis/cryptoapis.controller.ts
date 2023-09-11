@@ -7,9 +7,10 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  Headers,
 } from '@nestjs/common';
 import { CryptoapisService } from './cryptoapis.service';
-import { db } from '../firebase/admin';
+import { db } from 'src/firebase/admin';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 import { UsersService } from 'src/users/users.service';
 import {
@@ -17,6 +18,8 @@ import {
   CallbackNewUnconfirmedCoins,
 } from './types';
 import * as Sentry from '@sentry/node';
+import { GoogletaskService } from '../googletask/googletask.service';
+import { google } from '@google-cloud/tasks/build/protos/protos';
 
 @Controller('cryptoapis')
 export class CryptoapisController {
@@ -24,11 +27,51 @@ export class CryptoapisController {
     private readonly cryptoapisService: CryptoapisService,
     private readonly subscriptionService: SubscriptionsService,
     private readonly usersService: UsersService,
+    private readonly googleTaskService: GoogletaskService,
   ) {}
 
   @Get('validateWallet')
   validateWallet(@Query('wallet') wallet: string) {
     return this.cryptoapisService.validateWallet(wallet);
+  }
+
+  @Post('callbackPayment/:type/queue')
+  async callbackPaymentQueue(
+    @Body() body: CallbackNewConfirmedCoins,
+    @Param('type') type: 'ibo' | 'supreme' | 'pro',
+  ) {
+    const QUEUE_NAMES = {
+      pro: 'payment-membership-pro',
+      ibo: 'payment-membership-ibo',
+      supreme: 'payment-membership-supreme',
+    };
+    if (
+      body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
+      body.data.item.network == this.cryptoapisService.network &&
+      body.data.item.direction == 'incoming' &&
+      body.data.item.unit == 'BTC'
+    ) {
+      type Method = 'POST';
+      const task: google.cloud.tasks.v2.ITask = {
+        httpRequest: {
+          httpMethod: 'POST' as Method,
+          url: `https://${process.env.VERCEL_URL}/cryptoapis/callbackPayment/${type}`,
+          body: Buffer.from(JSON.stringify(body)),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      };
+
+      await this.googleTaskService.addToQueue(
+        task,
+        this.googleTaskService.getPathQueue(QUEUE_NAMES[type]),
+      );
+
+      return 'OK';
+    }
+
+    return 'FAIL';
   }
 
   /**
@@ -38,13 +81,19 @@ export class CryptoapisController {
   @Post('callbackPayment/:type')
   async callbackPaymentProMembership(
     @Body() body: CallbackNewConfirmedCoins,
+    @Headers() headers,
     @Param('type') type: 'ibo' | 'supreme' | 'pro',
   ): Promise<any> {
-    const network =
-      process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
+    await db.collection('cryptoapis-requests').add({
+      created_at: new Date(),
+      url: `cryptoapis/callbackPayment/${type}`,
+      body,
+      headers,
+    });
+
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
-      body.data.item.network == network &&
+      body.data.item.network == this.cryptoapisService.network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
@@ -61,13 +110,15 @@ export class CryptoapisController {
         await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
 
         // Verificar si el pago se completo
-        const tolerance =
-          Number(data.subscription[type].payment_link.amount) * 0.003;
+        const required_amount = Number(
+          data.subscription[type].payment_link.amount,
+        );
+        const tolerance = required_amount * 0.003;
         const pendingAmount: number =
           await this.cryptoapisService.calculatePendingAmount(
             userDoc.id,
             address,
-            Number(data.subscription[type].payment_link.amount),
+            required_amount,
           );
 
         if (pendingAmount - tolerance <= 0) {
@@ -150,11 +201,9 @@ export class CryptoapisController {
     @Body() body: CallbackNewUnconfirmedCoins,
     @Param('type') type: 'ibo' | 'supreme' | 'pro',
   ): Promise<any> {
-    const network =
-      process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED' &&
-      body.data.item.network == network &&
+      body.data.item.network == this.cryptoapisService.network &&
       body.data.item.direction == 'incoming' &&
       body.data.item.unit == 'BTC'
     ) {
@@ -169,7 +218,7 @@ export class CryptoapisController {
         const data = doc.data();
 
         // Guardar registro de la transaccion.
-        await this.cryptoapisService.addTransactionToUser(doc.id, { ...body });
+        await this.cryptoapisService.addTransactionToUser(doc.id, body);
 
         // Verificar si el pago fue completado
         const pendingAmount: number =

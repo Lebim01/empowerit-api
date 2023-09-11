@@ -1,15 +1,11 @@
 import admin from 'firebase-admin';
-
-import serviceAccountProd from './adminKeyProd.json';
-import serviceAccountDev from './adminKeyDev.json';
+import adminCredentials from './firebaseConfigAdmin';
 
 admin.initializeApp({
   credential: admin.credential.cert(
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    process.env.CUSTOM_ENV == 'production'
-      ? serviceAccountProd
-      : serviceAccountDev,
+    adminCredentials,
   ),
 });
 
