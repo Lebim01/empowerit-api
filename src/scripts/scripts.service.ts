@@ -328,21 +328,14 @@ export class ScriptsService {
     }
   }
 
-  async deleteUsers() {
-    const ignore = [
-      '1QcZupKiTxTOYfe9CAfTQuaBcnK2',
-      '7iRezG7E6vRq7OQywQN3WawSa872',
-      'G3E5HN0K2XMDPPbO0BgkbGNfVZ33',
-      '8MIprgTiKGOkZ1MhkFaB81wegdM2',
-      '1ICmQvQgq1hfq1CxTJGj1jI6PC53',
-    ];
-    const users = await getDocs(collection(db, 'users')).then((r) => r.docs);
+  async fixUsername() {
+    const snap = await getDocs(collectionGroup(db, 'profits_details'));
 
-    for (const u of users) {
-      console.log(u.id);
-      if (!ignore.includes(u.id)) {
-        await deleteDoc(u.ref);
-      }
+    for (const row of snap.docs) {
+      const user = await getDoc(doc(db, `users/${row.get('id_user')}`));
+      await updateDoc(row.ref, {
+        user_name: user.get('name'),
+      });
     }
   }
 }
