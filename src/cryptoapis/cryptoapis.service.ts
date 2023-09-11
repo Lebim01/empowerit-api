@@ -19,17 +19,6 @@ const default_options = {
   },
 };
 
-const walletId =
-  process.env.CUSTOM_ENV == 'production'
-    ? '64cbde4178ffd80007affa0f'
-    : '64c6dd54aa48640007b8e26f';
-const blockchain = 'bitcoin';
-const network = process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
-const hostapi =
-  process.env.CUSTOM_ENV == 'production'
-    ? 'https://topx-academy-nest.vercel.app'
-    : 'https://topx-academy-dev.vercel.app';
-
 const streamResponse = (resolve: any, reject: any) => (res: any) => {
   const chunks: any[] = [];
 
@@ -60,6 +49,17 @@ const cryptoapisRequest = async <Response>(
 
 @Injectable()
 export class CryptoapisService {
+  walletId =
+    process.env.CUSTOM_ENV == 'production'
+      ? '64cbde4178ffd80007affa0f'
+      : '64c6dd54aa48640007b8e26f';
+  blockchain = 'bitcoin';
+  network = process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
+  hostapi =
+    process.env.CUSTOM_ENV == 'production'
+      ? 'https://topx-academy-nest.vercel.app'
+      : 'https://topx-academy-dev.vercel.app';
+
   async removeSubscriptionEvent(referenceId: string) {
     const options = {
       ...default_options,
@@ -73,7 +73,7 @@ export class CryptoapisService {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${walletId}/${blockchain}/${network}/addresses`,
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${this.blockchain}/${this.network}/addresses`,
       qs: { context: 'yourExampleString' },
     };
     const res = await cryptoapisRequest<ResponseCreateWalletAddress>(options, {
@@ -95,7 +95,7 @@ export class CryptoapisService {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/blockchain-events/${blockchain}/${network}/subscriptions/address-coins-transactions-unconfirmed`,
+      path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
       qs: { context: userId },
     };
     const res =
@@ -108,7 +108,7 @@ export class CryptoapisService {
               address: address,
               allowDuplicates: true,
               callbackSecretKey: 'a12k*?_1ds',
-              callbackUrl: `${hostapi}/cryptoapis/callbackCoins/${type}`,
+              callbackUrl: `${this.hostapi}/cryptoapis/callbackCoins/${type}`,
             },
           },
         },
@@ -120,7 +120,7 @@ export class CryptoapisService {
     const options = {
       ...default_options,
       method: 'DELETE',
-      path: `/v2/blockchain-events/${blockchain}/${network}/subscriptions/${refereceId}`,
+      path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/${refereceId}`,
     };
     await cryptoapisRequest(options);
   }
@@ -133,7 +133,7 @@ export class CryptoapisService {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/blockchain-events/${blockchain}/${network}/subscriptions/address-coins-transactions-confirmed`,
+      path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/address-coins-transactions-confirmed`,
     };
     return await cryptoapisRequest<ResponseNewConfirmedCoinsTransactions>(
       options,
@@ -144,7 +144,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${hostapi}/cryptoapis/callbackPayment/${type}`,
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackPayment/${type}/queue`,
             receiveCallbackOn: 2,
           },
         },
@@ -158,14 +158,14 @@ export class CryptoapisService {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${walletId}/${blockchain}/${network}/transaction-requests`,
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${this.blockchain}/${this.network}/transaction-requests`,
     };
     return await cryptoapisRequest(options, {
       context: '',
       data: {
         item: {
           callbackSecretKey: 'a12k*?_1ds',
-          callbackUrl: `${hostapi}/callbackSendedCoins`,
+          callbackUrl: `${this.hostapi}/callbackSendedCoins`,
           feePriority: 'standard',
           note: 'yourAdditionalInformationhere',
           prepareStrategy: 'minimize-dust',
