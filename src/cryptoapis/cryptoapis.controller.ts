@@ -17,7 +17,7 @@ import {
   CallbackNewUnconfirmedCoins,
 } from './types';
 import * as Sentry from '@sentry/node';
-import { GoogletaskService } from '@/googletask/googletask.service';
+import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 
 @Controller('cryptoapis')
