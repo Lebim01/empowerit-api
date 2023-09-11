@@ -7,9 +7,10 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  Headers,
 } from '@nestjs/common';
 import { CryptoapisService } from './cryptoapis.service';
-import { db } from '../firebase/admin';
+import { db } from 'src/firebase/admin';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 import { UsersService } from 'src/users/users.service';
 import {
@@ -77,8 +78,16 @@ export class CryptoapisController {
   @Post('callbackPayment/:type')
   async callbackPaymentProMembership(
     @Body() body: CallbackNewConfirmedCoins,
+    @Headers() headers,
     @Param('type') type: 'ibo' | 'supreme' | 'pro',
   ): Promise<any> {
+    await db.collection('cryptoapis-requests').add({
+      created_at: new Date(),
+      url: `cryptoapis/callbackPayment/${type}`,
+      body,
+      headers,
+    });
+
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == this.cryptoapisService.network &&
