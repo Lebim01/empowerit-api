@@ -1,25 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import path from 'path';
 import { CloudTasksClient } from '@google-cloud/tasks';
 import { google } from '@google-cloud/tasks/build/protos/protos';
+import type { ClientOptions } from 'google-gax';
 
-const options = {
-  keyFilename: path.resolve(__dirname, '../firebase/adminKeyProd.json'),
+import adminCredentials from 'src/firebase/firebaseConfigAdmin';
+
+const options: ClientOptions = {
   projectId: 'topx-academy',
+  credentials: {
+    client_email: adminCredentials.client_email,
+    private_key: adminCredentials.private_key,
+  },
 };
 
-const project = options.projectId;
+const project = adminCredentials.project_id;
 const location = 'us-central1';
-const queue = '';
 
 @Injectable()
 export class GoogletaskService {
   tasksClient: CloudTasksClient;
-  parent: string;
 
   constructor() {
     this.tasksClient = new CloudTasksClient(options);
-    this.parent = this.tasksClient.queuePath(project, location, queue);
   }
 
   getPathQueue(queueName: string): string {
