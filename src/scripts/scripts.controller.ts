@@ -42,4 +42,9 @@ export class ScriptsController {
   removePoints() {
     return this.scriptsService.deleteExpiredPoints();
   }
+
+  @Post('fixUsername')
+  fixUsername() {
+    return this.scriptsService.fixUsername();
+  }
 }

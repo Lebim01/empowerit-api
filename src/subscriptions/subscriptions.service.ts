@@ -263,7 +263,6 @@ export class SubscriptionsService {
         data.sponsor_id,
         finish_position,
       );
-      console.log(binaryPosition);
 
       /**
        * se setea el valor del usuario padre en el usuario que se registro
@@ -330,8 +329,6 @@ export class SubscriptionsService {
     const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
     const sponsorHasScholapship =
       Boolean(sponsorRef.get('has_scholarship')) ?? false;
-
-    console.log({ sponsorHasScholapship, isNew });
 
     /**
      * aumentar contador de gente directa
