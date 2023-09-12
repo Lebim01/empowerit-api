@@ -238,7 +238,7 @@ export class BondsService {
     amount: number,
     registerUserId: string,
   ) {
-    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const userRef = await getDoc(doc(db, `users/${registerUserId}`));
     const user_name = userRef.get('name');
     await addDoc(collection(db, `users/${id_user}/profits_details`), {
       description: messages[type],
