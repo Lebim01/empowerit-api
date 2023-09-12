@@ -21,6 +21,12 @@ import * as Sentry from '@sentry/node';
 import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 
+const QUEUE_NAMES = {
+  pro: 'payment-membership-pro',
+  ibo: 'payment-membership-ibo',
+  supreme: 'payment-membership-supreme',
+};
+
 @Controller('cryptoapis')
 export class CryptoapisController {
   constructor(
@@ -40,11 +46,6 @@ export class CryptoapisController {
     @Body() body: CallbackNewConfirmedCoins,
     @Param('type') type: 'ibo' | 'supreme' | 'pro',
   ) {
-    const QUEUE_NAMES = {
-      pro: 'payment-membership-pro',
-      ibo: 'payment-membership-ibo',
-      supreme: 'payment-membership-supreme',
-    };
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == this.cryptoapisService.network &&
