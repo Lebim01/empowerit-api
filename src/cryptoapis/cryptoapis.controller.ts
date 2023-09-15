@@ -91,6 +91,8 @@ export class CryptoapisController {
       headers,
     });
 
+    console.log(this.cryptoapisService.network);
+
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == this.cryptoapisService.network &&
