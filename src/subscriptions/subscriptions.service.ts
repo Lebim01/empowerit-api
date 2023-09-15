@@ -20,6 +20,12 @@ import * as Sentry from '@sentry/node';
 import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 
+const isExpired = (expires_at: { seconds: number }) => {
+  const date = dayjs(expires_at.seconds * 1000);
+  const is_active = date.isValid() && date.isAfter(dayjs());
+  return !is_active;
+};
+
 @Injectable()
 export class SubscriptionsService {
   constructor(
@@ -224,10 +230,25 @@ export class SubscriptionsService {
     await this.bondService.execSupremeBond(id_user);
   }
 
-  async onPaymentProMembership(id_user: string) {
+  async onPaymentProMembership(id_user: string, amount_btc: number) {
     const userDocRef = doc(db, `users/${id_user}`);
     const data = await getDoc(userDocRef).then((r) => r.data());
     const isNew = await this.isNewMember(id_user);
+
+    /**
+     * Reconsumo pagado antes de tiempo
+     * Agregar transaccion pendiente y repartir bonos despues
+     */
+    if (!isNew && !isExpired(data.get('subscription.pro.expires_at'))) {
+      await updateDoc(userDocRef, {
+        'subscription.pro.pending_activation': {
+          created_at: new Date(),
+          amount: 177,
+          amount_btc,
+        },
+      });
+      return;
+    }
 
     /**
      * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
@@ -444,7 +465,7 @@ export class SubscriptionsService {
   }
 
   // Actualizar el status a 'expired' de las subscripciones a partir de una fecha.
-  async statusToExpired(type: 'ibo' | 'supreme' | 'pro') {
+  async statusToExpired(type: 'ibo' | 'supreme') {
     const _query = query(
       collection(db, 'users'),
       where(`subscription.${type}.status`, '==', 'paid'),
@@ -477,6 +498,69 @@ export class SubscriptionsService {
         result.size,
         "Subscripciones actualizadas a 'expired'.",
         type,
+      );
+      return true;
+    } catch (e) {
+      console.warn(e);
+      return false;
+    }
+  }
+
+  // Actualizar el status a 'expired' de las subscripciones a partir de una fecha.
+  async statusToExpiredPro() {
+    const _query = query(
+      collection(db, 'users'),
+      where(`subscription.pro.status`, '==', 'paid'),
+      where(`subscription.pro.expires_at`, '<=', new Date()),
+    );
+
+    try {
+      // Consultar todos los 'users'
+      // que entren en las condiciones anteriores.
+      const result = await getDocs(_query);
+
+      // Crear un lote de escritura
+      // Actualizara el estado de los 'users' consultados
+      const batch = writeBatch(db);
+
+      for (const doc of result.docs) {
+        const has_scholarship = doc.get('has_scholarship') ?? false;
+        const has_pending_activation = doc.get(
+          'subscription.pro.pending_activation',
+        );
+        if (has_scholarship) {
+          await this.scholarshipService.useSchorlarship(doc.id);
+        } else if (has_pending_activation) {
+          try {
+            const amount_btc = Number(
+              doc.get('subscription.pro.pending_activation.amount_btc'),
+            );
+            await this.onPaymentProMembership(doc.id, amount_btc);
+            batch.update(doc.ref, {
+              'subscription.pro.pending_activation': null,
+            });
+          } catch (err) {
+            Sentry.configureScope((scope) => {
+              scope.setExtras({
+                userId: doc.id,
+                message: 'No se pudo activar',
+              });
+              Sentry.captureException(err);
+            });
+          }
+        } else {
+          batch.update(doc.ref, {
+            'subscription.pro.status': 'expired',
+          });
+        }
+      }
+
+      // Ejecutar lote
+      await batch.commit();
+      console.log(
+        result.size,
+        "Subscripciones actualizadas a 'expired'.",
+        'PRO',
       );
       return true;
     } catch (e) {

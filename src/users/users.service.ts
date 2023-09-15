@@ -8,6 +8,7 @@ import {
   limit,
   orderBy,
   query,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -161,7 +162,13 @@ export class UsersService {
     return validDataSorted;
   }
 
-  getMXStates() {
+  async restartCycle(id_user: string) {
+    await updateDoc(doc(db, `users/${id_user}`), {
+      count_direct_people_this_cycle: 0,
+    });
+  }
+
+  async getMXStates() {
     type HexColor = `#${string}`;
     type Coordinates = [number, number];
     type MXStateCode = `${string}-MX`;

@@ -20,6 +20,9 @@ export class SubscriptionsController {
 
   @Post('statusToExpired/:type')
   statusToExpired(@Param('type') type) {
+    if (type == 'pro') {
+      return this.subscriptionService.statusToExpiredPro();
+    }
     return this.subscriptionService.statusToExpired(type);
   }
 
@@ -39,10 +42,5 @@ export class SubscriptionsController {
   @Post('createPaymentAddress/ibo')
   async createPaymentAddressIbo(@Body() body) {
     return this.subscriptionService.createPaymentAddress(body.userId, 'ibo');
-  }
-
-  @Post('insertSanguineUsers')
-  async insertSanguineUsers(@Body() body) {
-    return this.subscriptionService.insertSanguineUsers(body.userId);
   }
 }

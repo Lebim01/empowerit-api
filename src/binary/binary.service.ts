@@ -22,6 +22,8 @@ export class BinaryService {
     sponsor_id: string,
     position: 'left' | 'right',
   ) {
+    console.time('calculateBinaryPosition');
+
     let parent_id = null;
 
     let next_user_id = sponsor_id;
@@ -36,6 +38,8 @@ export class BinaryService {
         parent_id = next_user_id;
       }
     }
+
+    console.timeEnd('calculateBinaryPosition');
 
     return {
       parent_id,

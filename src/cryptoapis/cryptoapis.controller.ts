@@ -124,7 +124,10 @@ export class CryptoapisController {
         if (pendingAmount - tolerance <= 0) {
           switch (type) {
             case 'pro': {
-              await this.subscriptionService.onPaymentProMembership(userDoc.id);
+              await this.subscriptionService.onPaymentProMembership(
+                userDoc.id,
+                Number(data.subscription[type].payment_link.amount),
+              );
               break;
             }
             case 'ibo': {
