@@ -90,6 +90,9 @@ export class CryptoapisController {
       body,
       headers,
     });
+
+    if (body.data.item.direction == 'outgoing') return;
+
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == this.cryptoapisService.network &&
@@ -188,7 +191,7 @@ export class CryptoapisController {
           reference: body.referenceId,
           address: body.data.item.address,
           payload: JSON.stringify(body),
-          net: this.cryptoapisService.network
+          net: this.cryptoapisService.network,
         },
       });
       throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
