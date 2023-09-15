@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { ReportService } from './report.service';
 
 @Controller('report')
@@ -8,5 +8,10 @@ export class ReportController {
   @Get('topProfits')
   topProfits() {
     return this.reportService.getTopProfitsMonth(8);
+  }
+
+  @Post('restartMonth')
+  restartMonth() {
+    return this.reportService.restartMonth();
   }
 }
