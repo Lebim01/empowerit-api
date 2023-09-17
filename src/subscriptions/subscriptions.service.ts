@@ -488,7 +488,7 @@ export class SubscriptionsService {
       [...users_id].forEach((id) => {
         const sfRef = doc(db, 'users', id.toString());
         batch.update(sfRef, {
-          'subscription.pro.status': 'expired',
+          [`subscription.${type}.status`]: 'expired',
         });
       });
 
