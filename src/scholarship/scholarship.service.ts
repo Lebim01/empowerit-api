@@ -13,10 +13,14 @@ import {
 import { db } from '../firebase';
 import dayjs from 'dayjs';
 import { BondsService } from '../bonds/bonds.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ScholarshipService {
-  constructor(private readonly bondService: BondsService) {}
+  constructor(
+    private readonly bondService: BondsService,
+    private readonly userService: UsersService,
+  ) {}
 
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, 'users/' + id_user));
@@ -129,6 +133,7 @@ export class ScholarshipService {
     };
     await updateDoc(docRef, scholarship);
     await this.bondService.execUserResidualBond(user.get('sponsor_id'));
+    await this.userService.restartCycle(user.id);
     await addDoc(collection(db, 'scholarship_activations'), {
       id_user: user.id,
       start_at: initialDate,

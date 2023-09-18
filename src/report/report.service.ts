@@ -4,6 +4,29 @@ import dayjs from 'dayjs';
 
 @Injectable()
 export class ReportService {
+  async restartMonth() {
+    const batch = db.batch();
+    const users = await db.collection('users').get();
+
+    const date = dayjs().add(-1, 'day');
+    const year = date.year();
+    const month = date.month();
+
+    for (const u of users.docs) {
+      batch.set(db.doc(`users/${u.id}/history_months/${year}-${month}`), {
+        count_direct_people_this_month: u.get('count_direct_people_this_month'),
+        profits_this_month: u.get('profits_this_month'),
+        created_at: new Date(),
+      });
+      batch.update(u.ref, {
+        count_direct_people_this_month: 0,
+        profits_this_month: 0,
+      });
+    }
+
+    await batch.commit();
+    return 'OK';
+  }
   /**
    * month: 1-12
    */
