@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-export default process.env.NODE_ENV == 'production'
+export default process.env.CUSTOM_ENV == 'production'
   ? {
       type: 'service_account',
       project_id: 'topx-academy',
