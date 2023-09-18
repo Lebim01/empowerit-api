@@ -12,7 +12,7 @@ import {
 import { db } from '../firebase';
 import dayjs from 'dayjs';
 import { ranks_object } from './ranks_object';
-import { GoogletaskService } from '@/googletask/googletask.service';
+import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 
 @Injectable()
