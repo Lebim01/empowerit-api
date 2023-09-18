@@ -16,6 +16,7 @@ import {
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { db } from '../firebase';
+import { db as admin } from '../firebase/admin';
 import * as Sentry from '@sentry/node';
 import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
@@ -488,7 +489,7 @@ export class SubscriptionsService {
       [...users_id].forEach((id) => {
         const sfRef = doc(db, 'users', id.toString());
         batch.update(sfRef, {
-          'subscription.pro.status': 'expired',
+          [`subscription.${type}.status`]: 'expired',
         });
       });
 
@@ -566,6 +567,19 @@ export class SubscriptionsService {
     } catch (e) {
       console.warn(e);
       return false;
+    }
+  }
+
+  async fix() {
+    const res = await admin
+      .collection('users')
+      .where('subscription.pro.expires_at', '>=', new Date())
+      .where('subscription.pro.status', '==', 'expired')
+      .get();
+    for (const _doc of res.docs) {
+      await _doc.ref.update({
+        [`subscription.pro.status`]: 'paid',
+      });
     }
   }
 }

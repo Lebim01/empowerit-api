@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { db } from '../firebase/admin';
 import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { ranks_object } from '../ranks/ranks_object';
-import { increment } from 'firebase/firestore';
+
+const ADMIN_BINARY_PERCENT = 17 / 100;
 
 @Injectable()
 export class AdminService {
@@ -14,11 +15,12 @@ export class AdminService {
 
     const payroll_data = docs
       .map((docData: any) => {
+        const isAdmin = Boolean(docData.is_admin);
         const binary_side =
           docData.left_points > docData.right_points ? 'right' : 'left';
         const rank = ranks_object[docData.rank];
         const binary_points =
-          rank.binary > 0 ? docData[`${binary_side}_points`] : 0;
+          rank.binary > 0 || isAdmin ? docData[`${binary_side}_points`] : 0;
         return {
           id: docData.id,
           name: docData.name,
@@ -32,8 +34,9 @@ export class AdminService {
           supreme: docData.bond_supreme_level_1 || 0,
           supreme_second_level: docData.bond_supreme_level_2 || 0,
           supreme_third_level: docData.bond_supreme_level_3 || 0,
-          binary: binary_points * (docData.is_admin ? 0.15 : rank.binary),
-          binary_percent: rank.binary,
+          binary:
+            binary_points * (isAdmin ? ADMIN_BINARY_PERCENT : rank.binary),
+          binary_percent: isAdmin ? ADMIN_BINARY_PERCENT : rank.binary,
           binary_side,
           binary_points,
           left_points: docData.left_points,
