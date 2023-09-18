@@ -6,7 +6,7 @@ import type { ClientOptions } from 'google-gax';
 import adminCredentials from 'src/firebase/firebaseConfigAdmin';
 
 const options: ClientOptions = {
-  projectId: 'topx-academy',
+  projectId: adminCredentials.project_id,
   credentials: {
     client_email: adminCredentials.client_email,
     private_key: adminCredentials.private_key,

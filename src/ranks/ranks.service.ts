@@ -23,7 +23,7 @@ export class RanksService {
     /* Obtener todos los usuraios */
     const users = await getDocs(collection(db, 'users'));
 
-    await Promise.allSettled(
+    await Promise.all(
       users.docs.map(async (user, i) => {
         type Method = 'POST';
         const task: google.cloud.tasks.v2.ITask = {
@@ -51,7 +51,10 @@ export class RanksService {
   async updateUserRank(id_user: string) {
     const userRef = doc(db, `users/${id_user}`);
     const rankData = await this.getRankUser(id_user);
-    await updateDoc(userRef, { rank: rankData.rank_key });
+
+    await updateDoc(userRef, {
+      rank: rankData.rank_key,
+    });
 
     await this.insertRank(
       rankData.rank_key,
