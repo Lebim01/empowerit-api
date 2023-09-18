@@ -8,6 +8,12 @@ export class RanksController {
   upateRanks() {
     return this.ranksService.updateRank();
   }
+
+  @Post('updateUserRank/:id')
+  updateUserRank(@Param('id') id_user: string) {
+    return this.ranksService.updateUserRank(id_user);
+  }
+
   @Post('getRank/:idUser')
   async getRank(@Param('idUser') idUser: string) {
     return await this.ranksService.getRankUser(idUser);

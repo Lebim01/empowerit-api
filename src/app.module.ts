@@ -20,6 +20,7 @@ import { AdminModule } from './admin/admin.module';
 import { ReportModule } from './report/report.module';
 import { LocationModule } from './location/location.module';
 import { GoogletaskModule } from './googletask/googletask.module';
+import { GoogletaskService } from './googletask/googletask.service';
 
 @Module({
   imports: [
@@ -46,6 +47,12 @@ import { GoogletaskModule } from './googletask/googletask.module';
     GoogletaskModule,
   ],
   controllers: [AppController],
-  providers: [AppService, BinaryService, UsersService, RanksService],
+  providers: [
+    AppService,
+    BinaryService,
+    UsersService,
+    RanksService,
+    GoogletaskService,
+  ],
 })
 export class AppModule {}

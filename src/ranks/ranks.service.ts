@@ -12,31 +12,54 @@ import {
 import { db } from '../firebase';
 import dayjs from 'dayjs';
 import { ranks_object } from './ranks_object';
-
-//
+import { GoogletaskService } from '@/googletask/googletask.service';
+import { google } from '@google-cloud/tasks/build/protos/protos';
 
 @Injectable()
 export class RanksService {
+  constructor(private readonly googleTaskService: GoogletaskService) {}
+
   async updateRank() {
     /* Obtener todos los usuraios */
     const users = await getDocs(collection(db, 'users'));
 
-    /* recorrer todos los usuarios */
-    for (let i = 0; i <= users.size - 1; i++) {
-      const user = users.docs[i];
-      const rankData = await this.getRankUser(users.docs[i].id);
-      await updateDoc(user.ref, { rank: rankData.rank_key });
+    await Promise.allSettled(
+      users.docs.map(async (user, i) => {
+        type Method = 'POST';
+        const task: google.cloud.tasks.v2.ITask = {
+          httpRequest: {
+            httpMethod: 'POST' as Method,
+            url: `https://${process.env.VERCEL_URL}/ranks/updateUserRank/${user.id}`,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          },
+        };
 
-      await this.insertRank(
-        rankData.rank_key,
-        rankData.totalUSD.totalUSD,
-        rankData.user,
-        rankData.left_week,
-        rankData.right_week,
-        rankData.sanguinea,
-        rankData.derrame,
-      );
-    }
+        await this.googleTaskService.addToQueue(
+          task,
+          this.googleTaskService.getPathQueue('user-rank'),
+        );
+      }),
+    );
+
+    return 'OK';
+  }
+
+  async updateUserRank(id_user: string) {
+    const userRef = doc(db, `users/${id_user}`);
+    const rankData = await this.getRankUser(id_user);
+    await updateDoc(userRef, { rank: rankData.rank_key });
+
+    await this.insertRank(
+      rankData.rank_key,
+      rankData.totalUSD.totalUSD,
+      rankData.user,
+      rankData.left_week,
+      rankData.right_week,
+      rankData.sanguinea,
+      rankData.derrame,
+    );
   }
 
   async getRankUser(userId: string) {
