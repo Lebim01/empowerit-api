@@ -43,6 +43,8 @@ export class RanksService {
       }),
     );
 
+    console.log(users.size, 'usuarios');
+
     return 'OK';
   }
 
