@@ -153,6 +153,16 @@ export class CryptoapisController {
 
         // Sí el pago esta incompleto
         else {
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+
+          // Crear nuevo evento
+          await this.cryptoapisService.createCallbackConfirmation(
+            userDoc.id,
+            address,
+            type,
+          );
+
           // Actualizar QR
           const qr: string = this.cryptoapisService.generateQrUrl(
             address,
