@@ -25,6 +25,6 @@ export class RanksController {
 
   @Get('test')
   test() {
-    return this.ranksService.getWeeks();
+    return this.ranksService.repair();
   }
 }

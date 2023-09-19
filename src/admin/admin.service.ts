@@ -15,7 +15,8 @@ export class AdminService {
 
     const payroll_data = docs
       .map((docData: any) => {
-        const isAdmin = Boolean(docData.is_admin);
+        const isAdmin =
+          Boolean(docData.is_admin) || docData.type == 'top-lider';
         const binary_side =
           docData.left_points > docData.right_points ? 'right' : 'left';
         const rank = ranks_object[docData.rank];

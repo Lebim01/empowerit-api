@@ -26,7 +26,8 @@ export class ScholarshipService {
     const user = await getDoc(doc(db, 'users/' + id_user));
     const expires_at = user.get('subscription.pro.expires_at');
 
-    const is_admin = Boolean(user.get('is_admin'));
+    const is_admin =
+      Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
     return is_admin
       ? true
       : expires_at
@@ -122,7 +123,7 @@ export class ScholarshipService {
       return 'El usuario no tiene beca';
     }
 
-    if (user.get('is_admin') === true) {
+    if (user.get('is_admin') === true || user.get('type') == 'top-lider') {
       return 'El usuario Es admin';
     }
 

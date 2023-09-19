@@ -1,6 +1,11 @@
 export const ranks_object = {
   vanguard: { display: 'Vanguard', binary: 0, key: 'vanguard', order: 1 },
-  scholarship: { display: 'Scholarship', binary: 0, key: 'scholarship', order: 2 },
+  scholarship: {
+    display: 'Scholarship',
+    binary: 0,
+    key: 'scholarship',
+    order: 2,
+  },
   runner_1: { display: 'Runner 100', binary: 0.05, key: 'runner_1', order: 3 },
   runner_3: { display: 'Runner 300', binary: 0.06, key: 'runner_3', order: 4 },
   runner_6: { display: 'Runner 600', binary: 0.07, key: 'runner_6', order: 5 },

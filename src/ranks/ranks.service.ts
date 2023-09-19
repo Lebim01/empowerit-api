@@ -10,6 +10,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { db as admin } from '../firebase/admin';
 import dayjs from 'dayjs';
 import { ranks_object } from './ranks_object';
 import { GoogletaskService } from '../googletask/googletask.service';
@@ -381,13 +382,20 @@ export class RanksService {
     ];
 
     return dates;
+  }
 
-    /*  for (const [start, end] of dates) {
-      console.log(
-        start.format('YYYY-MM-DD HH:mm'),
-        '-',
-        end.format('YYYY-MM-DD HH:mm'),
-      );
-    } */
+  async repair() {
+    const users = await admin
+      .collection('users')
+      .where('rank', '==', 'scolarship')
+      .get();
+
+    for (const _doc of users.docs) {
+      await _doc.ref.update({
+        rank: 'scholarship',
+      });
+    }
+
+    return 'OK';
   }
 }

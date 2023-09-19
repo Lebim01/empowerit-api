@@ -106,7 +106,8 @@ export class SubscriptionsService {
     const user = await getDoc(doc(db, 'users/' + id_user));
     const expires_at = user.get('subscription.pro.expires_at');
 
-    const is_admin = Boolean(user.get('is_admin'));
+    const is_admin =
+      Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
     return is_admin
       ? true
       : expires_at
