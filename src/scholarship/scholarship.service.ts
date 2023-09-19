@@ -49,9 +49,16 @@ export class ScholarshipService {
       if (user.get('has_scholarship')) {
         return 'El usuario ya tiene beca';
       }
-      await updateDoc(docRef, {
+
+      const update: any = {
         has_scholarship: true,
-      });
+      };
+
+      if (user.get('rank') == 'vanguard') {
+        update.rank = 'scholarship';
+      }
+
+      await updateDoc(docRef, update);
     }
   }
 
