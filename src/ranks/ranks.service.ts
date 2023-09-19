@@ -319,12 +319,12 @@ export class RanksService {
       missing_usd = 300 - totalUSD;
       next_rank = 'runner_3';
     } else if (_users.has_scholarship) {
-      rank = 'scolarship';
+      rank = 'scholarship';
       missing_usd = 100 - totalUSD;
       next_rank = 'runner_1';
     } else {
       rank = 'vanguard';
-      next_rank = 'scolarship';
+      next_rank = 'scholarship';
       missing_scolarship = true;
     }
 
