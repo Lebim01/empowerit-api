@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { db } from '../firebase/admin';
 import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { ranks_object } from '../ranks/ranks_object';
-import { BinaryService } from '@/binary/binary.service';
+import { BinaryService } from '../binary/binary.service';
 
 const ADMIN_BINARY_PERCENT = 17 / 100;
 
