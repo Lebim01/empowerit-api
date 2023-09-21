@@ -1,4 +1,4 @@
-import { db } from '@/firebase/admin';
+import { db } from '../firebase/admin';
 import { Controller, Post, Body } from '@nestjs/common';
 
 import { BinaryService } from 'src/binary/binary.service';
