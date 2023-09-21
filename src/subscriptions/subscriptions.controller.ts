@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Query,
-  Body,
-  Post,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Query, Body, Post, Param } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 
 @Controller('subscriptions')
@@ -42,10 +34,5 @@ export class SubscriptionsController {
   @Post('createPaymentAddress/ibo')
   async createPaymentAddressIbo(@Body() body) {
     return this.subscriptionService.createPaymentAddress(body.userId, 'ibo');
-  }
-
-  @Post('fix')
-  fix() {
-    return this.subscriptionService.fix();
   }
 }
