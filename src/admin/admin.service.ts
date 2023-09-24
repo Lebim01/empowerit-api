@@ -3,6 +3,7 @@ import { db } from '../firebase/admin';
 import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { ranks_object } from '../ranks/ranks_object';
 import { BinaryService } from '../binary/binary.service';
+import dayjs from 'dayjs';
 
 const ADMIN_BINARY_PERCENT = 17 / 100;
 
@@ -144,14 +145,14 @@ export class AdminService {
       .collection('details')
       .get();
 
-    await this.cryptoapisService.sendRequestTransaction(
+    const res = await this.cryptoapisService.sendRequestTransaction(
       payroll_data.docs.map((doc) => ({
         address: doc.get('wallet_bitcoin'),
         amount: `${doc.get('btc_amount')}`,
       })),
     );
 
-    return payroll_data;
+    return res;
   }
 
   async fixPayrollAmount(id: string) {
@@ -167,5 +168,33 @@ export class AdminService {
     );
 
     return amount;
+  }
+
+  async getFix() {
+    const snap = await db
+      .collection('users')
+      .where('sponsor_id', '==', 'av3Gbj9bPeQxS9mA8ipPiVVTtz52')
+      .get();
+    const response = [];
+    for (const user of snap.docs) {
+      const lastPayroll = await db
+        .collection('users')
+        .doc(user.id)
+        .collection('payroll')
+        .orderBy('created_at', 'desc')
+        .limit(1)
+        .get();
+      response.push({
+        id: user.id,
+        email: user.get('email'),
+        name: user.get('name'),
+        last_payroll: lastPayroll.empty
+          ? null
+          : dayjs(lastPayroll.docs[0].get('created_at').seconds * 1000).format(
+              'YYYY-MM-DD HH:mm:ss',
+            ),
+      });
+    }
+    return response;
   }
 }

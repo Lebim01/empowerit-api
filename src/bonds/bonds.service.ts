@@ -40,12 +40,21 @@ export class BondsService {
     // primer nivel
     if (sponsor) {
       const isActive = await this.userService.isActiveUser(sponsor_id);
-      if (isActive) {
-        const amount = sponsor && sponsor.sponsor_id ? 50 : 60;
+      const isIBOActive = await this.userService.isIBOActive(sponsor_id);
+      const amount = sponsor && sponsor.sponsor_id ? 50 : 60;
+
+      if (isActive && isIBOActive) {
         await updateDoc(sponsorRef, {
           bond_direct: increment(amount),
         });
         await this.addProfitDetail(
+          sponsorRef.id,
+          'bond_direct_level_1',
+          amount,
+          user.id,
+        );
+      } else {
+        await this.addLostProfit(
           sponsorRef.id,
           'bond_direct_level_1',
           amount,
@@ -56,14 +65,23 @@ export class BondsService {
 
     // segundo nivel
     if (sponsor && sponsor.sponsor_id) {
-      const isActive = await this.userService.isActiveUser(sponsor.sponsor_id);
-      if (isActive) {
-        const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
-        const amount = 10;
+      const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
+      const isActive = await this.userService.isActiveUser(sponsor2Ref.id);
+      const isIBOActive = await this.userService.isIBOActive(sponsor2Ref.id);
+      const amount = 10;
+
+      if (isActive && isIBOActive) {
         await updateDoc(sponsor2Ref, {
           bond_direct_second_level: increment(amount),
         });
         await this.addProfitDetail(
+          sponsor2Ref.id,
+          'bond_direct_level_2',
+          amount,
+          user.id,
+        );
+      } else {
+        await this.addLostProfit(
           sponsor2Ref.id,
           'bond_direct_level_2',
           amount,
@@ -82,13 +100,22 @@ export class BondsService {
 
     // primer nivel
     if (sponsor) {
-      const isActive = await this.userService.isActiveUser(sponsor_id);
-      if (isActive) {
-        const amount = sponsor && sponsor.sponsor_id ? 30 : 50;
+      const isActive = await this.userService.isActiveUser(sponsorRef.id);
+      const isIBOActive = await this.userService.isIBOActive(sponsorRef.id);
+      const amount = sponsor && sponsor.sponsor_id ? 30 : 50;
+
+      if (isActive && isIBOActive) {
         await updateDoc(sponsorRef, {
           bond_residual_level_1: increment(amount),
         });
         await this.addProfitDetail(
+          sponsorRef.id,
+          'bond_residual_level_1',
+          amount,
+          user.id,
+        );
+      } else {
+        await this.addLostProfit(
           sponsorRef.id,
           'bond_residual_level_1',
           amount,
@@ -99,14 +126,23 @@ export class BondsService {
 
     // segundo nivel
     if (sponsor && sponsor.sponsor_id) {
-      const isActive = await this.userService.isActiveUser(sponsor.sponsor_id);
-      if (isActive) {
-        const amount = 20;
-        const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
+      const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
+      const isActive = await this.userService.isActiveUser(sponsor2Ref.id);
+      const isIBOActive = await this.userService.isIBOActive(sponsor2Ref.id);
+      const amount = 20;
+
+      if (isActive && isIBOActive) {
         await updateDoc(sponsor2Ref, {
           bond_residual_level_2: increment(amount),
         });
         await this.addProfitDetail(
+          sponsor2Ref.id,
+          'bond_residual_level_2',
+          amount,
+          user.id,
+        );
+      } else {
+        await this.addLostProfit(
           sponsor2Ref.id,
           'bond_residual_level_2',
           amount,
@@ -242,6 +278,24 @@ export class BondsService {
     const user_name = userRef.get('name');
     await addDoc(collection(db, `users/${id_user}/profits_details`), {
       description: messages[type],
+      id_user: registerUserId,
+      user_name,
+      amount,
+      created_at: new Date(),
+      type,
+    });
+  }
+
+  async addLostProfit(
+    id_user: string,
+    type: Types,
+    amount: number,
+    registerUserId: string,
+  ) {
+    const userRef = await getDoc(doc(db, `users/${registerUserId}`));
+    const user_name = userRef.get('name');
+    await addDoc(collection(db, `users/${id_user}/lost_profits`), {
+      description: 'Has perdido un bono por membresia inactiva',
       id_user: registerUserId,
       user_name,
       amount,
