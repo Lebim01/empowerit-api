@@ -3,6 +3,7 @@ import {
   Get,
   Query,
   Post,
+  Delete,
   Body,
   HttpException,
   HttpStatus,
@@ -300,5 +301,10 @@ export class CryptoapisController {
   @Get('/verify-transactions-from-blockchain')
   verifyTransactions() {
     return this.cryptoapisService.verifyTransactions();
+  }
+
+  @Delete('/deleteUnusedBlockChainEvents')
+  deleteUnusedBlockChainEvents() {
+    return this.cryptoapisService.deleteUnusedBlockChainEvents();
   }
 }

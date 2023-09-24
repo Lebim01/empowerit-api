@@ -103,3 +103,26 @@ export interface ResponseBalanceAddress {
     };
   };
 }
+
+export interface ResponseListOfEvents {
+  apiVersion: '2023-04-25';
+  requestId: '601c1710034ed6d407996b30';
+  context: 'yourExampleString';
+  data: {
+    limit: 50;
+    offset: 0;
+    total: 100;
+    items: {
+      address: string;
+      callbackSecretKey: string;
+      callbackUrl: string;
+      confirmationsCount: number;
+      createdTimestamp: number;
+      deactivationReasons: { reason: string; timestamp: number }[];
+      eventType: string;
+      isActive: boolean;
+      referenceId: string;
+      transactionId: string;
+    }[];
+  };
+}

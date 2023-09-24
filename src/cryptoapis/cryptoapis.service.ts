@@ -8,6 +8,7 @@ import {
   CallbackNewUnconfirmedCoins,
   CallbackNewConfirmedCoins,
   ResponseBalanceAddress,
+  ResponseListOfEvents,
 } from './types';
 import axios from 'axios';
 import { firestore } from 'firebase-admin';
@@ -471,5 +472,42 @@ export class CryptoapisService {
       path: `/blockchain-data/${this.blockchain}/${this.network}/addresses/${address}/balance`,
     };
     return await cryptoapisRequest<ResponseBalanceAddress>(options);
+  }
+
+  async deleteUnusedBlockChainEvents() {
+    const events = await this.getListOfEvents();
+
+    for (const event of events.data.items) {
+      const membership_type = event.callbackUrl.includes('pro')
+        ? 'pro'
+        : event.callbackUrl.includes('ibo')
+        ? 'ibo'
+        : event.callbackUrl.includes('supreme')
+        ? 'supreme'
+        : '';
+      const user = await db
+        .collection('users')
+        .where(
+          `subscription.${membership_type}.payment_link.address`,
+          '==',
+          event.address,
+        )
+        .get();
+
+      if (user.empty) {
+        // eliminar callback
+        await this.removeCallbackEvent(event.referenceId);
+        console.log('deleted', event.referenceId);
+      }
+    }
+  }
+
+  async getListOfEvents() {
+    const options = {
+      ...default_options,
+      method: 'GET',
+      path: `/blockchain-events/${this.blockchain}/${this.network}/subscriptions?limit=50&offset=70`,
+    };
+    return await cryptoapisRequest<ResponseListOfEvents>(options);
   }
 }
