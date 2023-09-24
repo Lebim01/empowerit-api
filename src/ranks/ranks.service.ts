@@ -1,4 +1,4 @@
-import { Injectable, Query } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   collection,
   doc,
@@ -25,7 +25,7 @@ export class RanksService {
     const users = await getDocs(collection(db, 'users'));
 
     await Promise.all(
-      users.docs.map(async (user, i) => {
+      users.docs.map(async (user) => {
         type Method = 'POST';
         const task: google.cloud.tasks.v2.ITask = {
           httpRequest: {
@@ -51,11 +51,36 @@ export class RanksService {
 
   async updateUserRank(id_user: string) {
     const userRef = doc(db, `users/${id_user}`);
+    const user = await getDoc(userRef);
     const rankData = await this.getRankUser(id_user);
+
+    const past_max_rank = ranks_object[user.get('max_rank')] || {
+      order: -1,
+    };
+    const current_max_rank = ranks_object[rankData.rank_key];
+    const is_new_max_rank = past_max_rank.order < current_max_rank.order;
 
     await updateDoc(userRef, {
       rank: rankData.rank_key,
+      max_rank: is_new_max_rank ? rankData.rank_key : past_max_rank,
     });
+
+    if (is_new_max_rank) {
+      await admin
+        .collection('users')
+        .doc(id_user)
+        .collection('rank-promotion')
+        .add({
+          created_at: new Date(),
+          rank: rankData.rank_key,
+        });
+      await admin.collection('rank-promotion').add({
+        id_user,
+        name: user.get('name'),
+        created_at: new Date(),
+        rank: rankData.rank_key,
+      });
+    }
 
     await this.insertRank(
       rankData.rank_key,
@@ -365,7 +390,6 @@ export class RanksService {
   }
 
   async getWeeks() {
-    console.log(dayjs().day());
     const sunday_this_week = dayjs()
       .subtract(dayjs().day() == 0 ? 1 : 0, 'day')
       .startOf('week')
@@ -381,28 +405,6 @@ export class RanksService {
       [sunday_this_week, sunday_this_week.add(7, 'days')],
     ];
 
-    console.log(
-      dates.map(([start, end]) => ({
-        start: start.format('YYYY-MM-DD HH:mm:ss'),
-        end: end.format('YYYY-MM-DD HH:mm:ss'),
-      })),
-    );
-
     return dates;
-  }
-
-  async repair() {
-    const users = await admin
-      .collection('users')
-      .where('rank', '==', 'scolarship')
-      .get();
-
-    for (const _doc of users.docs) {
-      await _doc.ref.update({
-        rank: 'scholarship',
-      });
-    }
-
-    return 'OK';
   }
 }
