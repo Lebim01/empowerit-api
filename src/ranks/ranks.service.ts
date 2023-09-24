@@ -77,10 +77,6 @@ export class RanksService {
     const dates = await this.getWeeks();
 
     for (const [start, end] of dates) {
-      console.log(
-        dayjs(start).format('DD/MM/YYYY hh:mm:ss'),
-        dayjs(end).format('DD/MM/YYYY hh:mm:ss'),
-      );
       let left = 0;
       let right = 0;
       const collectionRef = collection(db, `users/${_user.id}/sanguine_users`);
@@ -90,7 +86,7 @@ export class RanksService {
         collectionRef,
         queryCondition_,
         queryCondition__,
-        where('created_at', '>=', dayjs('2023-09-01 06:00:00').toDate()),
+        where('created_at', '>=', dayjs('2023-09-01 00:00:01').toDate()),
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
@@ -157,7 +153,7 @@ export class RanksService {
         queryCondition_,
         queryCondition__,
         queryCondition___,
-        where('created_at', '>=', dayjs('2023-09-01 06:00:00').toDate()),
+        where('created_at', '>=', dayjs('2023-09-01 00:00:01').toDate()),
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
@@ -197,7 +193,7 @@ export class RanksService {
         subCollectionRefpayroll,
         queryConditionPayroll,
         queryConditionPayroll_,
-        where('created_at', '>=', dayjs('2023-09-01 06:00:00').toDate()),
+        where('created_at', '>=', dayjs('2023-09-01 00:00:01').toDate()),
       );
 
       // Obtén los documentos de la subcolección
