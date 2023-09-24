@@ -89,3 +89,17 @@ export interface CallbackNewConfirmedCoins {
     };
   };
 }
+
+export interface ResponseBalanceAddress {
+  apiVersion: string;
+  requestId: string;
+  context: string;
+  data: {
+    item: {
+      confirmedBalance: {
+        amount: string;
+        unit: 'BTC';
+      };
+    };
+  };
+}

@@ -7,6 +7,7 @@ import {
   ResponseNewConfirmedCoinsTransactions,
   CallbackNewUnconfirmedCoins,
   CallbackNewConfirmedCoins,
+  ResponseBalanceAddress,
 } from './types';
 import axios from 'axios';
 import { firestore } from 'firebase-admin';
@@ -179,6 +180,14 @@ export class CryptoapisService {
     return axios
       .get('https://blockchain.info/tobtc?currency=USD&value=' + amount)
       .then((r) => r.data);
+  };
+
+  btcToSatoshi = (btc_amount: string): number => {
+    return Number(btc_amount) * 100000000;
+  };
+
+  satoshiToBTC = (satoshi_amount: number): string => {
+    return (Number(satoshi_amount) / 100000000).toString();
   };
 
   async validateWallet(wallet: string) {
@@ -416,4 +425,51 @@ export class CryptoapisService {
 
   generateQrUrl = (address: string, amount: string): string =>
     `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amount}`;
+
+  async verifyTransactions() {
+    const ibo_addresses = await db
+      .collection('users')
+      .where('subscription.ibo.payment_link.status', '==', 'pending')
+      .get()
+      .then((r) => r.docs.map((b) => b.get('subscription.ibo.payment_link')));
+    const pro_addresses = await db
+      .collection('users')
+      .where('subscription.pro.payment_link.status', '==', 'pending')
+      .get()
+      .then((r) => r.docs.map((b) => b.get('subscription.pro.payment_link')));
+    const supreme_addresses = await db
+      .collection('users')
+      .where('subscription.supreme.payment_link.status', '==', 'pending')
+      .get()
+      .then((r) =>
+        r.docs.map((b) => b.get('subscription.supreme.payment_link')),
+      );
+    const addresses = [ibo_addresses, pro_addresses, supreme_addresses].flat();
+
+    for (const payment_link of addresses) {
+      try {
+        const address_info = await this.getAddressInfo(payment_link.address);
+
+        if (Number(address_info.data.item.confirmedBalance.amount) > 0) {
+          payment_link.total_received =
+            address_info.data.item.confirmedBalance.amount;
+        } else {
+          payment_link.total_received = '0';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    return addresses;
+  }
+
+  async getAddressInfo(address: string): Promise<ResponseBalanceAddress> {
+    const options = {
+      ...default_options,
+      method: 'GET',
+      path: `/blockchain-data/${this.blockchain}/${this.network}/addresses/${address}/balance`,
+    };
+    return await cryptoapisRequest<ResponseBalanceAddress>(options);
+  }
 }

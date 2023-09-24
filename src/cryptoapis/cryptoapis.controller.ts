@@ -296,4 +296,9 @@ export class CryptoapisController {
       throw new HttpException('Peticion invalida', HttpStatus.BAD_REQUEST);
     }
   }
+
+  @Get('/verify-transactions-from-blockchain')
+  verifyTransactions() {
+    return this.cryptoapisService.verifyTransactions();
+  }
 }
