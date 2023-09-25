@@ -18,7 +18,6 @@ async function bootstrap() {
   dayjs.extend(utc);
   dayjs.extend(timezone);
   dayjs.extend(isoWeek);
-  dayjs.tz.setDefault('America/Mexico_City');
 
   const app = await NestFactory.create(AppModule, {
     cors: true,

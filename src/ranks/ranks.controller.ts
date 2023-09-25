@@ -22,4 +22,9 @@ export class RanksController {
   async getRankKey(@Param('key') key: string) {
     return await this.ranksService.getRankKey(key);
   }
+
+  @Get('weeks')
+  getWeeks() {
+    return this.ranksService.getWeeks();
+  }
 }

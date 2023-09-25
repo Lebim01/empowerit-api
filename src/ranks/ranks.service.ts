@@ -390,9 +390,10 @@ export class RanksService {
   }
 
   async getWeeks() {
-    console.log(dayjs().day());
+    const day_of_week = dayjs().day();
     const sunday_this_week = dayjs()
-      .subtract(dayjs().isoWeekday() == 7 ? 1 : 0, 'day')
+      .utcOffset(-6)
+      .subtract(day_of_week == 0 ? 1 : 0, 'day')
       .startOf('week')
       .hour(23);
     const sunday_2_weeks = sunday_this_week.subtract(1, 'week');
