@@ -6,11 +6,6 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-dayjs.tz.setDefault('America/Mexico_City');
-
 async function bootstrap() {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
@@ -18,6 +13,10 @@ async function bootstrap() {
     enabled: true,
     debug: true,
   });
+
+  dayjs.extend(utc);
+  dayjs.extend(timezone);
+  dayjs.tz.setDefault('America/Mexico_City');
 
   const app = await NestFactory.create(AppModule, {
     cors: true,
