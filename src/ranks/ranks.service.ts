@@ -393,7 +393,7 @@ export class RanksService {
     const day_of_week = dayjs().day();
     const sunday_this_week = dayjs()
       .utcOffset(-6)
-      .subtract(day_of_week == 0 ? 1 : 0, 'day')
+      .subtract(day_of_week == 0 || day_of_week == 1 ? 1 : 0, 'day')
       .startOf('week')
       .hour(23);
     const sunday_2_weeks = sunday_this_week.subtract(1, 'week');
