@@ -5,6 +5,7 @@ import { SentryFilter } from './sentry/sentry.filter';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import isoWeek from 'dayjs/plugin/isoWeek';
 
 async function bootstrap() {
   Sentry.init({
@@ -16,6 +17,7 @@ async function bootstrap() {
 
   dayjs.extend(utc);
   dayjs.extend(timezone);
+  dayjs.extend(isoWeek);
   dayjs.tz.setDefault('America/Mexico_City');
 
   const app = await NestFactory.create(AppModule, {

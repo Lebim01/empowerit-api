@@ -392,7 +392,7 @@ export class RanksService {
   async getWeeks() {
     console.log(dayjs().day());
     const sunday_this_week = dayjs()
-      .subtract(dayjs().day() == 1 ? 1 : 0, 'day')
+      .subtract(dayjs().isoWeekday() == 7 ? 1 : 0, 'day')
       .startOf('week')
       .hour(23);
     const sunday_2_weeks = sunday_this_week.subtract(1, 'week');
@@ -405,6 +405,13 @@ export class RanksService {
       [sunday_2_weeks, sunday_2_weeks.add(7, 'days')],
       [sunday_this_week, sunday_this_week.add(7, 'days')],
     ];
+
+    console.log(
+      dates.map(([start, end]) => ({
+        start: start.format('YYYY-MM-DD HH:mm:ss'),
+        end: end.format('YYYY-MM-DD HH:mm:ss'),
+      })),
+    );
 
     return dates;
   }
