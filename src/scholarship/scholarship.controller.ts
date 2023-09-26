@@ -10,19 +10,9 @@ export class ScholarshipController {
     return this.scholarshipService.hasScholarship(idUser);
   }
 
-  @Post('add/:idUser')
-  addDirectPeople(@Param('idUser') idUser: string) {
-    return this.scholarshipService.addDirectPeople(idUser);
-  }
-
   @Post('use/:idUser')
   useSchorlarship(@Param('idUser') idUser: string) {
     return this.scholarshipService.useSchorlarship(idUser);
-  }
-
-  @Post('distributeBond/:idUser')
-  distributeBond(@Param('idUser') idUser: string) {
-    return this.scholarshipService.distributeBond(idUser);
   }
 
   @Post('users')

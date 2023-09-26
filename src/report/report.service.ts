@@ -59,4 +59,12 @@ export class ReportService {
 
     return people;
   }
+
+  async fix() {
+    const users = await db
+      .collection('users')
+      .where('sponsor_id', '==', 'fkQL4rwDBebtQgSXzZacf75DmCt1')
+      .get();
+    return users;
+  }
 }

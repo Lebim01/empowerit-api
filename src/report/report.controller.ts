@@ -14,4 +14,9 @@ export class ReportController {
   restartMonth() {
     return this.reportService.restartMonth();
   }
+
+  @Get('fix')
+  fix() {
+    return this.reportService.fix();
+  }
 }
