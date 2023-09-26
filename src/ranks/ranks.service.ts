@@ -239,8 +239,8 @@ export class RanksService {
   async getRank(
     totalUSD: number,
     _users: any,
-    sanguinea: number[],
-    derrame: number[],
+    interna: number[],
+    externa: number[],
     firms: number[],
   ) {
     let rank = '';
@@ -250,16 +250,16 @@ export class RanksService {
 
     if (
       totalUSD >= 50000 &&
-      sanguinea.every((currentValue) => currentValue >= 80) &&
-      derrame.every((currentValue) => currentValue >= 120) &&
+      externa.every((currentValue) => currentValue >= 80) &&
+      interna.every((currentValue) => currentValue >= 120) &&
       _users.has_scholarship &&
       firms.every((currentValue) => currentValue >= 10)
     ) {
       rank = 'top_legend';
     } else if (
       totalUSD >= 20000 &&
-      sanguinea.every((currentValue) => currentValue >= 40) &&
-      derrame.every((currentValue) => currentValue >= 60) &&
+      externa.every((currentValue) => currentValue >= 40) &&
+      interna.every((currentValue) => currentValue >= 60) &&
       _users.has_scholarship &&
       firms.every((currentValue) => currentValue >= 9)
     ) {
@@ -268,8 +268,8 @@ export class RanksService {
       next_rank = 'top_leyend';
     } else if (
       totalUSD >= 10000 &&
-      sanguinea.every((currentValue) => currentValue >= 20) &&
-      derrame.every((currentValue) => currentValue >= 30) &&
+      externa.every((currentValue) => currentValue >= 20) &&
+      interna.every((currentValue) => currentValue >= 30) &&
       _users.has_scholarship &&
       firms.every((currentValue) => currentValue >= 8)
     ) {
@@ -278,8 +278,8 @@ export class RanksService {
       next_rank = 'top_1';
     } else if (
       totalUSD >= 5000 &&
-      sanguinea.every((currentValue) => currentValue >= 8) &&
-      derrame.every((currentValue) => currentValue >= 12) &&
+      externa.every((currentValue) => currentValue >= 8) &&
+      interna.every((currentValue) => currentValue >= 12) &&
       _users.has_scholarship &&
       firms.every((currentValue) => currentValue >= 7)
     ) {
@@ -288,8 +288,8 @@ export class RanksService {
       next_rank = 'top_king_10';
     } else if (
       totalUSD >= 2500 &&
-      sanguinea.every((currentValue) => currentValue >= 4) &&
-      derrame.every((currentValue) => currentValue >= 6) &&
+      externa.every((currentValue) => currentValue >= 4) &&
+      interna.every((currentValue) => currentValue >= 6) &&
       _users.has_scholarship &&
       firms.every((currentValue) => currentValue >= 6)
     ) {
@@ -298,8 +298,8 @@ export class RanksService {
       next_rank = 'top_diamond_5';
     } else if (
       totalUSD >= 1500 &&
-      sanguinea.every((currentValue) => currentValue >= 3) &&
-      derrame.every((currentValue) => currentValue >= 5) &&
+      externa.every((currentValue) => currentValue >= 3) &&
+      interna.every((currentValue) => currentValue >= 5) &&
       _users.has_scholarship &&
       firms.every((currentValue) => currentValue >= 5)
     ) {
@@ -308,8 +308,8 @@ export class RanksService {
       next_rank = 'top_royal_25';
     } else if (
       totalUSD >= 1000 &&
-      sanguinea.every((currentValue) => currentValue >= 2) &&
-      derrame.every((currentValue) => currentValue >= 3) &&
+      interna.every((currentValue) => currentValue >= 3) &&
+      externa.every((currentValue) => currentValue >= 2) &&
       _users.has_scholarship &&
       firms.every((currentValue) => currentValue >= 4)
     ) {
@@ -319,7 +319,9 @@ export class RanksService {
     } else if (
       totalUSD >= 600 &&
       _users.has_scholarship &&
-      firms.every((currentValue) => currentValue >= 3)
+      firms.every((currentValue) => currentValue >= 3) &&
+      interna.every((currentValue) => currentValue >= 1) &&
+      externa.every((currentValue) => currentValue >= 2)
     ) {
       rank = 'runner_6';
       missing_usd = 10000 - totalUSD;
@@ -327,7 +329,9 @@ export class RanksService {
     } else if (
       totalUSD >= 300 &&
       _users.has_scholarship &&
-      firms.every((currentValue) => currentValue >= 2)
+      firms.every((currentValue) => currentValue >= 2) &&
+      interna.every((currentValue) => currentValue >= 1) &&
+      externa.every((currentValue) => currentValue >= 1)
     ) {
       rank = 'runner_3';
       missing_usd = 600 - totalUSD;
