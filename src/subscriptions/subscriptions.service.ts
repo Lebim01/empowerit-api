@@ -367,7 +367,7 @@ export class SubscriptionsService {
      * Si el sponsor no esta becado le cuenta para la beca
      */
     if (!sponsorHasScholapship) {
-      await this.scholarshipService.addDirectPeople(sponsorRef.id);
+      await this.scholarshipService.addDirectPeople(sponsorRef.id, id_user);
 
       /**
        * Si el sponsor no esta becado no reparte bonos

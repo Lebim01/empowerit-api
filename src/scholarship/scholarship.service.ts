@@ -63,8 +63,8 @@ export class ScholarshipService {
     }
   }
 
-  async addDirectPeople(idUser: string) {
-    const docRef = doc(db, 'users', idUser);
+  async addDirectPeople(sponsorId: string, registerUserId: string) {
+    const docRef = doc(db, 'users', sponsorId);
     const user = await getDoc(docRef);
 
     if (!user.exists()) {
@@ -83,8 +83,8 @@ export class ScholarshipService {
     await updateDoc(docRef, { count_scholarship_people: directPeopleCount });
 
     if (directPeopleCount >= 2) {
-      await this.assingScholarship(idUser);
-      await this.distributeBond(idUser);
+      await this.assingScholarship(sponsorId);
+      await this.distributeBond(sponsorId, registerUserId);
       return true;
     }
 
@@ -151,7 +151,7 @@ export class ScholarshipService {
     return 'Se utilizo la beca';
   }
 
-  async giveBond(userId: string, bondValue: number) {
+  async giveBond(userId: string, bondValue: number, registerUserId: string) {
     const BOND_FIELD = {
       50: 'bond_scholarship_level_1',
       20: 'bond_scholarship_level_2',
@@ -175,22 +175,38 @@ export class ScholarshipService {
       await updateDoc(docRef, {
         [BOND_FIELD[bondValue]]: bond,
       });
+
+      const level = bondValue == 50 ? 1 : bondValue == 20 ? 2 : 3;
+      await this.bondService.addProfitDetail(
+        userId,
+        `bond_direct_level_${level}` as any,
+        bondValue,
+        registerUserId,
+      );
     }
 
     return docData.get('sponsor_id');
   }
 
-  async distributeBond(idUser: string) {
+  async distributeBond(sponsorId: string, registerUserId: string) {
     const BOND_VALUE_1 = 50; // Usuario
     const BOND_VALUE_2 = 20; // Sponsor (Upline)
     const BOND_VALUE_3 = 10; // Sponsor del sponsor (Upline)
 
-    const sponsorId = await this.giveBond(idUser, BOND_VALUE_1);
+    const nextSponsorId = await this.giveBond(
+      sponsorId,
+      BOND_VALUE_1,
+      registerUserId,
+    );
 
-    if (sponsorId) {
-      const grandSponsorId = await this.giveBond(sponsorId, BOND_VALUE_2);
+    if (nextSponsorId) {
+      const grandSponsorId = await this.giveBond(
+        nextSponsorId,
+        BOND_VALUE_2,
+        registerUserId,
+      );
       if (grandSponsorId) {
-        await this.giveBond(grandSponsorId, BOND_VALUE_3);
+        await this.giveBond(grandSponsorId, BOND_VALUE_3, registerUserId);
       }
     }
   }

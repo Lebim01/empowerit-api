@@ -19,6 +19,9 @@ const messages = {
   bond_supreme_level_1: 'Bono supreme primer nivel',
   bond_supreme_level_2: 'Bono supreme segundo nivel',
   bond_supreme_level_3: 'Bono supreme tercel nivel',
+  bond_scholarship_level_1: 'Bono beca primer nivel',
+  bond_scholarship_level_2: 'Bono beca segundo nivel',
+  bond_scholarship_level_3: 'Bono beca tercer nivel',
 };
 type Messages = typeof messages;
 type Types = keyof Messages;
