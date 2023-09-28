@@ -94,32 +94,37 @@ export class CryptoapisService {
     address: string,
     type: Memberships | Packs,
   ) {
-    const options = {
-      ...default_options,
-      method: 'POST',
-      path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
-      qs: { context: userId },
-    };
-    const is_pack = type == 'pro+supreme';
-    const res =
-      await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
-        options,
-        {
-          context: userId,
-          data: {
-            item: {
-              address: address,
-              allowDuplicates: true,
-              callbackSecretKey: 'a12k*?_1ds',
-              callbackUrl:
-                `${this.hostapi}/cryptoapis/callbackCoins/${type}` + is_pack
-                  ? '/packs'
-                  : '',
+    try {
+      const options = {
+        ...default_options,
+        method: 'POST',
+        path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
+        qs: { context: userId },
+      };
+      const is_pack = type == 'pro+supreme';
+      const res =
+        await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
+          options,
+          {
+            context: userId,
+            data: {
+              item: {
+                address: address,
+                allowDuplicates: true,
+                callbackSecretKey: 'a12k*?_1ds',
+                callbackUrl:
+                  `${this.hostapi}/cryptoapis/callbackCoins/${type}` + is_pack
+                    ? '/packs'
+                    : '',
+              },
             },
           },
-        },
-      );
-    return res;
+        );
+      return res;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
   }
 
   async removeCallbackEvent(refereceId: string) {
