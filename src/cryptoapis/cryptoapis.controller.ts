@@ -184,7 +184,7 @@ export class CryptoapisController {
             },
           });
           throw new HttpException(
-            'El monto pagado es menor al requerido.',
+            'El monto pagado es menor al requerido. ' + pendingAmount,
             HttpStatus.BAD_REQUEST,
           );
         }

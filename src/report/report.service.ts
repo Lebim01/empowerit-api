@@ -63,7 +63,8 @@ export class ReportService {
   async fix() {
     const users = await db
       .collection('users')
-      .where('sponsor_id', '==', 'fkQL4rwDBebtQgSXzZacf75DmCt1')
+      .doc('fkQL4rwDBebtQgSXzZacf75DmCt1')
+      .collection('sanguine_users')
       .get();
 
     const weeks = [
