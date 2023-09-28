@@ -24,9 +24,4 @@ export class AdminController {
   payrollAmount(@Param('payrollid') id: string) {
     return this.adminService.fixPayrollAmount(id);
   }
-
-  @Get('/fix')
-  getFix() {
-    return this.adminService.getFix();
-  }
 }

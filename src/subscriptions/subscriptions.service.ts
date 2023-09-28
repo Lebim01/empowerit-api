@@ -132,7 +132,7 @@ export class SubscriptionsService {
     }
 
     const amount_type = {
-      'pro+supreme': 177,
+      'pro+supreme': 277,
     };
     const amountbtc: any = await this.cryptoapisService.getBTCExchange(
       amount_type[type],
@@ -303,7 +303,7 @@ export class SubscriptionsService {
       await updateDoc(userDocRef, {
         'subscription.pro.pending_activation': {
           created_at: new Date(),
-          amount: 177,
+          amount: 277,
           amount_btc,
         },
       });

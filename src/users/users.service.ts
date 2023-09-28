@@ -519,43 +519,4 @@ export class UsersService {
     });
     return response;
   }
-
-  async fakeUsers() {
-    const user = 'ClSXuD7lkrUG11PfFMKJ';
-
-    const random = await this.getRandomUser();
-    const userL = await admin.collection('users').add({
-      parent_binary_user_id: user,
-      sponsor_id: user,
-      sponsor: 'Semen Antoniv',
-      position: 'left',
-      ...random,
-    });
-
-    const random2 = await this.getRandomUser();
-    const userR = await admin.collection('users').add({
-      parent_binary_user_id: user,
-      sponsor_id: user,
-      sponsor: 'Semen Antoniv',
-      position: 'right',
-      ...random2,
-    });
-    await admin.collection('users').doc(user).update({
-      left_binary_user_id: userL.id,
-      right_binary_user_id: userR.id,
-    });
-  }
-
-  async getRandomUser() {
-    return axios
-      .get('https://randomuser.me/api/')
-      .then((r) => r.data.results[0])
-      .then((r) => {
-        return {
-          email: r.email,
-          name: r.name.first + ' ' + r.name.last,
-          avatar: r.picture.large,
-        };
-      });
-  }
 }

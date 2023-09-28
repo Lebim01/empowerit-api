@@ -93,7 +93,11 @@ export class ReportService {
         return created_at.isAfter(start) && created_at.isBefore(end);
       });
 
-      if (weekIndex > -1) users_by_week[weekIndex].push(user.get('name'));
+      if (weekIndex > -1)
+        users_by_week[weekIndex].push({
+          name: user.get('name'),
+          position: user.get('position'),
+        });
     }
 
     return users_by_week;

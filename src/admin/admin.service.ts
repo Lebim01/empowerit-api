@@ -169,32 +169,4 @@ export class AdminService {
 
     return amount;
   }
-
-  async getFix() {
-    const snap = await db
-      .collection('users')
-      .where('sponsor_id', '==', 'av3Gbj9bPeQxS9mA8ipPiVVTtz52')
-      .get();
-    const response = [];
-    for (const user of snap.docs) {
-      const lastPayroll = await db
-        .collection('users')
-        .doc(user.id)
-        .collection('payroll')
-        .orderBy('created_at', 'desc')
-        .limit(1)
-        .get();
-      response.push({
-        id: user.id,
-        email: user.get('email'),
-        name: user.get('name'),
-        last_payroll: lastPayroll.empty
-          ? null
-          : dayjs(lastPayroll.docs[0].get('created_at').seconds * 1000).format(
-              'YYYY-MM-DD HH:mm:ss',
-            ),
-      });
-    }
-    return response;
-  }
 }
