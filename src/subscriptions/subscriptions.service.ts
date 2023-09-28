@@ -389,6 +389,12 @@ export class SubscriptionsService {
      */
     await this.assingMembership(id_user, 'pro');
 
+    if (isNew) {
+      await updateDoc(userDocRef, {
+        first_cycle_started_at: new Date(),
+      });
+    }
+
     /**
      * se crea un registro en la subcoleccion users/{id}/sanguine_users
      */
