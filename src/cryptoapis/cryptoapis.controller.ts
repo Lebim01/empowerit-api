@@ -26,6 +26,7 @@ const QUEUE_NAMES = {
   pro: 'payment-membership-pro',
   ibo: 'payment-membership-ibo',
   supreme: 'payment-membership-supreme',
+  'pro+supreme': 'payment-membership-prosupreme',
 };
 
 @Controller('cryptoapis')
