@@ -61,9 +61,9 @@ export class CryptoapisController {
           httpMethod: 'POST' as Method,
           url:
             `https://${process.env.VERCEL_URL}/cryptoapis/callbackPayment/${type}` +
-            is_pack
+            (is_pack
               ? '/packs'
-              : '',
+              : ''),
           body: Buffer.from(JSON.stringify(body)),
           headers: {
             'Content-Type': 'application/json',

@@ -113,9 +113,9 @@ export class CryptoapisService {
                 allowDuplicates: true,
                 callbackSecretKey: 'a12k*?_1ds',
                 callbackUrl:
-                  `${this.hostapi}/cryptoapis/callbackCoins/${type}` + is_pack
+                  `${this.hostapi}/cryptoapis/callbackCoins/${type}` + (is_pack
                     ? '/packs'
-                    : '',
+                    : ''),
               },
             },
           },
