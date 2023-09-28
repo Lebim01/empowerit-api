@@ -56,12 +56,31 @@ export class UsersService {
 
   async getUserByPaymentAddress(
     address: string,
-    type: 'ibo' | 'supreme' | 'pro',
+    type: Memberships,
   ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
     try {
       const snap = await admin
         .collection('users')
         .where(`subscription.${type}.payment_link.address`, '==', address)
+        .get();
+
+      if (snap.empty) return null;
+
+      return snap.docs[0];
+    } catch (err) {
+      Sentry.captureException(err);
+      return null;
+    }
+  }
+
+  async getUserByPaymentAddressPack(
+    address: string,
+    type: Packs,
+  ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
+    try {
+      const snap = await admin
+        .collection('users')
+        .where(`payment_link.${type}.address`, '==', address)
         .get();
 
       if (snap.empty) return null;

@@ -45,7 +45,7 @@ export class CryptoapisController {
   @Post('callbackPayment/:type/queue')
   async callbackPaymentQueue(
     @Body() body: CallbackNewConfirmedCoins,
-    @Param('type') type: 'ibo' | 'supreme' | 'pro',
+    @Param('type') type: Memberships | Packs,
   ) {
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
@@ -54,10 +54,15 @@ export class CryptoapisController {
       body.data.item.unit == 'BTC'
     ) {
       type Method = 'POST';
+      const is_pack = type == 'pro+supreme';
       const task: google.cloud.tasks.v2.ITask = {
         httpRequest: {
           httpMethod: 'POST' as Method,
-          url: `https://${process.env.VERCEL_URL}/cryptoapis/callbackPayment/${type}`,
+          url:
+            `https://${process.env.VERCEL_URL}/cryptoapis/callbackPayment/${type}` +
+            is_pack
+              ? '/packs'
+              : '',
           body: Buffer.from(JSON.stringify(body)),
           headers: {
             'Content-Type': 'application/json',
@@ -84,7 +89,7 @@ export class CryptoapisController {
   async callbackPaymentProMembership(
     @Body() body: CallbackNewConfirmedCoins,
     @Headers() headers,
-    @Param('type') type: 'ibo' | 'supreme' | 'pro',
+    @Param('type') type: Memberships,
   ): Promise<any> {
     await db.collection('cryptoapis-requests').add({
       created_at: new Date(),
@@ -211,13 +216,138 @@ export class CryptoapisController {
   }
 
   /**
+   * Transaccion confirmada
+   * Cambiar status a "paid"
+   */
+  @Post('callbackPayment/:type/packs')
+  async callbackPaymentProMembershipPacks(
+    @Body() body: CallbackNewConfirmedCoins,
+    @Headers() headers,
+    @Param('type') type: Packs,
+  ): Promise<any> {
+    await db.collection('cryptoapis-requests').add({
+      created_at: new Date(),
+      url: `cryptoapis/callbackPayment/${type}/packs`,
+      body,
+      headers,
+    });
+
+    if (body.data.item.direction == 'outgoing') return;
+
+    if (
+      body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
+      body.data.item.network == this.cryptoapisService.network &&
+      body.data.item.direction == 'incoming' &&
+      body.data.item.unit == 'BTC'
+    ) {
+      const { address } = body.data.item;
+      const userDoc = await this.usersService.getUserByPaymentAddressPack(
+        address,
+        type,
+      );
+
+      if (userDoc) {
+        const data = userDoc.data();
+
+        // Agregar registro de la transaccion
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
+
+        // Verificar si el pago se completo
+        const required_amount = Number(data.payment_link[type].amount);
+        const tolerance = required_amount * 0.003;
+        const pendingAmount: number =
+          await this.cryptoapisService.calculatePendingAmount(
+            userDoc.id,
+            address,
+            required_amount,
+          );
+
+        if (pendingAmount - tolerance <= 0) {
+          switch (type) {
+            case 'pro+supreme': {
+              await this.subscriptionService.onPaymentProMembership(
+                userDoc.id,
+                Number(data.payment_link[type].amount),
+              );
+              await this.subscriptionService.onPaymentSupremeMembership(
+                userDoc.id,
+              );
+              break;
+            }
+          }
+
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+
+          return 'transaccion correcta';
+        }
+
+        // Sí el pago esta incompleto
+        else {
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+
+          // Crear nuevo evento
+          await this.cryptoapisService.createCallbackConfirmation(
+            userDoc.id,
+            address,
+            type,
+          );
+
+          // Actualizar QR
+          const qr: string = this.cryptoapisService.generateQrUrl(
+            address,
+            pendingAmount.toFixed(8),
+          );
+          await userDoc.ref.update({
+            [`payment_link.${type}.qr`]: qr,
+          });
+
+          Sentry.captureException('Transaccion: Amount menor', {
+            extra: {
+              reference: body.referenceId,
+              address: body.data.item.address,
+            },
+          });
+          throw new HttpException(
+            'El monto pagado es menor al requerido.',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      } else {
+        Sentry.captureException('Inscripción: usuario no encontrado', {
+          extra: {
+            reference: body.referenceId,
+            address: body.data.item.address,
+            payload: JSON.stringify(body),
+          },
+        });
+        throw new HttpException(
+          'No se encontro el usuario',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } else {
+      Sentry.captureException('Inscripción: peticion invalida', {
+        extra: {
+          reference: body.referenceId,
+          address: body.data.item.address,
+          payload: JSON.stringify(body),
+          net: this.cryptoapisService.network,
+        },
+      });
+      throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
    * Primera confirmacion de transaccion
    * Cambiar status a "confirming"
    */
   @Post('callbackCoins/:type')
   async callbackCoins(
     @Body() body: CallbackNewUnconfirmedCoins,
-    @Param('type') type: 'ibo' | 'supreme' | 'pro',
+    @Param('type') type: Memberships,
   ): Promise<any> {
     if (
       body.data.event == 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED' &&
@@ -267,6 +397,90 @@ export class CryptoapisController {
         );
         await doc.ref.update({
           [`subscription.${type}.payment_link.qr`]: qr,
+        });
+
+        return 'OK';
+      } else {
+        Sentry.captureException(
+          `Inscripción: Usuario con petición de ${type} no encontrado.`,
+          {
+            extra: {
+              reference: body.referenceId,
+              address: body.data.item.address,
+              payload: JSON.stringify(body),
+            },
+          },
+        );
+        throw new HttpException(
+          'Usuario no encontrado.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } else {
+      Sentry.captureException('Inscripción: peticion invalida', {
+        extra: {
+          reference: body.referenceId,
+          address: body.data.item.address,
+          payload: JSON.stringify(body),
+        },
+      });
+      throw new HttpException('Peticion invalida', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Post('callbackCoins/:type/packs')
+  async callbackCoinsPacks(
+    @Body() body: CallbackNewUnconfirmedCoins,
+    @Param('type') type: Packs,
+  ): Promise<any> {
+    if (
+      body.data.event == 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED' &&
+      body.data.item.network == this.cryptoapisService.network &&
+      body.data.item.direction == 'incoming' &&
+      body.data.item.unit == 'BTC'
+    ) {
+      const { address } = body.data.item;
+      const snap = await db
+        .collection('users')
+        .where(`payment_link.${type}.address`, '==', address)
+        .get();
+
+      if (snap.size > 0) {
+        const doc = snap.docs[0];
+        const data = doc.data();
+
+        // Guardar registro de la transaccion.
+        await this.cryptoapisService.addTransactionToUser(doc.id, body);
+
+        // Verificar si el pago fue completado
+        const pendingAmount: number =
+          await this.cryptoapisService.calculatePendingAmount(
+            doc.id,
+            address,
+            Number.parseFloat(data.payment_link[type]?.amount),
+          );
+
+        // Si se cubrio el pago completo
+        if (pendingAmount <= 0) {
+          await doc.ref.update({
+            [`payment_link.${type}.status`]: 'confirming',
+          });
+
+          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.createCallbackConfirmation(
+            data.id,
+            body.data.item.address,
+            type,
+          );
+        }
+
+        // Actualizar QR
+        const qr: string = this.cryptoapisService.generateQrUrl(
+          address,
+          pendingAmount.toFixed(8),
+        );
+        await doc.ref.update({
+          [`payment_link.${type}.qr`]: qr,
         });
 
         return 'OK';

@@ -36,7 +36,7 @@ export class SubscriptionsService {
     private readonly cryptoapisService: CryptoapisService,
   ) {}
 
-  async createPaymentAddress(id_user: string, type: 'pro' | 'supreme' | 'ibo') {
+  async createPaymentAddress(id_user: string, type: Memberships) {
     // Obtener datos del usuario
     const userRef = await getDoc(doc(db, `users/${id_user}`));
     const userData = userRef.data();
@@ -102,6 +102,70 @@ export class SubscriptionsService {
     };
   }
 
+  async createPaymentAddressPack(id_user: string, type: 'pro+supreme') {
+    // Obtener datos del usuario
+    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const userData = userRef.data();
+    let address = '';
+    let referenceId = '';
+
+    // Si no existe registro de la informacion de pago...
+    if (
+      !userData.subscription[type] ||
+      !userData.subscription[type].payment_link
+    ) {
+      // Obtener un nuevo wallet para el pago
+      const newAddress = await this.cryptoapisService.createNewWalletAddress();
+      address = newAddress;
+
+      // Crear primera confirmación de la transaccion
+      const resConfirmation =
+        await this.cryptoapisService.createFirstConfirmationTransaction(
+          id_user,
+          newAddress,
+          type,
+        );
+      referenceId = resConfirmation.data.item.referenceId;
+    }
+
+    // Si existe registro...
+    else {
+      address = userData.subscription[type].payment_link.address;
+      referenceId = userData.subscription[type].payment_link.referenceId;
+    }
+
+    const amount_type = {
+      'pro+supreme': 177,
+    };
+    const amountbtc: any = await this.cryptoapisService.getBTCExchange(
+      amount_type[type],
+    );
+
+    // Estructurar el campo payment_link
+    const payment_link = {
+      referenceId,
+      address,
+      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amountbtc}`,
+      status: 'pending',
+      created_at: new Date(),
+      amount: amountbtc,
+      currency: 'BTC',
+      expires_at: dayjs().add(15, 'minutes').toDate(),
+    };
+
+    // Guardar payment_link
+    await updateDoc(userRef.ref, {
+      [`payment_link.${type}`]: payment_link,
+    });
+
+    return {
+      address: address,
+      amount: payment_link.amount,
+      currency: payment_link.currency,
+      qr: payment_link.qr,
+    };
+  }
+
   async isActiveUser(id_user: string) {
     const user = await getDoc(doc(db, 'users/' + id_user));
     const expires_at = user.get('subscription.pro.expires_at');
@@ -115,7 +179,7 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingMembership(id_user: string, type: 'pro' | 'supreme' | 'ibo') {
+  async assingMembership(id_user: string, type: Memberships) {
     // Obtener fechas
     const startAt: Date = await this.calculateStartDate(id_user, type);
     const expiresAt: Date = await this.calculateExpirationDate(id_user, type);
@@ -161,10 +225,7 @@ export class SubscriptionsService {
    * Obtener fecha de inicio.
    * Fecha en la que iniciara la membresia del 'type' enviado.
    */
-  async calculateStartDate(
-    id_user: string,
-    type: 'pro' | 'supreme' | 'ibo',
-  ): Promise<Date> {
+  async calculateStartDate(id_user: string, type: Memberships): Promise<Date> {
     // Obtener la información del usuario
     const userDoc = await getDoc(doc(db, `users/${id_user}`));
     const { status, expires_at } = userDoc.data().subscription[type];
@@ -188,7 +249,7 @@ export class SubscriptionsService {
    */
   async calculateExpirationDate(
     id_user: string,
-    type: 'pro' | 'supreme' | 'ibo',
+    type: Memberships,
   ): Promise<Date> {
     // Obtener los días de membresia.
     let days = 0;
@@ -467,7 +528,7 @@ export class SubscriptionsService {
   }
 
   // Actualizar el status a 'expired' de las subscripciones a partir de una fecha.
-  async statusToExpired(type: 'ibo' | 'supreme') {
+  async statusToExpired(type: Memberships) {
     const _query = query(
       collection(db, 'users'),
       where(`subscription.${type}.status`, '==', 'paid'),

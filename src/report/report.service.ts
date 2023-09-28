@@ -65,6 +65,37 @@ export class ReportService {
       .collection('users')
       .where('sponsor_id', '==', 'fkQL4rwDBebtQgSXzZacf75DmCt1')
       .get();
-    return users;
+
+    const weeks = [
+      [
+        dayjs('2023-08-27 11:00:00').utcOffset(-6),
+        dayjs('2023-09-03 11:00:00').utcOffset(-6),
+      ],
+      [
+        dayjs('2023-09-03 11:00:00').utcOffset(-6),
+        dayjs('2023-09-10 11:00:00').utcOffset(-6),
+      ],
+      [
+        dayjs('2023-09-10 11:00:00').utcOffset(-6),
+        dayjs('2023-09-17 11:00:00').utcOffset(-6),
+      ],
+      [
+        dayjs('2023-09-17 11:00:00').utcOffset(-6),
+        dayjs('2023-09-24 11:00:00').utcOffset(-6),
+      ],
+    ];
+
+    const users_by_week = [[], [], [], []];
+
+    for (const user of users.docs) {
+      const weekIndex = weeks.findIndex(([start, end]) => {
+        const created_at = dayjs(user.get('created_at').seconds * 1000);
+        return created_at.isAfter(start) && created_at.isBefore(end);
+      });
+
+      if (weekIndex > -1) users_by_week[weekIndex].push(user.get('name'));
+    }
+
+    return users_by_week;
   }
 }

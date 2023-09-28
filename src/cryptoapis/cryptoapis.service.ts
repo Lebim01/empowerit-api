@@ -92,7 +92,7 @@ export class CryptoapisService {
   async createFirstConfirmationTransaction(
     userId: string,
     address: string,
-    type: 'ibo' | 'supreme' | 'pro',
+    type: Memberships | Packs,
   ) {
     const options = {
       ...default_options,
@@ -100,6 +100,7 @@ export class CryptoapisService {
       path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
       qs: { context: userId },
     };
+    const is_pack = type == 'pro+supreme';
     const res =
       await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
         options,
@@ -110,7 +111,10 @@ export class CryptoapisService {
               address: address,
               allowDuplicates: true,
               callbackSecretKey: 'a12k*?_1ds',
-              callbackUrl: `${this.hostapi}/cryptoapis/callbackCoins/${type}`,
+              callbackUrl:
+                `${this.hostapi}/cryptoapis/callbackCoins/${type}` + is_pack
+                  ? '/packs'
+                  : '',
             },
           },
         },
@@ -130,7 +134,7 @@ export class CryptoapisService {
   async createCallbackConfirmation(
     id_user: string,
     address: string,
-    type: 'ibo' | 'supreme' | 'pro',
+    type: Memberships | Packs,
   ) {
     const options = {
       ...default_options,
@@ -346,18 +350,10 @@ export class CryptoapisService {
     user_id: string,
     addressWallet: string,
   ): Promise<FirebaseFirestore.DocumentData> => {
-    // Calcular la fecha de hace un mes
-    // const currentDate = new Date();
-    // const oneMonthAgo = new Date();
-    // oneMonthAgo.setMonth(currentDate.getMonth() - 1);
-
-    return (
-      db
-        .collection(`users/${user_id}/transactions`)
-        .where(`data.item.address`, '==', addressWallet)
-        //.where('created_at', '>', oneMonthAgo)
-        .get()
-    );
+    return db
+      .collection(`users/${user_id}/transactions`)
+      .where(`data.item.address`, '==', addressWallet)
+      .get();
   };
 
   /**
