@@ -520,7 +520,7 @@ export class SubscriptionsService {
           id_user: userRef.id,
           sponsor_id: current_user.sponsor_id,
           is_active: current_user.is_active,
-          created_at: current_user.created_at || null,
+          created_at: new Date() || null,
           position: sponsorSanguineRef.get('position') || null,
         },
         {
