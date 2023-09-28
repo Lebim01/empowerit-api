@@ -95,8 +95,12 @@ export class ReportService {
 
       if (weekIndex > -1)
         users_by_week[weekIndex].push({
+          id: user.id,
           name: user.get('name'),
           position: user.get('position'),
+          created_at: dayjs(user.get('created_at').seconds * 1000).format(
+            'YYYY-MM-DD[T]HH:mm:ss',
+          ),
         });
     }
 
