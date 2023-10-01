@@ -14,8 +14,9 @@ export class ReportService {
 
     for (const u of users.docs) {
       batch.set(db.doc(`users/${u.id}/history_months/${year}-${month}`), {
-        count_direct_people_this_month: u.get('count_direct_people_this_month'),
-        profits_this_month: u.get('profits_this_month'),
+        count_direct_people_this_month:
+          u.get('count_direct_people_this_month') || 0,
+        profits_this_month: u.get('profits_this_month') || 0,
         created_at: new Date(),
       });
       batch.update(u.ref, {
