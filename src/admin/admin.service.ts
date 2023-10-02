@@ -75,7 +75,7 @@ export class AdminService {
       }))
       .map((doc) => ({
         ...doc,
-        fee: doc.subtotal * 0.05,
+        fee: Math.ceil(doc.subtotal * 0.05 * 100) / 100,
       }))
       .map((doc) => ({
         ...doc,
