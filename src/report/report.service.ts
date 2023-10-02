@@ -13,16 +13,31 @@ export class ReportService {
     const month = date.month();
 
     for (const u of users.docs) {
-      batch.set(db.doc(`users/${u.id}/history_months/${year}-${month}`), {
+      const last_firm = await this.getLastFirmDate(u.id);
+      const docData = {
         count_direct_people_this_month:
           u.get('count_direct_people_this_month') || 0,
         profits_this_month: u.get('profits_this_month') || 0,
+        id_user: u.id,
+        last_firm,
         created_at: new Date(),
-      });
+      };
+
+      batch.set(
+        db.doc(`users/${u.id}/history_months/${year}-${month}`),
+        docData,
+      );
       batch.update(u.ref, {
         count_direct_people_this_month: 0,
         profits_this_month: 0,
       });
+
+      const newDoc = db
+        .collection('report-month')
+        .doc(`${year}-${month}`)
+        .collection('users')
+        .doc();
+      batch.set(newDoc, docData);
     }
 
     await batch.commit();
@@ -32,7 +47,6 @@ export class ReportService {
    * month: 1-12
    */
   async getTopProfitsMonth(month: number) {
-    const help = dayjs().set('month', month);
     const date = dayjs(`2023-08-01 00:00:01`);
     const payrolls = await db
       .collectionGroup('payroll')
@@ -59,6 +73,38 @@ export class ReportService {
     }
 
     return people;
+  }
+
+  async topMes(month: string) {
+    const snap = await db.collectionGroup('history_months').get();
+
+    for (const doc of snap.docs) {
+      const last_firm = await this.getLastFirmDate(doc.ref.parent.parent.id);
+      await db
+        .collection('report-month')
+        .doc(month)
+        .collection('users')
+        .add({
+          last_firm,
+          id_user: doc.ref.parent.parent.id,
+          ...doc.data(),
+        });
+    }
+
+    return snap.size;
+  }
+
+  async getLastFirmDate(id_user: string) {
+    const last_firm = await db
+      .collection('users')
+      .where('sponsor_id', '==', id_user)
+      .where('subscription.pro.status', '==', 'paid')
+      .where('created_at', '>', dayjs('2023-09-01T06:00:00').toDate())
+      .where('created_at', '<', dayjs('2023-10-01T06:00:00').toDate())
+      .orderBy('created_at', 'desc')
+      .limit(1)
+      .get();
+    return last_firm.empty ? null : last_firm.docs[0].get('created_at');
   }
 
   async fix() {

@@ -15,8 +15,8 @@ export class ReportController {
     return this.reportService.restartMonth();
   }
 
-  @Get('fix')
-  fix() {
-    return this.reportService.fix();
+  @Get('month')
+  reportMonth() {
+    return this.reportService.topMes('2023-8');
   }
 }
