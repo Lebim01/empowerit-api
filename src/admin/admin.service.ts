@@ -42,7 +42,11 @@ export class AdminService {
           supreme_second_level: docData.bond_supreme_level_2 || 0,
           supreme_third_level: docData.bond_supreme_level_3 || 0,
           binary:
-            binary_points * (isAdmin ? ADMIN_BINARY_PERCENT : rank.binary),
+            Math.floor(
+              binary_points *
+                (isAdmin ? ADMIN_BINARY_PERCENT : rank.binary) *
+                100,
+            ) / 100,
           binary_percent: isAdmin ? ADMIN_BINARY_PERCENT : rank.binary,
           binary_side,
           binary_points,

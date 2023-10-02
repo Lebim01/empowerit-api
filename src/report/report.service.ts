@@ -76,22 +76,42 @@ export class ReportService {
   }
 
   async topMes(month: string) {
-    const snap = await db.collectionGroup('history_months').get();
+    const snap = await db
+      .collection('report-month')
+      .doc(month)
+      .collection('users')
+      .orderBy('profits_this_month', 'desc')
+      .limit(25)
+      .get();
+
+    const headers = [
+      'ID',
+      'Nombre',
+      'Email',
+      'Firmas',
+      'Ultima firma',
+      'Ganancias',
+    ];
+    const rows = [headers.join(',')];
 
     for (const doc of snap.docs) {
-      const last_firm = await this.getLastFirmDate(doc.ref.parent.parent.id);
-      await db
-        .collection('report-month')
-        .doc(month)
-        .collection('users')
-        .add({
-          last_firm,
-          id_user: doc.ref.parent.parent.id,
-          ...doc.data(),
-        });
+      console.log(doc.id);
+      const user = await db.collection('users').doc(doc.get('id_user')).get();
+      rows.push(
+        [
+          user.id,
+          user.get('name'),
+          user.get('email'),
+          doc.get('count_direct_people_this_month'),
+          dayjs(doc.get('last_firm')?.seconds * 1000)
+            .utcOffset(-6)
+            .format('YYYY-MM-DD HH:mm:ss'),
+          doc.get('profits_this_month'),
+        ].join(','),
+      );
     }
 
-    return snap.size;
+    return rows;
   }
 
   async getLastFirmDate(id_user: string) {
