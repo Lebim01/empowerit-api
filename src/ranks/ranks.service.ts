@@ -404,8 +404,11 @@ export class RanksService {
     const sunday_3_weeks = sunday_this_week.subtract(2, 'week');
     const sunday_4_weeks = sunday_this_week.subtract(3, 'week');
     const sunday_5_weeks = sunday_this_week.subtract(4, 'week');
+    const sunday_6_weeks = sunday_this_week.subtract(5, 'week');
 
     const dates = [
+      [sunday_6_weeks, sunday_6_weeks.add(7, 'days')],
+      [sunday_5_weeks, sunday_5_weeks.add(7, 'days')],
       [sunday_4_weeks, sunday_4_weeks.add(7, 'days')],
       [sunday_3_weeks, sunday_3_weeks.add(7, 'days')],
       [sunday_2_weeks, sunday_2_weeks.add(7, 'days')],
