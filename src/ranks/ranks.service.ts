@@ -127,9 +127,9 @@ export class RanksService {
 
     const sanguinea = user.get('position') == 'left' ? right_week : left_week;
     const derrame = user.get('position') == 'left' ? left_week : right_week;
-    const firms = await this.getDirectFirms(user.id);
+    const firms = await this.getDirectFirms(user.id, is_report);
     /* Obtener el payroll de los ultimos 28 dias */
-    const totalUSD = await this.getPayrollUser(user.id);
+    const totalUSD = await this.getPayrollUser(user.id, is_report);
     /* Crear subcoleccion para el historial de rangos */
     const rank = await this.getRank(
       totalUSD.totalUSD,
@@ -156,10 +156,10 @@ export class RanksService {
     };
   }
 
-  async getDirectFirms(id) {
+  async getDirectFirms(id, is_report = false) {
     /* Obtener firmas  directas*/
     const firm_week = [];
-    const dates = await this.getWeeks();
+    const dates = await this.getWeeks(is_report);
 
     for (const [start, end] of dates) {
       let firm = 0;
@@ -183,11 +183,11 @@ export class RanksService {
     return firm_week;
   }
 
-  async getPayrollUser(id) {
+  async getPayrollUser(id, is_report = false) {
     const subCollectionRefpayroll = collection(db, 'users', id, 'payroll');
     const total_week = [];
     let totalUSD = 0;
-    const dates = await this.getWeeks();
+    const dates = await this.getWeeks(is_report);
 
     for (const [start, end] of dates) {
       let totalUSD_week = 0;
