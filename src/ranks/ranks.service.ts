@@ -22,7 +22,9 @@ export class RanksService {
 
   async updateRank() {
     /* Obtener todos los usuraios */
-    const users = await getDocs(collection(db, 'users'));
+    //const users = await getDocs(collection(db, 'users'));
+
+    const users = { docs: [{ id: 'KRzOTaOSpfhthcClu0DZV93cnTc2' }], size: 1 };
 
     await Promise.all(
       users.docs.map(async (user) => {
@@ -93,7 +95,7 @@ export class RanksService {
     );
   }
 
-  async getRankUser(userId: string, is_report?: boolean) {
+  async getRankUser(userId: string, is_report = false) {
     /* Declarar la coleccion y las condiciones para obtener los usuarios que fueron sponsoreados por el usaurio en turno */
     const user = await getDoc(doc(db, 'users', userId));
     const left_week = [];
@@ -377,7 +379,7 @@ export class RanksService {
     return ranks_object[key];
   }
 
-  async getWeeks(is_report = false) {
+  /*async getWeeks(is_report = false) {
     const day_of_week = dayjs().day();
     const sunday_this_week = dayjs()
       .utcOffset(-6)
@@ -410,5 +412,33 @@ export class RanksService {
     );
 
     return dates;
+  }*/
+
+  async getWeeks(is_report = false) {
+    const weeks = [
+      [
+        dayjs('2023-09-03 11:00:00').utcOffset(-6),
+        dayjs('2023-09-10 11:00:00').utcOffset(-6),
+      ],
+      [
+        dayjs('2023-09-10 11:00:00').utcOffset(-6),
+        dayjs('2023-09-17 11:00:00').utcOffset(-6),
+      ],
+      [
+        dayjs('2023-09-17 11:00:00').utcOffset(-6),
+        dayjs('2023-09-24 11:00:00').utcOffset(-6),
+      ],
+      [
+        dayjs('2023-09-24 11:00:00').utcOffset(-6),
+        dayjs('2023-10-01 11:00:00').utcOffset(-6),
+      ],
+    ];
+    console.log(
+      weeks.map(([start, end]) => ({
+        start: start.format('YYYY-MM-DD HH:mm:ss'),
+        end: end.format('YYYY-MM-DD HH:mm:ss'),
+      })),
+    );
+    return weeks;
   }
 }
