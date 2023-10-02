@@ -377,7 +377,7 @@ export class RanksService {
     return ranks_object[key];
   }
 
-  /*async getWeeks(is_report = false) {
+  async getWeeks(is_report = false) {
     const day_of_week = dayjs().day();
     const sunday_this_week = dayjs()
       .utcOffset(-6)
@@ -410,33 +410,5 @@ export class RanksService {
     );
 
     return dates;
-  }*/
-
-  async getWeeks(is_report = false) {
-    const weeks = [
-      [
-        dayjs('2023-09-03 11:00:00').utcOffset(-6),
-        dayjs('2023-09-10 11:00:00').utcOffset(-6),
-      ],
-      [
-        dayjs('2023-09-10 11:00:00').utcOffset(-6),
-        dayjs('2023-09-17 11:00:00').utcOffset(-6),
-      ],
-      [
-        dayjs('2023-09-17 11:00:00').utcOffset(-6),
-        dayjs('2023-09-24 11:00:00').utcOffset(-6),
-      ],
-      [
-        dayjs('2023-09-24 11:00:00').utcOffset(-6),
-        dayjs('2023-10-01 11:00:00').utcOffset(-6),
-      ],
-    ];
-    console.log(
-      weeks.map(([start, end]) => ({
-        start: start.format('YYYY-MM-DD HH:mm:ss'),
-        end: end.format('YYYY-MM-DD HH:mm:ss'),
-      })),
-    );
-    return weeks;
   }
 }
