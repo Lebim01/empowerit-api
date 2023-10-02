@@ -130,7 +130,7 @@ export class ReportService {
   async fix() {
     const users = await db
       .collection('users')
-      .doc('fkQL4rwDBebtQgSXzZacf75DmCt1')
+      .doc('KRzOTaOSpfhthcClu0DZV93cnTc2')
       .collection('sanguine_users')
       .get();
 
@@ -153,25 +153,41 @@ export class ReportService {
       ],
     ];
 
-    const users_by_week = [[], [], [], []];
+    const headers = ['ID', 'Nombre', 'Lado', 'Fecha de creacion'];
+    const users_by_week = [
+      [headers.join(',')],
+      [headers.join(',')],
+      [headers.join(',')],
+      [headers.join(',')],
+    ];
 
-    for (const user of users.docs) {
+    for (const sanguine_user of users.docs) {
       const weekIndex = weeks.findIndex(([start, end]) => {
-        const created_at = dayjs(user.get('created_at').seconds * 1000);
+        const created_at = dayjs(
+          sanguine_user.get('created_at').seconds * 1000,
+        );
         return created_at.isAfter(start) && created_at.isBefore(end);
       });
 
-      if (weekIndex > -1)
-        users_by_week[weekIndex].push({
-          id: user.id,
-          name: user.get('name'),
-          position: user.get('position'),
-          created_at: dayjs(user.get('created_at').seconds * 1000).format(
-            'YYYY-MM-DD[T]HH:mm:ss',
-          ),
-        });
+      if (weekIndex > -1) {
+        const user = await db
+          .collection('users')
+          .doc(sanguine_user.get('id_user'))
+          .get();
+
+        users_by_week[weekIndex].push(
+          [
+            sanguine_user.get('id_user'),
+            user.get('name'),
+            sanguine_user.get('position'),
+            dayjs(sanguine_user.get('created_at').seconds * 1000).format(
+              'YYYY-MM-DD[T]HH:mm:ss',
+            ),
+          ].join(','),
+        );
+      }
     }
 
-    return users_by_week;
+    return users_by_week[3].join('\n');
   }
 }

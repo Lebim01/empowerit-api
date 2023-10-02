@@ -19,4 +19,9 @@ export class ReportController {
   reportMonth() {
     return this.reportService.topMes('2023-08').then((r) => r.join('\n'));
   }
+
+  @Get('chec')
+  check() {
+    return this.reportService.fix();
+  }
 }

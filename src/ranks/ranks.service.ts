@@ -93,13 +93,13 @@ export class RanksService {
     );
   }
 
-  async getRankUser(userId: string) {
+  async getRankUser(userId: string, is_report?: boolean) {
     /* Declarar la coleccion y las condiciones para obtener los usuarios que fueron sponsoreados por el usaurio en turno */
     const _user = await getDoc(doc(db, 'users', userId));
     const left_week = [];
     const right_week = [];
 
-    const dates = await this.getWeeks();
+    const dates = await this.getWeeks(is_report);
 
     for (const [start, end] of dates) {
       let left = 0;
@@ -393,7 +393,7 @@ export class RanksService {
     return ranks_object[key];
   }
 
-  async getWeeks() {
+  async getWeeks(is_report = false) {
     const day_of_week = dayjs().day();
     const sunday_this_week = dayjs()
       .utcOffset(-6)
@@ -407,13 +407,16 @@ export class RanksService {
     const sunday_6_weeks = sunday_this_week.subtract(5, 'week');
 
     const dates = [
-      [sunday_6_weeks, sunday_6_weeks.add(7, 'days')],
-      [sunday_5_weeks, sunday_5_weeks.add(7, 'days')],
       [sunday_4_weeks, sunday_4_weeks.add(7, 'days')],
       [sunday_3_weeks, sunday_3_weeks.add(7, 'days')],
       [sunday_2_weeks, sunday_2_weeks.add(7, 'days')],
       [sunday_this_week, sunday_this_week.add(7, 'days')],
     ];
+
+    if (is_report) {
+      dates.unshift([sunday_5_weeks, sunday_5_weeks.add(7, 'days')]);
+      dates.unshift([sunday_6_weeks, sunday_6_weeks.add(7, 'days')]);
+    }
 
     console.log(
       dates.map(([start, end]) => ({

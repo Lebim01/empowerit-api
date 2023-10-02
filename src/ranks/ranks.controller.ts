@@ -16,7 +16,8 @@ export class RanksController {
 
   @Post('getRank/:idUser')
   async getRank(@Param('idUser') idUser: string) {
-    return await this.ranksService.getRankUser(idUser);
+    const is_report = true;
+    return await this.ranksService.getRankUser(idUser, is_report);
   }
   @Post('getRankKey/:key')
   async getRankKey(@Param('key') key: string) {
