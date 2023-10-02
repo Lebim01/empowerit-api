@@ -22,9 +22,7 @@ export class RanksService {
 
   async updateRank() {
     /* Obtener todos los usuraios */
-    //const users = await getDocs(collection(db, 'users'));
-
-    const users = { docs: [{ id: 'KRzOTaOSpfhthcClu0DZV93cnTc2' }], size: 1 };
+    const users = await getDocs(collection(db, 'users'));
 
     await Promise.all(
       users.docs.map(async (user) => {
