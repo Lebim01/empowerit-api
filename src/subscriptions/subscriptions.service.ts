@@ -12,6 +12,7 @@ import {
   collectionGroup,
   setDoc,
   increment,
+  addDoc,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
@@ -183,6 +184,7 @@ export class SubscriptionsService {
 
     // Generar objeto con cambios a registrar
     let changes = {};
+    let cycle: any = null;
     switch (type) {
       case 'pro': {
         changes = {
@@ -192,6 +194,7 @@ export class SubscriptionsService {
           'subscription.pro.status': 'paid',
           is_new: false,
         };
+        cycle = collection(db, `users/${id_user}/pro-cycles`);
         break;
       }
       case 'supreme': {
@@ -201,6 +204,7 @@ export class SubscriptionsService {
           'subscription.supreme.expires_at': expiresAt,
           'subscription.supreme.status': 'paid',
         };
+        cycle = collection(db, `users/${id_user}/supreme-cycles`);
         break;
       }
       case 'ibo': {
@@ -210,12 +214,18 @@ export class SubscriptionsService {
           'subscription.ibo.expires_at': expiresAt,
           'subscription.ibo.status': 'paid',
         };
+        cycle = collection(db, `users/${id_user}/ibo-cycles`);
         break;
       }
     }
 
     // Registrar cambios
     await updateDoc(doc(db, `users/${id_user}`), changes);
+
+    await addDoc(cycle, {
+      start_at: startAt,
+      expires_at: expiresAt,
+    });
   }
 
   /**
