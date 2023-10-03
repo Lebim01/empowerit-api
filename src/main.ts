@@ -18,6 +18,10 @@ async function bootstrap() {
   dayjs.extend(utc);
   dayjs.extend(timezone);
   dayjs.extend(isoWeek);
+  dayjs.locale({
+    name: 'es-ES',
+    weekStart: 7,
+  } as any);
 
   const app = await NestFactory.create(AppModule, {
     cors: true,

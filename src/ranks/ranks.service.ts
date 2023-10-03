@@ -72,13 +72,13 @@ export class RanksService {
         .collection('rank-promotion')
         .add({
           created_at: new Date(),
-          rank: rankData.rank_key,
+          rank: rankData.rank_key || 'vanguard',
         });
       await admin.collection('rank-promotion').add({
         id_user,
         name: user.get('name'),
         created_at: new Date(),
-        rank: rankData.rank_key,
+        rank: rankData.rank_key || 'vanguard',
       });
     }
 
@@ -105,9 +105,13 @@ export class RanksService {
       let right = 0;
       const filteredQuery = query(
         collection(db, `users/${user.id}/sanguine_users`),
-        where('created_at', '>=', dayjs(start).toDate()),
-        where('created_at', '<=', dayjs(end).toDate()),
-        where('created_at', '>=', dayjs('2023-09-01 00:00:01').toDate()),
+        where('created_at', '>=', start.toDate()),
+        where('created_at', '<=', end.toDate()),
+        where(
+          'created_at',
+          '>=',
+          dayjs('2023-09-01 00:00:01').utcOffset(-6).toDate(),
+        ),
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
@@ -115,9 +119,9 @@ export class RanksService {
       /* Recorrer los usuarios sponsoreados por el usuario en turno */
       for (const doc of sanguineUsers.docs) {
         /* Acumular el contador depentiendo del valor del atributo position del usuario esponsoreado */
-        if (doc.data().position === 'left') {
+        if (doc.get('position') === 'left') {
           left++;
-        } else if (doc.data().position === 'right') {
+        } else {
           right++;
         }
       }
@@ -165,10 +169,10 @@ export class RanksService {
       let firm = 0;
       const filteredQuery = query(
         collection(db, `users`),
-        where('created_at', '>=', dayjs(start).toDate()),
-        where('created_at', '<=', dayjs(end).toDate()),
+        where('created_at', '>=', start.toDate()),
+        where('created_at', '<=', end.toDate()),
         where('sponsor_id', '==', id),
-        where('created_at', '>=', dayjs('2023-09-01 00:00:01').toDate()),
+        where('created_at', '>=', dayjs('2023-09-01 06:00:01').toDate()),
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
@@ -194,8 +198,8 @@ export class RanksService {
 
       const filteredQueryPayroll = query(
         subCollectionRefpayroll,
-        where('created_at', '>=', dayjs(start).toDate()),
-        where('created_at', '<=', dayjs(end).toDate()),
+        where('created_at', '>=', start.toDate()),
+        where('created_at', '<=', end.toDate()),
         where('created_at', '>=', dayjs('2023-09-01 00:00:01').toDate()),
       );
 
