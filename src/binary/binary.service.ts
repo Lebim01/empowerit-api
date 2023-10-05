@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UsersService } from '../users/users.service';
+import { ADMIN_USERS } from '@/constants';
 
 @Injectable()
 export class BinaryService {
@@ -139,12 +140,19 @@ export class BinaryService {
 
     const batch = writeBatch(db);
 
-    while (leftPointsDocs.length > 0 && rightPointsDocs.length > 0) {
+    while (
+      (leftPointsDocs.length > 0 || ADMIN_USERS.includes(userId)) &&
+      rightPointsDocs.length > 0
+    ) {
       // Tomamos y eliminamos el documento más antiguo de cada lado
-      const oldestLeftDoc = leftPointsDocs.shift();
-      const oldestRightDoc = rightPointsDocs.shift();
+      // Los admin no tienen puntos del lado izquierdo
 
-      batch.delete(oldestLeftDoc.ref);
+      if (!ADMIN_USERS.includes(userId)) {
+        const oldestLeftDoc = leftPointsDocs.shift();
+        batch.delete(oldestLeftDoc.ref);
+      }
+
+      const oldestRightDoc = rightPointsDocs.shift();
       batch.delete(oldestRightDoc.ref);
     }
 
