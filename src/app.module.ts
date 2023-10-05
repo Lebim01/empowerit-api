@@ -21,6 +21,7 @@ import { ReportModule } from './report/report.module';
 import { LocationModule } from './location/location.module';
 import { GoogletaskModule } from './googletask/googletask.module';
 import { GoogletaskService } from './googletask/googletask.service';
+import { CloudflareModule } from './cloudflare/cloudflare.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { GoogletaskService } from './googletask/googletask.service';
     ReportModule,
     LocationModule,
     GoogletaskModule,
+    CloudflareModule,
   ],
   controllers: [AppController],
   providers: [
