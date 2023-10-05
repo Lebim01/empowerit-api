@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UsersService } from '../users/users.service';
-import { ADMIN_USERS } from '@/constants';
+import { ADMIN_USERS } from '../constants';
 
 @Injectable()
 export class BinaryService {
@@ -147,7 +147,7 @@ export class BinaryService {
       // Tomamos y eliminamos el documento más antiguo de cada lado
       // Los admin no tienen puntos del lado izquierdo
 
-      if (!ADMIN_USERS.includes(userId)) {
+      if (leftPointsDocs.length > 0) {
         const oldestLeftDoc = leftPointsDocs.shift();
         batch.delete(oldestLeftDoc.ref);
       }
