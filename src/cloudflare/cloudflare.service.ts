@@ -24,7 +24,7 @@ export class CloudflareService {
     });
   }
 
-  async getUploadVideoUrl(courseId, path: string) {
+  async getUploadVideoUrl(courseId: string, path: string) {
     const uuid = v4();
     const filename = uuid + '.mp4';
 
