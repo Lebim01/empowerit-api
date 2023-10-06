@@ -30,16 +30,22 @@ export class CloudflareService {
 
     const course = await this.academyService.getCourseById(courseId);
 
-    return {
-      filename,
-      url: await getSignedUrl(
-        this.s3,
-        new PutObjectCommand({
-          Bucket: 'academia-top',
-          Key: `${course.s3_path}/${path}/${filename}`,
-        }),
-        { expiresIn: 3600 },
-      ),
-    };
+    if (course) {
+      console.log(course);
+
+      return {
+        filename,
+        url: await getSignedUrl(
+          this.s3,
+          new PutObjectCommand({
+            Bucket: 'academia-top',
+            Key: `${course.s3_path}/${path}/${filename}`,
+          }),
+          { expiresIn: 3600 },
+        ),
+      };
+    } else {
+      throw new Error('Curso no existe');
+    }
   }
 }
