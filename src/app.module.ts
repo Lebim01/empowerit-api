@@ -22,6 +22,7 @@ import { LocationModule } from './location/location.module';
 import { GoogletaskModule } from './googletask/googletask.module';
 import { GoogletaskService } from './googletask/googletask.service';
 import { CloudflareModule } from './cloudflare/cloudflare.module';
+import { AcademyModule } from './academy/academy.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { CloudflareModule } from './cloudflare/cloudflare.module';
     LocationModule,
     GoogletaskModule,
     CloudflareModule,
+    AcademyModule,
   ],
   controllers: [AppController],
   providers: [
