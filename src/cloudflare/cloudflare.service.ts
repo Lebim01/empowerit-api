@@ -21,6 +21,7 @@ export class CloudflareService {
         secretAccessKey: `${access_key_secret}`,
       },
       region: 'auto',
+      apiVersion: '4.0',
     });
   }
 
