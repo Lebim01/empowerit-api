@@ -32,15 +32,14 @@ export class CloudflareService {
     const course = await this.academyService.getCourseById(courseId);
 
     if (course) {
-      console.log(course);
-
       return {
-        filename,
+        filename: `${course.s3_path}/${path}/${filename}`,
         url: await getSignedUrl(
           this.s3,
           new PutObjectCommand({
             Bucket: 'academia-top',
             Key: `${course.s3_path}/${path}/${filename}`,
+            ContentType: 'video/mp4',
           }),
           { expiresIn: 3600 },
         ),
