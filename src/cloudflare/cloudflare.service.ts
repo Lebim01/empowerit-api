@@ -5,9 +5,9 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { AcademyService } from 'src/academy/academy.service';
 
 const accountid = '1bb1bad530f7fe11d1ad7016ef1eb9af';
-const access_key_id = '3cc93c070860661210fb141a7aaa5099';
+const access_key_id = '56c04a5b2f61d9b53090cec8d0fd773e';
 const access_key_secret =
-  '44622f57c7f504e312ba8ff4f30330fc296c0078a093fadb72b3922680d67d5b';
+  '2db374a6bd1577ddf2bfed8236d464fdb0d0ed84698481d8e00a5c93086a7701';
 
 @Injectable()
 export class CloudflareService {
