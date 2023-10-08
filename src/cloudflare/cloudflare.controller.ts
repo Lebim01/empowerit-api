@@ -7,6 +7,6 @@ export class CloudflareController {
 
   @Post('uploadVideo')
   uploadVideo(@Body() body) {
-    return this.cloudflareService.getUploadVideoUrl(body.courseId, 'lives');
+    return this.cloudflareService.getUploadVideoUrl(body.courseId, body.folder);
   }
 }
