@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { AdminService } from './admin.service';
 
 @Controller('admin')
@@ -23,5 +23,10 @@ export class AdminController {
   @Get('/payroll/:payrollid/amount')
   payrollAmount(@Param('payrollid') id: string) {
     return this.adminService.fixPayrollAmount(id);
+  }
+
+  @Post('/withdraw')
+  withdraw(@Body() body) {
+    return this.adminService.withdraw(body.address, body.amount);
   }
 }

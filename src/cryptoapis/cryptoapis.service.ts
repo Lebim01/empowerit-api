@@ -510,4 +510,30 @@ export class CryptoapisService {
     };
     return await cryptoapisRequest<ResponseListOfEvents>(options);
   }
+
+  async withdraw(address: string, amount: string) {
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${this.blockchain}/${this.network}/transaction-requests`,
+    };
+    return await cryptoapisRequest(options, {
+      context: '',
+      data: {
+        item: {
+          callbackSecretKey: 'a12k*?_1ds',
+          callbackUrl: `${this.hostapi}/callbackSendedCoins`,
+          feePriority: 'standard',
+          note: 'yourAdditionalInformationhere',
+          prepareStrategy: 'minimize-dust',
+          recipients: [
+            {
+              address,
+              amount,
+            },
+          ],
+        },
+      },
+    });
+  }
 }

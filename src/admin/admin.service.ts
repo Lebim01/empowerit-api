@@ -3,7 +3,6 @@ import { db } from '../firebase/admin';
 import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { ranks_object } from '../ranks/ranks_object';
 import { BinaryService } from '../binary/binary.service';
-import dayjs from 'dayjs';
 
 const ADMIN_BINARY_PERCENT = 17 / 100;
 
@@ -172,5 +171,9 @@ export class AdminService {
     );
 
     return amount;
+  }
+
+  withdraw(address: string, amount: string) {
+    return this.cryptoapisService.withdraw(address, amount);
   }
 }

@@ -1,19 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  addDoc,
-  collectionGroup,
-  deleteDoc,
-  getCountFromServer,
-  query,
-} from 'firebase/firestore';
+import { getDocs, collectionGroup, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { db as admin } from '../firebase/admin';
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()
@@ -67,5 +56,17 @@ export class ScriptsService {
     }
 
     return repeat;
+  }
+
+  async updateUserProfile() {
+    const users = await admin.collection('users').get();
+
+    for (const user of users.docs) {
+      if (!user.get('user_profile')) {
+        await user.ref.update({
+          user_profile: 'user',
+        });
+      }
+    }
   }
 }
