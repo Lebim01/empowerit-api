@@ -265,9 +265,6 @@ export class CryptoapisController {
         if (pendingAmount - tolerance <= 0) {
           switch (type) {
             case 'pro+supreme': {
-              await db.collection('users').doc(userDoc.id).update({
-                'payment_link.pro+supreme': null,
-              });
               await this.subscriptionService.onPaymentProMembership(
                 userDoc.id,
                 Number(data.payment_link[type].amount),
@@ -275,6 +272,9 @@ export class CryptoapisController {
               await this.subscriptionService.onPaymentSupremeMembership(
                 userDoc.id,
               );
+              await db.collection('users').doc(userDoc.id).update({
+                'payment_link.pro+supreme': null,
+              });
               break;
             }
           }
