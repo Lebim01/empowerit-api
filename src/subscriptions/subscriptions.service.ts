@@ -12,7 +12,6 @@ import {
   collectionGroup,
   setDoc,
   increment,
-  addDoc,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
@@ -21,6 +20,7 @@ import { db as admin } from '../firebase/admin';
 import * as Sentry from '@sentry/node';
 import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
+import { firestore } from 'firebase-admin';
 
 const isExpired = (expires_at: { seconds: number }) => {
   const date = dayjs(expires_at.seconds * 1000);
@@ -194,7 +194,7 @@ export class SubscriptionsService {
           'subscription.pro.status': 'paid',
           is_new: false,
         };
-        cycle = `users/${id_user}/pro-cycles`;
+        cycle = `pro-cycles`;
         break;
       }
       case 'supreme': {
@@ -204,7 +204,7 @@ export class SubscriptionsService {
           'subscription.supreme.expires_at': expiresAt,
           'subscription.supreme.status': 'paid',
         };
-        cycle = `users/${id_user}/supreme-cycles`;
+        cycle = `supreme-cycles`;
         break;
       }
       case 'ibo': {
@@ -214,15 +214,15 @@ export class SubscriptionsService {
           'subscription.ibo.expires_at': expiresAt,
           'subscription.ibo.status': 'paid',
         };
-        cycle = `users/${id_user}/ibo-cycles`;
+        cycle = `ibo-cycles`;
         break;
       }
     }
 
     // Registrar cambios
-    await admin.doc(`users/${id_user}`).update(changes);
+    await admin.collection('users').doc(id_user).update(changes);
 
-    await admin.collection(cycle).add({
+    await admin.collection('users').doc(id_user).collection(cycle).add({
       start_at: startAt,
       expires_at: expiresAt,
     });
@@ -301,8 +301,8 @@ export class SubscriptionsService {
   }
 
   async onPaymentProMembership(id_user: string, amount_btc: number) {
-    const userDocRef = doc(db, `users/${id_user}`);
-    const data = await getDoc(userDocRef).then((r) => r.data());
+    const userDocRef = admin.collection('users').doc(id_user);
+    const data = await userDocRef.get().then((r) => r.data());
     const isNew = await this.isNewMember(id_user);
 
     /**
@@ -310,7 +310,7 @@ export class SubscriptionsService {
      * Agregar transaccion pendiente y repartir bonos despues
      */
     if (!isNew && !isExpired(data.get('subscription.pro.expires_at'))) {
-      await updateDoc(userDocRef, {
+      await userDocRef.update({
         'subscription.pro.pending_activation': {
           created_at: new Date(),
           amount: 277,
@@ -329,7 +329,8 @@ export class SubscriptionsService {
       /**
        * Las dos primeras personas de cada ciclo van al lado del derrame
        */
-      const sponsor = await getDoc(doc(db, `users/${data.sponsor_id}`));
+      const sponsorRef = admin.collection('ussers').doc(data.sponsor_id);
+      const sponsor = await sponsorRef.get();
       const sponsor_side = sponsor.get('position') ?? 'right';
       const forceDerrame =
         Number(sponsor.get('count_direct_people_this_cycle')) < 2;
@@ -340,13 +341,13 @@ export class SubscriptionsService {
          */
         if (data.position != sponsor_side) {
           finish_position = sponsor_side;
-          await updateDoc(userDocRef, {
+          await userDocRef.update({
             position: sponsor_side,
           });
         }
 
-        await updateDoc(sponsor.ref, {
-          count_direct_people_this_cycle: increment(1),
+        await sponsorRef.update({
+          count_direct_people_this_cycle: firestore.FieldValue.increment(1),
         });
       }
 
@@ -358,7 +359,7 @@ export class SubscriptionsService {
       /**
        * se setea el valor del usuario padre en el usuario que se registro
        */
-      await updateDoc(userDocRef, {
+      await userDocRef.update({
         parent_binary_user_id: binaryPosition.parent_id,
       });
 
@@ -366,12 +367,14 @@ export class SubscriptionsService {
         /**
          * se setea el valor del hijo al usuario ascendente en el binario
          */
-        await updateDoc(
-          doc(db, 'users/' + binaryPosition.parent_id),
-          finish_position == 'left'
-            ? { left_binary_user_id: id_user }
-            : { right_binary_user_id: id_user },
-        );
+        await admin
+          .collection('users')
+          .doc(binaryPosition.parent_id)
+          .update(
+            finish_position == 'left'
+              ? { left_binary_user_id: id_user }
+              : { right_binary_user_id: id_user },
+          );
       } catch (err) {
         Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);
@@ -400,7 +403,7 @@ export class SubscriptionsService {
     await this.assingMembership(id_user, 'pro');
 
     if (isNew) {
-      await updateDoc(userDocRef, {
+      await userDocRef.update({
         first_cycle_started_at: new Date(),
       });
     }
@@ -491,7 +494,7 @@ export class SubscriptionsService {
   }
 
   async insertSanguineUsers(id_user: string) {
-    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const userRef = await admin.collection('users').doc(id_user).get();
 
     const current_user = {
       id: id_user,
@@ -501,19 +504,23 @@ export class SubscriptionsService {
       position: userRef.get('position'),
     };
 
-    await setDoc(
-      doc(db, `users/${current_user.sponsor_id}/sanguine_users/${id_user}`),
-      {
-        id_user: userRef.id,
-        sponsor_id: current_user.sponsor_id,
-        is_active: current_user.is_active,
-        created_at: current_user.created_at || null,
-        position: current_user.position || null,
-      },
-      {
-        merge: true,
-      },
-    );
+    await admin
+      .collection('users')
+      .doc(current_user.sponsor_id)
+      .collection('sanguine_users')
+      .doc(id_user)
+      .set(
+        {
+          id_user: userRef.id,
+          sponsor_id: current_user.sponsor_id,
+          is_active: current_user.is_active,
+          created_at: current_user.created_at || null,
+          position: current_user.position || null,
+        },
+        {
+          merge: true,
+        },
+      );
 
     const sanguine_sponsors = await getDocs(
       query(

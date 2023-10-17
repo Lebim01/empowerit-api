@@ -14,7 +14,6 @@ import {
 import { db } from '../firebase';
 import { db as admin, auth } from '../firebase/admin';
 import * as Sentry from '@sentry/node';
-import axios from 'axios';
 
 @Injectable()
 export class UsersService {
@@ -43,7 +42,7 @@ export class UsersService {
   }
 
   async isActiveUser(id_user: string) {
-    const user = await getDoc(doc(db, `users/${id_user}`));
+    const user = await admin.collection('users').doc(id_user).get();
     const expires_at = user.get('subscription.pro.expires_at');
     const is_admin =
       Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';

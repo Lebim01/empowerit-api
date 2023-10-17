@@ -382,6 +382,27 @@ export class RanksService {
   }
 
   async getWeeks(is_report = false) {
+    const sunday_this_week = dayjs('2023-10-15 23:59:59')
+      .utcOffset(-6)
+      .hour(23)
+      .minute(59);
+    const sunday_2_weeks = sunday_this_week.subtract(1, 'week');
+    const sunday_3_weeks = sunday_this_week.subtract(2, 'week');
+    const sunday_4_weeks = sunday_this_week.subtract(3, 'week');
+    const sunday_5_weeks = sunday_this_week.subtract(4, 'week');
+    const sunday_6_weeks = sunday_this_week.subtract(5, 'week');
+
+    const dates = [
+      [sunday_4_weeks, sunday_4_weeks.add(7, 'days')],
+      [sunday_3_weeks, sunday_3_weeks.add(7, 'days')],
+      [sunday_2_weeks, sunday_2_weeks.add(7, 'days')],
+      [sunday_this_week, sunday_this_week.add(7, 'days')],
+    ];
+
+    return dates;
+  }
+
+  /*async getWeeks(is_report = false) {
     const day_of_week = dayjs().day();
     const sunday_this_week = dayjs()
       .utcOffset(-6)
@@ -415,5 +436,5 @@ export class RanksService {
     );
 
     return dates;
-  }
+  }*/
 }

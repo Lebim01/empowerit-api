@@ -12,8 +12,10 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { db as admin } from '../firebase/admin';
 import { UsersService } from '../users/users.service';
 import { ADMIN_USERS } from '../constants';
+import { firestore } from 'firebase-admin';
 
 @Injectable()
 export class BinaryService {
@@ -29,9 +31,11 @@ export class BinaryService {
 
     let next_user_id = sponsor_id;
     while (!parent_id) {
-      const sponsorData = await getDoc(doc(db, `users/${next_user_id}`)).then(
-        (r) => r.data(),
-      );
+      const sponsorData = await admin
+        .collection('users')
+        .doc(next_user_id)
+        .get()
+        .then((r) => r.data());
 
       if (sponsorData[`${position}_binary_user_id`]) {
         next_user_id = sponsorData[`${position}_binary_user_id`];
@@ -48,21 +52,22 @@ export class BinaryService {
   }
 
   async increaseUnderlinePeople(registerUserId: string) {
-    const batch = writeBatch(db);
+    const batch = admin.batch();
 
     let currentUser = registerUserId;
-    let user = await getDoc(doc(db, `users/${registerUserId}`));
+    let user = await admin.collection('users').doc(registerUserId).get();
 
     do {
-      user = await getDoc(
-        doc(db, `users/${user.get('parent_binary_user_id')}`),
-      );
-      if (user.exists()) {
+      user = await admin
+        .collection('users')
+        .doc(user.get('parent_binary_user_id'))
+        .get();
+      if (user.exists) {
         currentUser = user.id;
 
         batch.set(
           user.ref,
-          { count_underline_people: increment(1) },
+          { count_underline_people: firestore.FieldValue.increment(1) },
           { merge: true },
         );
       } else {
@@ -77,7 +82,10 @@ export class BinaryService {
   async increaseBinaryPoints(registerUserId: string) {
     const batch = writeBatch(db);
 
-    const registerUser = await getDoc(doc(db, `users/${registerUserId}`));
+    const registerUser = await admin
+      .collection('users')
+      .doc(registerUserId)
+      .get();
     let currentUser = registerUserId;
 
     do {
