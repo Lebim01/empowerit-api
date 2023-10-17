@@ -12,9 +12,12 @@ import {
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
 import dayjs from 'dayjs';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { ranks_object } from './ranks_object';
 import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
+
+dayjs.extend(weekOfYear);
 
 @Injectable()
 export class RanksService {
@@ -52,7 +55,7 @@ export class RanksService {
   async updateUserRank(id_user: string) {
     const userRef = doc(db, `users/${id_user}`);
     const user = await getDoc(userRef);
-    const rankData = await this.getRankUser(id_user);
+    const rankData = await this.getRankUser(id_user, false);
 
     const past_max_rank = ranks_object[user.get('max_rank')] || {
       order: -1,
@@ -65,6 +68,18 @@ export class RanksService {
       max_rank: is_new_max_rank ? rankData.rank_key : past_max_rank,
     });
 
+    const today = dayjs().utcOffset(-6);
+    await admin
+      .collection('ranks')
+      .doc(`${today.year()}-${today.week()}`)
+      .collection('users')
+      .doc(id_user)
+      .set({
+        past_max_rank: past_max_rank,
+        new_max_rank: current_max_rank,
+        new_rank: is_new_max_rank,
+      });
+
     if (is_new_max_rank) {
       await admin
         .collection('users')
@@ -76,7 +91,7 @@ export class RanksService {
         });
       await admin.collection('rank-promotion').add({
         id_user,
-        name: user.get('name'),
+        name: user.get('name') || '',
         created_at: new Date(),
         rank: rankData.rank_key || 'vanguard',
       });
