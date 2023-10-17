@@ -76,7 +76,8 @@ export class RanksService {
       .doc(id_user)
       .set({
         past_max_rank: past_max_rank,
-        new_max_rank: current_max_rank,
+        current_rank: current_max_rank,
+        new_max_rank: is_new_max_rank ? past_max_rank : current_max_rank,
         new_rank: is_new_max_rank,
       });
 
@@ -430,5 +431,71 @@ export class RanksService {
     );
 
     return dates;
+  }
+
+  async newRanks(
+    year: string,
+    week: string,
+    returnType: 'csv' | 'json' = 'json',
+  ) {
+    const prevWeek = (Number(week) - 1).toString();
+
+    const usersPrev = await admin
+      .collection('ranks')
+      .doc(`${year}-${prevWeek}`)
+      .collection('users')
+      .get();
+
+    const usersNew = await admin
+      .collection('ranks')
+      .doc(`${year}-${week}`)
+      .collection('users')
+      .get();
+
+    const response = [];
+
+    for (const newRank of usersNew.docs) {
+      if (
+        !['vanguard', 'scholarship'].includes(newRank.get('new_max_rank.key'))
+      ) {
+        const pastRank = usersPrev.docs.find((r) => r.id == newRank.id);
+
+        if (
+          pastRank.get('new_max_rank.key') != newRank.get('new_max_rank.key')
+        ) {
+          const user = await admin.collection('users').doc(newRank.id).get();
+          const sponsor = await admin
+            .collection('users')
+            .doc(user.get('sponsor_id'))
+            .get();
+          response.push({
+            past_rank: pastRank.get('new_max_rank.display'),
+            new_rank: newRank.get('new_max_rank.display'),
+            name: user.get('name'),
+            email: user.get('email'),
+            id: user.id,
+            sponsor: sponsor.get('name'),
+            sponsor_email: sponsor.get('email'),
+          });
+        }
+      }
+    }
+
+    return returnType == 'json'
+      ? response
+      : [
+          'ID,NOMBRE,EMAIL,PATROCINADOR,PATROCINADOR EMAIL,RANGO PASADO,NUEVO RANGO',
+          ...response.map((r) =>
+            [
+              r.id,
+              r.name,
+              r.email,
+              r.sponsor,
+              r.sponsor_email,
+              r.past_rank,
+              r.new_rank,
+            ].join(','),
+          ),
+        ].join('\n');
   }
 }
