@@ -188,6 +188,8 @@ export class SubscriptionsService {
     switch (type) {
       case 'pro': {
         changes = {
+          count_direct_people_this_cycle: 0,
+          count_scholarship_people: 0,
           'subscription.pro.payment_link': null,
           'subscription.pro.start_at': startAt,
           'subscription.pro.expires_at': expiresAt,
