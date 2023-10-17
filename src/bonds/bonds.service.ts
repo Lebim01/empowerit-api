@@ -11,6 +11,7 @@ import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from 'src/users/users.service';
 import * as Sentry from '@sentry/node';
+import { firestore } from 'firebase-admin';
 
 const messages = {
   bond_direct_level_1: 'Bono directo primer nivel',
@@ -185,7 +186,7 @@ export class BondsService {
         if (is_active) {
           const amount = 100;
           await sponsorRef.update({
-            bond_supreme_level_1: increment(amount),
+            bond_supreme_level_1: firestore.FieldValue.increment(amount),
           });
           await this.addProfitDetail(
             sponsorRef.id,
@@ -205,7 +206,7 @@ export class BondsService {
           if (is_active) {
             const amount = 50;
             await sponsorRef.update({
-              bond_supreme_level_1: increment(amount),
+              bond_supreme_level_1: firestore.FieldValue.increment(amount),
             });
             await this.addProfitDetail(
               sponsorRef.id,
@@ -226,7 +227,7 @@ export class BondsService {
           if (is_active_2) {
             const amount = 20;
             await sponsor2Ref.update({
-              bond_supreme_level_2: increment(amount),
+              bond_supreme_level_2: firestore.FieldValue.increment(amount),
             });
             await this.addProfitDetail(
               sponsor2Ref.id,
@@ -246,7 +247,7 @@ export class BondsService {
           if (is_active_3) {
             const amount = 10;
             await sponsor3Ref.update({
-              bond_supreme_level_3: increment(amount),
+              bond_supreme_level_3: firestore.FieldValue.increment(amount),
             });
             await this.addProfitDetail(
               sponsor3Ref.id,
