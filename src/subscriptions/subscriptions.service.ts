@@ -194,7 +194,7 @@ export class SubscriptionsService {
           'subscription.pro.status': 'paid',
           is_new: false,
         };
-        cycle = collection(db, `users/${id_user}/pro-cycles`);
+        cycle = `users/${id_user}/pro-cycles`;
         break;
       }
       case 'supreme': {
@@ -204,7 +204,7 @@ export class SubscriptionsService {
           'subscription.supreme.expires_at': expiresAt,
           'subscription.supreme.status': 'paid',
         };
-        cycle = collection(db, `users/${id_user}/supreme-cycles`);
+        cycle = `users/${id_user}/supreme-cycles`;
         break;
       }
       case 'ibo': {
@@ -214,15 +214,15 @@ export class SubscriptionsService {
           'subscription.ibo.expires_at': expiresAt,
           'subscription.ibo.status': 'paid',
         };
-        cycle = collection(db, `users/${id_user}/ibo-cycles`);
+        cycle = `users/${id_user}/ibo-cycles`;
         break;
       }
     }
 
     // Registrar cambios
-    await updateDoc(doc(db, `users/${id_user}`), changes);
+    await admin.doc(`users/${id_user}`).update(changes);
 
-    await addDoc(cycle, {
+    await admin.collection(cycle).add({
       start_at: startAt,
       expires_at: expiresAt,
     });
@@ -234,7 +234,7 @@ export class SubscriptionsService {
    */
   async calculateStartDate(id_user: string, type: Memberships): Promise<Date> {
     // Obtener la información del usuario
-    const userDoc = await getDoc(doc(db, `users/${id_user}`));
+    const userDoc = await admin.doc(`users/${id_user}`).get();
     const { status, expires_at } = userDoc.data().subscription[type];
 
     // Obtener fecha de inicio
@@ -286,7 +286,7 @@ export class SubscriptionsService {
   }
 
   async isNewMember(id_user: string) {
-    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const userRef = await admin.doc(`users/${id_user}`).get();
     const isNew = Boolean(userRef.get('is_new')) ?? false;
     return isNew;
   }

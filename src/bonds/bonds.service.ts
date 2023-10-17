@@ -8,6 +8,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { db as admin } from '../firebase/admin';
 import { UsersService } from 'src/users/users.service';
 import * as Sentry from '@sentry/node';
 
@@ -156,7 +157,7 @@ export class BondsService {
   }
 
   async execSupremeBond(id_user: string) {
-    const userRef = await getDoc(doc(db, `users/${id_user}`));
+    const userRef = await admin.collection('users').doc(id_user).get();
 
     // Comprobar que el usuario tenga sponsor
     const id_sponsor = userRef.get('sponsor_id');
@@ -168,8 +169,9 @@ export class BondsService {
       return;
     }
 
-    const sponsorRef = await getDoc(doc(db, `users/${id_sponsor}`));
-    const sequence = Number(sponsorRef.get('supreme_sequence') ?? 0);
+    const sponsorRef = admin.collection('users').doc(id_sponsor);
+    const sponsor = await sponsorRef.get();
+    const sequence = Number(sponsor.get('supreme_sequence') ?? 0);
 
     let nextBond = sequence + 1;
     if (nextBond > 3) {
@@ -178,13 +180,11 @@ export class BondsService {
 
     switch (nextBond) {
       case 1:
-        const is_active = await this.userService.isSupremeActive(
-          sponsorRef.ref.id,
-        );
+        const is_active = await this.userService.isSupremeActive(sponsor.id);
         // El usuario debe ser supreme tambien
         if (is_active) {
           const amount = 100;
-          await updateDoc(sponsorRef.ref, {
+          await sponsorRef.update({
             bond_supreme_level_1: increment(amount),
           });
           await this.addProfitDetail(
@@ -199,12 +199,12 @@ export class BondsService {
       case 3:
         try {
           const is_active = await this.userService.isSupremeActive(
-            sponsorRef.ref.id,
+            sponsorRef.id,
           );
           // El usuario debe ser supreme tambien
           if (is_active) {
             const amount = 50;
-            await updateDoc(sponsorRef.ref, {
+            await sponsorRef.update({
               bond_supreme_level_1: increment(amount),
             });
             await this.addProfitDetail(
@@ -215,40 +215,41 @@ export class BondsService {
             );
           }
 
-          const sponsor2 = await getDoc(
-            doc(db, `users/${sponsorRef.get('sponsor_id')}`),
-          );
+          const sponsor2Ref = admin
+            .collection('users')
+            .doc(sponsor.get('sponsor_id'));
+          const sponsor2 = await sponsor2Ref.get();
           const is_active_2 = await this.userService.isSupremeActive(
-            sponsor2.id,
+            sponsor2Ref.id,
           );
           // El usuario debe ser supreme tambien
           if (is_active_2) {
             const amount = 20;
-            await updateDoc(sponsor2.ref, {
+            await sponsor2Ref.update({
               bond_supreme_level_2: increment(amount),
             });
             await this.addProfitDetail(
-              sponsor2.id,
+              sponsor2Ref.id,
               'bond_supreme_level_2',
               amount,
               userRef.id,
             );
           }
 
-          const sponsor3 = await getDoc(
-            doc(db, `users/${sponsor2.get('sponsor_id')}`),
-          );
+          const sponsor3Ref = admin
+            .collection('users')
+            .doc(sponsor2.get('sponsor_id'));
           const is_active_3 = await this.userService.isSupremeActive(
-            sponsor3.id,
+            sponsor3Ref.id,
           );
           // El usuario debe ser supreme tambien
           if (is_active_3) {
             const amount = 10;
-            await updateDoc(sponsor3.ref, {
+            await sponsor3Ref.update({
               bond_supreme_level_3: increment(amount),
             });
             await this.addProfitDetail(
-              sponsor3.id,
+              sponsor3Ref.id,
               'bond_supreme_level_3',
               amount,
               userRef.id,
@@ -266,7 +267,7 @@ export class BondsService {
         break;
     }
 
-    await updateDoc(sponsorRef.ref, {
+    await sponsorRef.update({
       supreme_sequence: nextBond,
     });
   }
