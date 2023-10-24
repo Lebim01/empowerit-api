@@ -117,6 +117,8 @@ export class RanksService {
       rankData.sanguinea,
       rankData.derrame,
     );
+
+    return rankData;
   }
 
   async getRankUser(userId: string, is_report = false) {
@@ -133,11 +135,6 @@ export class RanksService {
         collection(db, `users/${user.id}/sanguine_users`),
         where('created_at', '>=', start.toDate()),
         where('created_at', '<=', end.toDate()),
-        where(
-          'created_at',
-          '>=',
-          dayjs('2023-09-01 00:00:01').utcOffset(-6).toDate(),
-        ),
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
@@ -198,7 +195,6 @@ export class RanksService {
         where('created_at', '>=', start.toDate()),
         where('created_at', '<=', end.toDate()),
         where('sponsor_id', '==', id),
-        where('created_at', '>=', dayjs('2023-09-01 06:00:01').toDate()),
       );
 
       /* Obtener el total de usuarios que pertenecen al usuario en turno del */
@@ -226,7 +222,6 @@ export class RanksService {
         subCollectionRefpayroll,
         where('created_at', '>=', start.toDate()),
         where('created_at', '<=', end.toDate()),
-        where('created_at', '>=', dayjs('2023-09-01 00:00:01').toDate()),
       );
 
       // Obtén los documentos de la subcolección
@@ -408,8 +403,9 @@ export class RanksService {
   }
 
   async getWeeks(is_report = false) {
-    const day_of_week = dayjs().day();
-    const sunday_this_week = dayjs()
+    const today = dayjs();
+    const day_of_week = today.day();
+    const sunday_this_week = today
       .utcOffset(-6)
       .subtract(day_of_week == 0 || day_of_week == 1 ? 1 : 0, 'day')
       .startOf('week')

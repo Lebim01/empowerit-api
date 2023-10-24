@@ -32,4 +32,9 @@ export class RanksController {
   ) {
     return await this.ranksService.newRanks(year, week, type);
   }
+
+  @Get('weeks')
+  async weeks() {
+    return this.ranksService.getWeeks(false);
+  }
 }
