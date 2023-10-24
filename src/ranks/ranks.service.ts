@@ -56,6 +56,7 @@ export class RanksService {
     const userRef = doc(db, `users/${id_user}`);
     const user = await getDoc(userRef);
     const rankData = await this.getRankUser(id_user, false);
+    const weeks = await this.getWeeks(false);
 
     const past_max_rank = ranks_object[user.get('max_rank')] || {
       order: -1,
@@ -69,6 +70,15 @@ export class RanksService {
     });
 
     const today = dayjs().utcOffset(-6);
+    await admin
+      .collection('ranks')
+      .doc(`${today.year()}-${today.week()}`)
+      .set({
+        week_1: [weeks[3][0].toDate(), weeks[4][1].toDate()],
+        week_2: [weeks[3][0].toDate(), weeks[4][1].toDate()],
+        week_3: [weeks[3][0].toDate(), weeks[4][1].toDate()],
+        week_4: [weeks[3][0].toDate(), weeks[4][1].toDate()],
+      });
     await admin
       .collection('ranks')
       .doc(`${today.year()}-${today.week()}`)
