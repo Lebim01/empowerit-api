@@ -74,10 +74,10 @@ export class RanksService {
       .collection('ranks')
       .doc(`${today.year()}-${today.week()}`)
       .set({
-        week_1: [weeks[3][0].toDate(), weeks[4][1].toDate()],
-        week_2: [weeks[3][0].toDate(), weeks[4][1].toDate()],
-        week_3: [weeks[3][0].toDate(), weeks[4][1].toDate()],
-        week_4: [weeks[3][0].toDate(), weeks[4][1].toDate()],
+        week_1: [weeks[3][0].toDate(), weeks[3][1].toDate()],
+        week_2: [weeks[2][0].toDate(), weeks[2][1].toDate()],
+        week_3: [weeks[1][0].toDate(), weeks[1][1].toDate()],
+        week_4: [weeks[0][0].toDate(), weeks[0][1].toDate()],
       });
     await admin
       .collection('ranks')
