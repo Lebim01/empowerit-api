@@ -18,6 +18,12 @@ export class AdminService {
     const docs = users.docs.map((r) => ({ id: r.id, ...r.data() }));
 
     const payroll_data = docs
+      .filter((docData: any) => {
+        // los STARTER no cobran
+        const is_starter =
+          docData.subscription?.starter?.status == 'paid' || false;
+        return !is_starter;
+      })
       .map((docData: any) => {
         const isAdmin =
           Boolean(docData.is_admin) || docData.type == 'top-lider';

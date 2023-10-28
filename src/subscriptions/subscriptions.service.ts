@@ -177,10 +177,14 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingMembership(id_user: string, type: Memberships) {
+  async assingMembership(id_user: string, type: Memberships, days?: number) {
     // Obtener fechas
     const startAt: Date = await this.calculateStartDate(id_user, type);
-    const expiresAt: Date = await this.calculateExpirationDate(id_user, type);
+    const expiresAt: Date = await this.calculateExpirationDate(
+      id_user,
+      type,
+      days,
+    );
 
     // Generar objeto con cambios a registrar
     let changes = {};
@@ -242,10 +246,8 @@ export class SubscriptionsService {
     // Obtener fecha de inicio
     let date: dayjs.Dayjs;
     if (status && status == 'paid') {
-      console.log('Entro bien');
       date = dayjs((expires_at?.seconds || 0) * 1000 || new Date());
     } else {
-      console.log('Entro donde no deberia');
       date = dayjs();
     }
 
@@ -259,23 +261,32 @@ export class SubscriptionsService {
   async calculateExpirationDate(
     id_user: string,
     type: Memberships,
+    customDays?: number,
   ): Promise<Date> {
-    // Obtener los días de membresia.
     let days = 0;
-    switch (type) {
-      case 'pro': {
-        const isNew = await this.isNewMember(id_user);
-        days = isNew ? 56 : 28;
-        break;
+
+    if (!customDays) {
+      switch (type) {
+        case 'pro': {
+          const isNew = await this.isNewMember(id_user);
+          days = isNew ? 56 : 28;
+          break;
+        }
+        case 'supreme': {
+          days = 168;
+          break;
+        }
+        case 'ibo': {
+          days = 112;
+          break;
+        }
+        case 'starter': {
+          days = 28;
+          break;
+        }
       }
-      case 'supreme': {
-        days = 168;
-        break;
-      }
-      case 'ibo': {
-        days = 112;
-        break;
-      }
+    } else {
+      days = customDays;
     }
 
     // Obtener la fecha de expiración
@@ -300,6 +311,13 @@ export class SubscriptionsService {
   async onPaymentSupremeMembership(id_user: string) {
     await this.assingMembership(id_user, 'supreme');
     await this.bondService.execSupremeBond(id_user);
+  }
+
+  async onPaymentStarterMembership(id_user: string) {
+    await this.assingMembership(id_user, 'starter');
+
+    const customIBODays = 56;
+    await this.assingMembership(id_user, 'ibo', customIBODays);
   }
 
   async onPaymentProMembership(id_user: string, amount_btc: number) {
