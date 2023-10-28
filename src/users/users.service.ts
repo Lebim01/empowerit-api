@@ -41,9 +41,21 @@ export class UsersService {
       : false;
   }
 
-  async isActiveUser(id_user: string) {
+  async isProActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
     const expires_at = user.get('subscription.pro.expires_at');
+    const is_admin =
+      Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
+    return is_admin
+      ? true
+      : expires_at
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
+  }
+
+  async isStarterActiveUser(id_user: string) {
+    const user = await admin.collection('users').doc(id_user).get();
+    const expires_at = user.get('subscription.starter.expires_at');
     const is_admin =
       Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
     return is_admin

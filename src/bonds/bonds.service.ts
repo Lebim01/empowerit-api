@@ -24,6 +24,7 @@ const messages = {
   bond_scholarship_level_1: 'Bono beca primer nivel',
   bond_scholarship_level_2: 'Bono beca segundo nivel',
   bond_scholarship_level_3: 'Bono beca tercer nivel',
+  bond_direct_starter_level_1: 'Bono directo starter primer nivel',
 };
 type Messages = typeof messages;
 type Types = keyof Messages;
@@ -44,11 +45,14 @@ export class BondsService {
 
     // primer nivel
     if (sponsor) {
-      const isActive = await this.userService.isActiveUser(sponsor_id);
+      const isStarterActive = await this.userService.isStarterActiveUser(
+        sponsor_id,
+      );
+      const isProActive = await this.userService.isProActiveUser(sponsor_id);
       const isIBOActive = await this.userService.isIBOActive(sponsor_id);
-      const amount = sponsor && sponsor.sponsor_id ? 50 : 60;
+      const amount = 50;
 
-      if (isActive && isIBOActive) {
+      if ((isStarterActive || isProActive) && isIBOActive) {
         await updateDoc(sponsorRef, {
           bond_direct: increment(amount),
         });
@@ -71,7 +75,7 @@ export class BondsService {
     // segundo nivel
     if (sponsor && sponsor.sponsor_id) {
       const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
-      const isActive = await this.userService.isActiveUser(sponsor2Ref.id);
+      const isActive = await this.userService.isProActiveUser(sponsor2Ref.id);
       const isIBOActive = await this.userService.isIBOActive(sponsor2Ref.id);
       const amount = 10;
 
@@ -105,11 +109,11 @@ export class BondsService {
 
     // primer nivel
     if (sponsor) {
-      const isActive = await this.userService.isActiveUser(sponsorRef.id);
+      const isProActive = await this.userService.isProActiveUser(sponsorRef.id);
       const isIBOActive = await this.userService.isIBOActive(sponsorRef.id);
       const amount = sponsor && sponsor.sponsor_id ? 30 : 50;
 
-      if (isActive && isIBOActive) {
+      if (isProActive && isIBOActive) {
         await updateDoc(sponsorRef, {
           bond_residual_level_1: increment(amount),
         });
@@ -132,7 +136,7 @@ export class BondsService {
     // segundo nivel
     if (sponsor && sponsor.sponsor_id) {
       const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
-      const isActive = await this.userService.isActiveUser(sponsor2Ref.id);
+      const isActive = await this.userService.isProActiveUser(sponsor2Ref.id);
       const isIBOActive = await this.userService.isIBOActive(sponsor2Ref.id);
       const amount = 20;
 
@@ -273,22 +277,63 @@ export class BondsService {
     });
   }
 
+  async execStarterBond(registerUserId: string) {
+    const user = await admin.collection('users').doc(registerUserId).get();
+
+    const sponsor_id = user.get('sponsor_id');
+    const sponsorRef = admin.collection('users').doc(sponsor_id);
+    const sponsor = await sponsorRef.get().then((r) => r.data());
+
+    // primer nivel
+    if (sponsor) {
+      const isStarterActive = await this.userService.isStarterActiveUser(
+        sponsor_id,
+      );
+      const isProActive = await this.userService.isProActiveUser(sponsor_id);
+      const isIBOActive = await this.userService.isIBOActive(sponsor_id);
+      const amount = 20;
+
+      if ((isProActive || isStarterActive) && isIBOActive) {
+        await sponsorRef.update({
+          bond_direct: firestore.FieldValue.increment(amount),
+        });
+        await this.addProfitDetail(
+          sponsorRef.id,
+          'bond_direct_starter_level_1',
+          amount,
+          user.id,
+        );
+      } else {
+        await this.addLostProfit(
+          sponsorRef.id,
+          'bond_direct_starter_level_1',
+          amount,
+          user.id,
+        );
+      }
+    }
+  }
+
   async addProfitDetail(
     id_user: string,
     type: Types,
     amount: number,
     registerUserId: string,
   ) {
-    const userRef = await getDoc(doc(db, `users/${registerUserId}`));
+    const userRef = await admin.collection('users').doc(registerUserId).get();
     const user_name = userRef.get('name');
-    await addDoc(collection(db, `users/${id_user}/profits_details`), {
-      description: messages[type],
-      id_user: registerUserId,
-      user_name,
-      amount,
-      created_at: new Date(),
-      type,
-    });
+    await admin
+      .collection('users')
+      .doc(id_user)
+      .collection('profits_details')
+      .add({
+        description: messages[type],
+        id_user: registerUserId,
+        user_name,
+        amount,
+        created_at: new Date(),
+        type,
+      });
   }
 
   async addLostProfit(
@@ -297,15 +342,19 @@ export class BondsService {
     amount: number,
     registerUserId: string,
   ) {
-    const userRef = await getDoc(doc(db, `users/${registerUserId}`));
+    const userRef = await admin.collection('users').doc(registerUserId).get();
     const user_name = userRef.get('name');
-    await addDoc(collection(db, `users/${id_user}/lost_profits`), {
-      description: 'Has perdido un bono por membresia inactiva',
-      id_user: registerUserId,
-      user_name,
-      amount,
-      created_at: new Date(),
-      type,
-    });
+    await admin
+      .collection('users')
+      .doc(id_user)
+      .collection('lost_profits')
+      .add({
+        description: 'Has perdido un bono por membresia inactiva',
+        id_user: registerUserId,
+        user_name,
+        amount,
+        created_at: new Date(),
+        type,
+      });
   }
 }

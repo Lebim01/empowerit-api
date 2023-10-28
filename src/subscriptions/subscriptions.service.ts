@@ -315,6 +315,7 @@ export class SubscriptionsService {
 
   async onPaymentStarterMembership(id_user: string) {
     await this.assingMembership(id_user, 'starter');
+    await this.bondService.execStarterBond(id_user);
 
     const customIBODays = 56;
     await this.assingMembership(id_user, 'ibo', customIBODays);
