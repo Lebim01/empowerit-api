@@ -39,8 +39,8 @@ export class SubscriptionsService {
 
   async createPaymentAddress(id_user: string, type: Memberships) {
     // Obtener datos del usuario
-    const userRef = await getDoc(doc(db, `users/${id_user}`));
-    const userData = userRef.data();
+    const userRef = admin.collection('users').doc(id_user);
+    const userData = await userRef.get().then((r) => r.data());
     let address = '';
     let referenceId = '';
 
@@ -91,7 +91,7 @@ export class SubscriptionsService {
     };
 
     // Guardar payment_link
-    await updateDoc(userRef.ref, {
+    await userRef.update({
       [`subscription.${type}.payment_link`]: payment_link,
     });
 
@@ -105,8 +105,8 @@ export class SubscriptionsService {
 
   async createPaymentAddressPack(id_user: string, type: 'pro+supreme') {
     // Obtener datos del usuario
-    const userRef = await getDoc(doc(db, `users/${id_user}`));
-    const userData = userRef.data();
+    const userRef = admin.collection('users').doc(id_user);
+    const userData = await userRef.get().then((r) => r.data());
     let address = '';
     let referenceId = '';
 
@@ -152,7 +152,7 @@ export class SubscriptionsService {
     };
 
     // Guardar payment_link
-    await updateDoc(userRef.ref, {
+    await userRef.update({
       [`payment_link.${type}`]: payment_link,
     });
 
@@ -165,9 +165,21 @@ export class SubscriptionsService {
   }
 
   async isActiveUser(id_user: string) {
-    const user = await getDoc(doc(db, 'users/' + id_user));
+    const user = await admin.collection('users').doc(id_user).get();
     const expires_at = user.get('subscription.pro.expires_at');
 
+    const is_admin =
+      Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
+    return is_admin
+      ? true
+      : expires_at
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
+  }
+
+  async isStarterActiveUser(id_user: string) {
+    const user = await admin.collection('users').doc(id_user).get();
+    const expires_at = user.get('subscription.starter.expires_at');
     const is_admin =
       Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
     return is_admin
@@ -683,6 +695,24 @@ export class SubscriptionsService {
       await _doc.ref.update({
         [`subscription.pro.status`]: 'paid',
       });
+    }
+  }
+
+  async starterActivatePro(id_user: string) {
+    const user = await admin.collection('users').doc(id_user).get();
+    const isStarter = await this.isStarterActiveUser(id_user);
+    const profits = Number(user.get('profits'));
+
+    if (isStarter && profits > 177) {
+      const btc_amount = await this.cryptoapisService.getBTCExchange(177);
+      await user.ref.update({
+        profits: 0,
+        'subscription.starter.status': null,
+        'subscription.starter.expires_at': null,
+        'subscription.starter.start_at': null,
+      });
+      await this.bondService.resetUserProfits(id_user);
+      await this.onPaymentProMembership(id_user, btc_amount);
     }
   }
 }

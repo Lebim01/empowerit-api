@@ -295,7 +295,7 @@ export class BondsService {
 
       if ((isProActive || isStarterActive) && isIBOActive) {
         await sponsorRef.update({
-          bond_direct: firestore.FieldValue.increment(amount),
+          bond_direct_starter_level_1: firestore.FieldValue.increment(amount),
         });
         await this.addProfitDetail(
           sponsorRef.id,
@@ -356,5 +356,21 @@ export class BondsService {
         created_at: new Date(),
         type,
       });
+  }
+
+  async resetUserProfits(id_user: string) {
+    await admin.collection('users').doc(id_user).update({
+      bond_direct: 0,
+      bond_direct_second_level: 0,
+      bond_residual_level_1: 0,
+      bond_residual_level_2: 0,
+      bond_supreme_level_1: 0,
+      bond_supreme_level_2: 0,
+      bond_supreme_level_3: 0,
+      bond_scholarship_level_1: 0,
+      bond_scholarship_level_2: 0,
+      bond_scholarship_level_3: 0,
+      bond_direct_starter_level_1: 0,
+    });
   }
 }

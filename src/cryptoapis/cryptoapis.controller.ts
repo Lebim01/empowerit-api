@@ -26,6 +26,7 @@ const QUEUE_NAMES = {
   pro: 'payment-membership-pro',
   ibo: 'payment-membership-ibo',
   supreme: 'payment-membership-supreme',
+  starter: 'payment-membership-starter',
   'pro+supreme': 'payment-membership-prosupreme',
 };
 
@@ -144,6 +145,12 @@ export class CryptoapisController {
             }
             case 'supreme': {
               await this.subscriptionService.onPaymentSupremeMembership(
+                userDoc.id,
+              );
+              break;
+            }
+            case 'starter': {
+              await this.subscriptionService.onPaymentStarterMembership(
                 userDoc.id,
               );
               break;

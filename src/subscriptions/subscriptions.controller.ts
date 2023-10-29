@@ -54,4 +54,9 @@ export class SubscriptionsController {
     }
     return new HttpException('Tipo invalido', 404);
   }
+
+  @Post('starterActivatePro')
+  async starterActivatePro(@Body() body) {
+    return this.subscriptionService.starterActivatePro(body.user_id);
+  }
 }
