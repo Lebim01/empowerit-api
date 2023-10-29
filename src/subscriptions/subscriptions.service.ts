@@ -311,7 +311,7 @@ export class SubscriptionsService {
   }
 
   async isNewMember(id_user: string) {
-    const userRef = await admin.doc(`users/${id_user}`).get();
+    const userRef = await admin.collection('users').doc(id_user).get();
     const isNew = Boolean(userRef.get('is_new')) ?? false;
     return isNew;
   }
