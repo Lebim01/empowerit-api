@@ -335,7 +335,7 @@ export class SubscriptionsService {
 
   async onPaymentProMembership(id_user: string, amount_btc: number) {
     const userDocRef = admin.collection('users').doc(id_user);
-    const data = await userDocRef.get().then((r) => r.data());
+    const data = await userDocRef.get();
     const isNew = await this.isNewMember(id_user);
 
     /**
@@ -356,13 +356,13 @@ export class SubscriptionsService {
     /**
      * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
-    if (!data.parent_binary_user_id) {
-      let finish_position = data.position;
+    if (!data.get('parent_binary_user_id')) {
+      let finish_position = data.get('position');
 
       /**
        * Las dos primeras personas de cada ciclo van al lado del derrame
        */
-      const sponsorRef = admin.collection('ussers').doc(data.sponsor_id);
+      const sponsorRef = admin.collection('ussers').doc(data.get('sponsor_id'));
       const sponsor = await sponsorRef.get();
       const sponsor_side = sponsor.get('position') ?? 'right';
       const forceDerrame =
@@ -372,7 +372,7 @@ export class SubscriptionsService {
         /**
          * Nos quiso hackear, y forzamos el lado correcto
          */
-        if (data.position != sponsor_side) {
+        if (data.get('position') != sponsor_side) {
           finish_position = sponsor_side;
           await userDocRef.update({
             position: sponsor_side,
@@ -385,7 +385,7 @@ export class SubscriptionsService {
       }
 
       const binaryPosition = await this.binaryService.calculatePositionOfBinary(
-        data.sponsor_id,
+        data.get('sponsor_id'),
         finish_position,
       );
 
@@ -459,7 +459,7 @@ export class SubscriptionsService {
       }
     }
 
-    const sponsorRef = await getDoc(doc(db, `users/${data.sponsor_id}`));
+    const sponsorRef = await getDoc(doc(db, `users/${data.get('sponsor_id')}`));
     const sponsorHasScholapship =
       Boolean(sponsorRef.get('has_scholarship')) ?? false;
 
