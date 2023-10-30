@@ -107,7 +107,7 @@ export class BinaryService {
         currentUser = user.id;
 
         // solo se suman puntos si el usuario esta activo
-        const isActive = await this.userService.isActiveUser(user.id);
+        const isActive = await this.userService.isProActiveUser(user.id);
         const isIBOActive = await this.userService.isIBOActive(user.id);
 
         if (isActive && isIBOActive) {
