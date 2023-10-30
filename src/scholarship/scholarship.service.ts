@@ -15,11 +15,13 @@ import { db as admin } from '../firebase/admin';
 import dayjs from 'dayjs';
 import { BondsService } from '../bonds/bonds.service';
 import { UsersService } from '../users/users.service';
+import { BinaryService } from 'src/binary/binary.service';
 
 @Injectable()
 export class ScholarshipService {
   constructor(
     private readonly bondService: BondsService,
+    private readonly binaryService: BinaryService,
     private readonly userService: UsersService,
   ) {}
 
@@ -149,6 +151,7 @@ export class ScholarshipService {
 
     if (sponsor.get('has_scholarship')) {
       await this.bondService.execUserResidualBond(user.get('sponsor_id'));
+      await this.binaryService.increaseBinaryPoints(idUser);
     } else {
       await this.addDirectPeople(user.get('sponsor_id'), idUser);
     }
