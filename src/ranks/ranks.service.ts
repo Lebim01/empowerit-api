@@ -404,10 +404,9 @@ export class RanksService {
 
   async getWeeks(is_report = false) {
     const today = dayjs();
-    const day_of_week = today.day();
     const sunday_this_week = today
       .utcOffset(-6)
-      .subtract(day_of_week == 0 || day_of_week == 1 ? 1 : 0, 'day')
+      .subtract(1, 'day')
       .startOf('week')
       .hour(23)
       .minute(59);

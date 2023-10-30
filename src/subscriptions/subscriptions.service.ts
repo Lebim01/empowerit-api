@@ -353,6 +353,8 @@ export class SubscriptionsService {
       return;
     }
 
+    const sponsor_is_starter = this.isStarterActiveUser(data.get('sponsor_id'));
+
     /**
      * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
@@ -366,7 +368,8 @@ export class SubscriptionsService {
       const sponsor = await sponsorRef.get();
       const sponsor_side = sponsor.get('position') ?? 'right';
       const forceDerrame =
-        Number(sponsor.get('count_direct_people_this_cycle')) < 2;
+        Number(sponsor.get('count_direct_people_this_cycle')) < 2 ||
+        sponsor_is_starter;
 
       if (forceDerrame) {
         /**
@@ -474,9 +477,10 @@ export class SubscriptionsService {
     }
 
     /**
-     * Si el sponsor no esta becado le cuenta para la beca
+     * Si el sponsor no esta becado le cuenta para la beca y no reparte los bonos
+     * Si el sponsor es starter no se puede becar
      */
-    if (!sponsorHasScholapship) {
+    if (!sponsorHasScholapship && !sponsor_is_starter) {
       await this.scholarshipService.addDirectPeople(sponsorRef.id, id_user);
 
       /**

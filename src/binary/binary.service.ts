@@ -2,13 +2,11 @@ import { Injectable } from '@nestjs/common';
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   query,
   writeBatch,
   or,
   where,
-  increment,
   orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -107,10 +105,10 @@ export class BinaryService {
         currentUser = user.id;
 
         // solo se suman puntos si el usuario esta activo
-        const isActive = await this.userService.isProActiveUser(user.id);
+        const isProActive = await this.userService.isProActiveUser(user.id);
         const isIBOActive = await this.userService.isIBOActive(user.id);
 
-        if (isActive && isIBOActive) {
+        if (isProActive && isIBOActive) {
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
             position == 'left' ? 'left-points' : 'right-points';
