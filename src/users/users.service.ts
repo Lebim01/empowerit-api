@@ -530,14 +530,4 @@ export class UsersService {
     });
     return response;
   }
-
-  async fix() {
-    const users = await admin
-      .collectionGroup('profits_details')
-      .where('created_at', '>=', dayjs('2023-10-29 00:00:00').toDate())
-      .where('type', '==', 'bond_residual_level_1')
-      .get();
-
-    console.log(users.size);
-  }
 }

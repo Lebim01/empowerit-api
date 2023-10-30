@@ -39,9 +39,4 @@ export class UsersController {
   changeEmail(@Body() payload) {
     return this.usersService.changeEmail(payload.from, payload.to);
   }
-
-  @Get('fix')
-  fix() {
-    return this.usersService.fix();
-  }
 }
