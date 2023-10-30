@@ -11,6 +11,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { db as admin } from '../firebase/admin';
 import dayjs from 'dayjs';
 import { BondsService } from '../bonds/bonds.service';
 import { UsersService } from '../users/users.service';
@@ -140,7 +141,18 @@ export class ScholarshipService {
       is_new: false,
     };
     await updateDoc(docRef, scholarship);
-    await this.bondService.execUserResidualBond(user.get('sponsor_id'));
+
+    const sponsor = await admin
+      .collection('users')
+      .doc(user.get('sponsor_id'))
+      .get();
+
+    if (sponsor.get('has_scholarship')) {
+      await this.bondService.execUserResidualBond(user.get('sponsor_id'));
+    } else {
+      await this.addDirectPeople(user.get('sponsor_id'), idUser);
+    }
+
     await this.userService.restartCycle(user.id);
     await addDoc(collection(db, 'scholarship_activations'), {
       id_user: user.id,
