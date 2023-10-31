@@ -16,7 +16,6 @@ import dayjs from 'dayjs';
 import { BondsService } from '../bonds/bonds.service';
 import { UsersService } from '../users/users.service';
 import { BinaryService } from 'src/binary/binary.service';
-import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 
 @Injectable()
 export class ScholarshipService {
@@ -24,7 +23,6 @@ export class ScholarshipService {
     private readonly bondService: BondsService,
     private readonly binaryService: BinaryService,
     private readonly userService: UsersService,
-    private readonly subscriptionService: SubscriptionsService,
   ) {}
 
   async isActiveUser(id_user: string) {
@@ -140,10 +138,17 @@ export class ScholarshipService {
       return 'El usuario Es admin';
     }
 
-    await this.subscriptionService.assingMembership(idUser, 'pro');
+    const initialDate = dayjs().toDate();
+    const finalDate = dayjs()
+      .add(user.data().is_new ? 56 : 28, 'days')
+      .toDate();
     const scholarship = {
       has_scholarship: false,
       count_scholarship_people: 0,
+      'subscription.pro.start_at': initialDate,
+      'subscription.pro.expires_at': finalDate,
+      'subscription.pro.status': 'paid',
+      is_new: false,
     };
     await updateDoc(docRef, scholarship);
     await admin.collection('users').doc(idUser).collection('pro-cycles').add({
@@ -166,6 +171,8 @@ export class ScholarshipService {
     await this.userService.restartCycle(user.id);
     await addDoc(collection(db, 'scholarship_activations'), {
       id_user: user.id,
+      start_at: initialDate,
+      expires_at: finalDate,
       created_at: new Date(),
     });
     return 'Se utilizo la beca';
