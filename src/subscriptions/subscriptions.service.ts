@@ -364,7 +364,7 @@ export class SubscriptionsService {
       /**
        * Las dos primeras personas de cada ciclo van al lado del derrame
        */
-      const sponsorRef = admin.collection('ussers').doc(data.get('sponsor_id'));
+      const sponsorRef = admin.collection('users').doc(data.get('sponsor_id'));
       const sponsor = await sponsorRef.get();
       const sponsor_side = sponsor.get('position') ?? 'right';
       const forceDerrame =
