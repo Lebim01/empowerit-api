@@ -86,6 +86,14 @@ export class ScholarshipService {
     await updateDoc(docRef, { count_scholarship_people: directPeopleCount });
 
     if (directPeopleCount >= 2) {
+      await addDoc(collection(db, `users/${sponsorId}/profits_details`), {
+        amount: 0,
+        created_at: new Date(),
+        description: 'Cuenta para Beca',
+        id_user: registerUserId,
+        type: 'bond_scholarship_level_1',
+        user_name: user.get('name') || '',
+      });
       await this.assingScholarship(sponsorId);
       await this.distributeBond(sponsorId, registerUserId);
       return true;
