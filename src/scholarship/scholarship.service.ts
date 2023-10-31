@@ -151,6 +151,10 @@ export class ScholarshipService {
       is_new: false,
     };
     await updateDoc(docRef, scholarship);
+    await admin.collection('users').doc(idUser).collection('pro-cycles').add({
+      start_at: initialDate,
+      expires_at: finalDate,
+    });
 
     const sponsor = await admin
       .collection('users')
