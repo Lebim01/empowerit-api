@@ -44,6 +44,11 @@ export class SubscriptionsController {
     return this.subscriptionService.createPaymentAddress(body.userId, 'ibo');
   }
 
+  @Post('createPaymentAddress/starter')
+  async createPaymentAddressStarter(@Body() body) {
+    return this.subscriptionService.createPaymentAddress(body.userId, 'starter');
+  }
+
   @Post('createPaymentAddressPack')
   async createPaymentAddressPack(@Body() body) {
     if (body.type == 'pro+supreme') {
