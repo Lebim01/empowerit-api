@@ -73,6 +73,7 @@ export class SubscriptionsService {
       supreme: 100,
       pro: 177,
       ibo: 30,
+      starter: 50,
     };
     const amount: any = await this.cryptoapisService.getBTCExchange(
       amount_type[type],
