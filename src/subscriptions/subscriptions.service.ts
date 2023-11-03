@@ -73,6 +73,7 @@ export class SubscriptionsService {
       supreme: 100,
       pro: 177,
       ibo: 30,
+      starter: 50,
     };
     const amount: any = await this.cryptoapisService.getBTCExchange(
       amount_type[type],
@@ -233,6 +234,16 @@ export class SubscriptionsService {
           'subscription.ibo.status': 'paid',
         };
         cycle = `ibo-cycles`;
+        break;
+      }
+      case 'starter': {
+        changes = {
+          'subscription.starter.payment_link': null,
+          'subscription.starter.start_at': startAt,
+          'subscription.starter.expires_at': expiresAt,
+          'subscription.starter.status': 'paid',
+        };
+        cycle = `starter-cycles`;
         break;
       }
     }
