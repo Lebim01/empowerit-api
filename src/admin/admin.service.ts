@@ -3,6 +3,8 @@ import { db } from '../firebase/admin';
 import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { ranks_object } from '../ranks/ranks_object';
 import { BinaryService } from '../binary/binary.service';
+import dayjs from 'dayjs';
+import { firestore } from 'firebase-admin';
 
 const ADMIN_BINARY_PERCENT = 17 / 100;
 
@@ -181,5 +183,66 @@ export class AdminService {
 
   withdraw(address: string, amount: string) {
     return this.cryptoapisService.withdraw(address, amount);
+  }
+
+  async regresardinero() {
+    const snap = await db
+      .collectionGroup('payroll')
+      .where('created_at', '>=', dayjs('2023-10-29 00:00:00').toDate())
+      .get();
+
+    for (const doc of snap.docs) {
+      if (doc.ref.path.includes('users')) {
+        const get_bonds = (doc) => ({
+          bond_direct: doc.get('direct'),
+          bond_direct_second_level: doc.get('direct_second_level'),
+          bond_residual_level_1: doc.get('residual'),
+          bond_residual_level_2: doc.get('residual_second_level'),
+          bond_scholarship_level_1: doc.get('scholarship'),
+          bond_scholarship_level_2: doc.get('scholarship_second_level'),
+          bond_scholarship_level_3: doc.get('scholarship_third_level'),
+          bond_supreme_level_1: doc.get('supreme'),
+          bond_supreme_level_2: doc.get('supreme_second_level'),
+          bond_supreme_level_3: doc.get('supreme_third_level'),
+        });
+
+        const bonds = get_bonds(doc);
+
+        console.log(doc.ref.parent.parent.id, bonds);
+
+        await doc.ref.parent.parent.update({
+          bond_direct: firestore.FieldValue.increment(bonds.bond_direct),
+          bond_direct_second_level: firestore.FieldValue.increment(
+            bonds.bond_direct_second_level,
+          ),
+          bond_residual_level_1: firestore.FieldValue.increment(
+            bonds.bond_residual_level_1,
+          ),
+          bond_residual_level_2: firestore.FieldValue.increment(
+            bonds.bond_residual_level_2,
+          ),
+          bond_scholarship_level_1: firestore.FieldValue.increment(
+            bonds.bond_scholarship_level_1,
+          ),
+          bond_scholarship_level_2: firestore.FieldValue.increment(
+            bonds.bond_scholarship_level_2,
+          ),
+          bond_scholarship_level_3: firestore.FieldValue.increment(
+            bonds.bond_scholarship_level_3,
+          ),
+          bond_supreme_level_1: firestore.FieldValue.increment(
+            bonds.bond_supreme_level_1,
+          ),
+          bond_supreme_level_2: firestore.FieldValue.increment(
+            bonds.bond_supreme_level_2,
+          ),
+          bond_supreme_level_3: firestore.FieldValue.increment(
+            bonds.bond_supreme_level_3,
+          ),
+        });
+
+        await doc.ref.delete();
+      }
+    }
   }
 }

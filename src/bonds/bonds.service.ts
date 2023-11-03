@@ -101,11 +101,11 @@ export class BondsService {
   }
 
   async execUserResidualBond(registerUserId: string) {
-    const user = await getDoc(doc(db, `users/${registerUserId}`));
+    const user = await admin.collection('users').doc(registerUserId).get();
 
     const sponsor_id = user.get('sponsor_id');
-    const sponsorRef = doc(db, `users/${sponsor_id}`);
-    const sponsor = await getDoc(sponsorRef).then((r) => r.data());
+    const sponsorRef = admin.collection('users').doc(sponsor_id);
+    const sponsor = await sponsorRef.get().then((r) => r.data());
 
     // primer nivel
     if (sponsor) {
@@ -114,8 +114,8 @@ export class BondsService {
       const amount = sponsor && sponsor.sponsor_id ? 30 : 50;
 
       if (isProActive && isIBOActive) {
-        await updateDoc(sponsorRef, {
-          bond_residual_level_1: increment(amount),
+        await sponsorRef.update({
+          bond_residual_level_1: firestore.FieldValue.increment(amount),
         });
         await this.addProfitDetail(
           sponsorRef.id,
@@ -135,14 +135,14 @@ export class BondsService {
 
     // segundo nivel
     if (sponsor && sponsor.sponsor_id) {
-      const sponsor2Ref = doc(db, `users/${sponsor.sponsor_id}`);
+      const sponsor2Ref = admin.collection('users').doc(sponsor.sponsor_id);
       const isActive = await this.userService.isProActiveUser(sponsor2Ref.id);
       const isIBOActive = await this.userService.isIBOActive(sponsor2Ref.id);
       const amount = 20;
 
       if (isActive && isIBOActive) {
-        await updateDoc(sponsor2Ref, {
-          bond_residual_level_2: increment(amount),
+        await sponsor2Ref.update({
+          bond_residual_level_2: firestore.FieldValue.increment(amount),
         });
         await this.addProfitDetail(
           sponsor2Ref.id,

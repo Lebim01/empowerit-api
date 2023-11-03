@@ -85,15 +85,16 @@ export class ScholarshipService {
     directPeopleCount += 1;
     await updateDoc(docRef, { count_scholarship_people: directPeopleCount });
 
+    await addDoc(collection(db, `users/${sponsorId}/profits_details`), {
+      amount: 0,
+      created_at: new Date(),
+      description: 'Cuenta para Beca',
+      id_user: registerUserId,
+      type: 'bond_scholarship_level_1',
+      user_name: user.get('name') || '',
+    });
+
     if (directPeopleCount >= 2) {
-      await addDoc(collection(db, `users/${sponsorId}/profits_details`), {
-        amount: 0,
-        created_at: new Date(),
-        description: 'Cuenta para Beca',
-        id_user: registerUserId,
-        type: 'bond_scholarship_level_1',
-        user_name: user.get('name') || '',
-      });
       await this.assingScholarship(sponsorId);
       await this.distributeBond(sponsorId, registerUserId);
       return true;
@@ -206,7 +207,7 @@ export class ScholarshipService {
       const level = bondValue == 50 ? 1 : bondValue == 20 ? 2 : 3;
       await this.bondService.addProfitDetail(
         userId,
-        `bond_direct_level_${level}` as any,
+        `bond_scholarship_level_${level}` as any,
         bondValue,
         registerUserId,
       );
@@ -236,5 +237,34 @@ export class ScholarshipService {
         await this.giveBond(grandSponsorId, BOND_VALUE_3, registerUserId);
       }
     }
+  }
+
+  async direct(id_user: string) {
+    await this.bondService.execUserDirectBond(id_user);
+  }
+
+  async revisar(id_user: string) {
+    const users = await admin
+      .collection('users')
+      .where('sponsor_id', '==', id_user)
+      .where('subscription.pro.start_at', '>=', dayjs('2023-09-08').toDate())
+      .orderBy('subscription.pro.start_at', 'desc')
+      .get();
+
+    for (const u of users.docs) {
+      console.log(u.id, {
+        email: u.get('email'),
+        name: u.get('name'),
+        sponsor_id: u.get('sponsor_id'),
+        sponsor: u.get('sponsor'),
+        pro_start_at: dayjs(
+          u.get('subscription.pro.start_at').seconds * 1000,
+        ).format('YYYY-MM-DD HH:mm'),
+      });
+    }
+  }
+
+  async residual(id_user: string) {
+    await this.bondService.execUserResidualBond(id_user);
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { ScholarshipService } from './scholarship.service';
 
 @Controller('scholarship')
@@ -18,5 +18,25 @@ export class ScholarshipController {
   @Post('users')
   useScholarship() {
     return this.scholarshipService.useAllScholarship();
+  }
+
+  @Post('residual')
+  residual(@Body() body) {
+    return this.scholarshipService.residual(body.id);
+  }
+
+  @Post('direct')
+  direct(@Body() body) {
+    return this.scholarshipService.direct(body.id);
+  }
+
+  @Post('scholarship')
+  scholarship(@Body() body) {
+    return this.scholarshipService.distributeBond(body.id, body.registerUser);
+  }
+
+  @Post('revisar')
+  revisar(@Body() body) {
+    return this.scholarshipService.revisar(body.id);
   }
 }
