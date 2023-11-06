@@ -39,4 +39,9 @@ export class ScholarshipController {
   revisar(@Body() body) {
     return this.scholarshipService.revisar(body.id);
   }
+
+  @Post('copyuser')
+  copyuser(@Body() body) {
+    return this.scholarshipService.copyuser(body.old, body.new, body);
+  }
 }

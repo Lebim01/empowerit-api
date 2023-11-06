@@ -48,6 +48,7 @@ export class AdminService {
           supreme: docData.bond_supreme_level_1 || 0,
           supreme_second_level: docData.bond_supreme_level_2 || 0,
           supreme_third_level: docData.bond_supreme_level_3 || 0,
+          bond_starter_level_1: docData.bond_starter_level_1 || 0,
           binary:
             Math.floor(
               binary_points *
@@ -78,7 +79,8 @@ export class AdminService {
           doc.scholarship_third_level +
           doc.supreme +
           doc.supreme_second_level +
-          doc.supreme_third_level,
+          doc.supreme_third_level +
+          doc.bond_starter_level_1,
       }))
       .map((doc) => ({
         ...doc,
@@ -135,6 +137,7 @@ export class AdminService {
         bond_supreme_level_1: 0,
         bond_supreme_level_2: 0,
         bond_supreme_level_3: 0,
+        bond_starter_level_1: 0,
         profits_this_month: doc.profits_this_month + doc.total,
       });
     }
@@ -204,6 +207,7 @@ export class AdminService {
           bond_supreme_level_1: doc.get('supreme'),
           bond_supreme_level_2: doc.get('supreme_second_level'),
           bond_supreme_level_3: doc.get('supreme_third_level'),
+          bond_starter_level_1: doc.get('bond_starter_level_1'),
         });
 
         const bonds = get_bonds(doc);
@@ -238,6 +242,9 @@ export class AdminService {
           ),
           bond_supreme_level_3: firestore.FieldValue.increment(
             bonds.bond_supreme_level_3,
+          ),
+          bond_starter_level_1: firestore.FieldValue.increment(
+            bonds.bond_starter_level_1,
           ),
         });
 
