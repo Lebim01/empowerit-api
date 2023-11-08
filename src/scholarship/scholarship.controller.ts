@@ -44,4 +44,9 @@ export class ScholarshipController {
   copyuser(@Body() body) {
     return this.scholarshipService.copyuser(body.old, body.new, body);
   }
+
+  @Post('position')
+  position(@Body() body) {
+    return this.scholarshipService.position(body.new, body);
+  }
 }

@@ -2,11 +2,13 @@ import { Injectable } from '@nestjs/common';
 import {
   addDoc,
   collection,
+  collectionGroup,
   doc,
   getDoc,
   getDocs,
   orderBy,
   query,
+  setDoc,
   updateDoc,
   where,
 } from 'firebase/firestore';
@@ -273,69 +275,71 @@ export class ScholarshipService {
     const user = await admin.collection('users').doc(old_user_id).get();
     const sponsor = await admin.collection('users').doc(body.sponsor).get();
 
-    
+    await admin
+      .collection('users')
+      .doc(new_user_id)
+      .set({
+        email: body.email,
+        sponsor_id: body.sponsor,
+        position: body.position,
+        sponsor: sponsor.get('name'),
+        avatar: user.get('avatar') || '',
+        discord: user.get('discord') || '',
 
-    await admin.collection('users').doc(new_user_id).set({
-      email: body.email,
-      sponsor_id: body.sponsor,
-      sponsor: sponsor.get('name'),
-      avatar: user.get('avatar') || "",
-      discord: user.get('discord') || "",
+        created_at: new Date(),
+        updated_at: new Date(),
+        left: uuidv4(),
+        right: uuidv4(),
+        profits: 0,
+        is_new: true, // flag nuevo usuario (cambia a false cuando se activa su paquete)
+        has_scholarship: false,
+        is_pending_complete_personal_info: true,
+        rank: 'vanguard',
 
-      created_at: new Date(),
-      updated_at: new Date(),
-      left: uuidv4(),
-      right: uuidv4(),
-      profits: 0,
-      is_new: true, // flag nuevo usuario (cambia a false cuando se activa su paquete)
-      has_scholarship: false,
-      is_pending_complete_personal_info: true,
-      rank: "vanguard",
-
-      subscription: {
-        pro: {
-          expires_at: null,
-          start_at: null,
-          status: null,
+        subscription: {
+          pro: {
+            expires_at: null,
+            start_at: null,
+            status: null,
+          },
+          supreme: {
+            expires_at: null,
+            start_at: null,
+            status: null,
+          },
+          ibo: {
+            expires_at: null,
+            start_at: null,
+            status: null,
+          },
         },
-        supreme: {
-          expires_at: null,
-          start_at: null,
-          status: null,
-        },
-        ibo: {
-          expires_at: null,
-          start_at: null,
-          status: null,
-        },
-      },
 
-      // CONTADORES
-      count_direct_people: 0,
-      count_underline_people: 0,
-      count_scholarship_people: 0,
-      count_direct_people_this_cycle: 0,
+        // CONTADORES
+        count_direct_people: 0,
+        count_underline_people: 0,
+        count_scholarship_people: 0,
+        count_direct_people_this_cycle: 0,
 
-      // BINARIOS
-      left_points: 0,
-      right_points: 0,
-      left_binary_user_id: null,
-      right_binary_user_id: null,
-      parent_binary_user_id: null,
+        // BINARIOS
+        left_points: 0,
+        right_points: 0,
+        left_binary_user_id: null,
+        right_binary_user_id: null,
+        parent_binary_user_id: null,
 
-      // BONOS
-      bond_direct: 0,
-      bond_direct_second_level: 0,
-      bond_residual_level_1: 0,
-      bond_residual_level_2: 0,
-      bond_supreme_level_1: 0,
-      bond_supreme_level_2: 0,
-      bond_supreme_level_3: 0,
-      bond_scholarship_level_1: 0,
-      bond_scholarship_level_2: 0,
-      bond_scholarship_level_3: 0,
-      bond_direct_starter_level_1: 0,
-    });
+        // BONOS
+        bond_direct: 0,
+        bond_direct_second_level: 0,
+        bond_residual_level_1: 0,
+        bond_residual_level_2: 0,
+        bond_supreme_level_1: 0,
+        bond_supreme_level_2: 0,
+        bond_supreme_level_3: 0,
+        bond_scholarship_level_1: 0,
+        bond_scholarship_level_2: 0,
+        bond_scholarship_level_3: 0,
+        bond_direct_starter_level_1: 0,
+      });
 
     const userDocRef = admin.collection('users').doc(new_user_id);
 
@@ -345,32 +349,45 @@ export class ScholarshipService {
     const finishSupreme = dayjs().add(168, 'days').toDate();
     const finishIBO = dayjs().add(122, 'days').toDate();
     await admin.collection('users').doc(new_user_id).update({
+      is_new: false,
       'subscription.pro.payment_link': null,
       'subscription.pro.start_at': new Date(),
       'subscription.pro.expires_at': finishPro,
       'subscription.pro.status': 'paid',
-      'subscription.supreme.payment_link': null,
+      /*'subscription.supreme.payment_link': null,
       'subscription.supreme.start_at': new Date(),
       'subscription.supreme.expires_at': finishSupreme,
-      'subscription.supreme.status': 'paid',
+      'subscription.supreme.status': 'paid',*/
       'subscription.ibo.payment_link': null,
       'subscription.ibo.start_at': new Date(),
       'subscription.ibo.expires_at': finishIBO,
       'subscription.ibo.status': 'paid',
     });
 
-    await admin.collection('users').doc(new_user_id).collection('pro-cycles').add({
-      expires_at: finishPro,
-      start_at: new Date(),
-    });
-    await admin.collection('users').doc(new_user_id).collection('supreme-cycles').add({
-      expires_at: finishSupreme,
-      start_at: new Date(),
-    });
-    await admin.collection('users').doc(new_user_id).collection('ibo-cycles').add({
-      expires_at: finishIBO,
-      start_at: new Date(),
-    });
+    await admin
+      .collection('users')
+      .doc(new_user_id)
+      .collection('pro-cycles')
+      .add({
+        expires_at: finishPro,
+        start_at: new Date(),
+      });
+    /*await admin
+      .collection('users')
+      .doc(new_user_id)
+      .collection('supreme-cycles')
+      .add({
+        expires_at: finishSupreme,
+        start_at: new Date(),
+      });*/
+    await admin
+      .collection('users')
+      .doc(new_user_id)
+      .collection('ibo-cycles')
+      .add({
+        expires_at: finishIBO,
+        start_at: new Date(),
+      });
 
     const binaryPosition = await this.binaryService.calculatePositionOfBinary(
       body.sponsor,
@@ -401,11 +418,95 @@ export class ScholarshipService {
     } catch (err) {
       console.error(err);
     }
+
+    await this.insertSanguineUsers(userDocRef.id);
   }
 
   async wait(ms: number) {
     return new Promise((resolve) => {
       setTimeout(resolve, ms);
     });
+  }
+
+  async insertSanguineUsers(id_user: string) {
+    const userRef = await admin.collection('users').doc(id_user).get();
+
+    const current_user = {
+      id: id_user,
+      is_active: true,
+      created_at: userRef.get('created_at'),
+      sponsor_id: userRef.get('sponsor_id'),
+      position: userRef.get('position'),
+    };
+
+    await admin
+      .collection('users')
+      .doc(current_user.sponsor_id)
+      .collection('sanguine_users')
+      .doc(id_user)
+      .set(
+        {
+          id_user: userRef.id,
+          sponsor_id: current_user.sponsor_id,
+          is_active: current_user.is_active,
+          created_at: current_user.created_at || null,
+          position: current_user.position || null,
+        },
+        {
+          merge: true,
+        },
+      );
+
+    const sanguine_sponsors = await getDocs(
+      query(
+        collectionGroup(db, 'sanguine_users'),
+        where('id_user', '==', current_user.sponsor_id),
+      ),
+    );
+
+    for (const sponsorSanguineRef of sanguine_sponsors.docs) {
+      const userId = sponsorSanguineRef.ref.parent.parent.id;
+      await setDoc(
+        doc(db, `users/${userId}/sanguine_users/${id_user}`),
+        {
+          id_user: userRef.id,
+          sponsor_id: current_user.sponsor_id,
+          is_active: current_user.is_active,
+          created_at: new Date() || null,
+          position: sponsorSanguineRef.get('position') || null,
+        },
+        {
+          merge: true,
+        },
+      );
+    }
+  }
+
+  async position(new_user_id, body) {
+    const userDocRef = admin.collection('users').doc(new_user_id);
+
+    const binaryPosition = await this.binaryService.calculatePositionOfBinary(
+      body.sponsor,
+      body.position,
+    );
+
+    /**
+     * se setea el valor del usuario padre en el usuario que se registro
+     */
+    await userDocRef.update({
+      parent_binary_user_id: binaryPosition.parent_id,
+    });
+
+    /**
+     * se setea el valor del hijo al usuario ascendente en el binario
+     */
+    await admin
+      .collection('users')
+      .doc(binaryPosition.parent_id)
+      .update(
+        body.position == 'left'
+          ? { left_binary_user_id: userDocRef.id }
+          : { right_binary_user_id: userDocRef.id },
+      );
   }
 }
