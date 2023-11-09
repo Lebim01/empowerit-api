@@ -70,10 +70,10 @@ export class ScholarshipService {
   }
 
   async addDirectPeople(sponsorId: string, registerUserId: string) {
-    const docRef = doc(db, 'users', sponsorId);
-    const user = await getDoc(docRef);
+    const docRef = admin.collection('users').doc(sponsorId);
+    const user = await docRef.get();
 
-    if (!user.exists()) {
+    if (!user.exists) {
       return false;
     }
 
@@ -86,7 +86,7 @@ export class ScholarshipService {
       directPeopleCount = 0;
     }
     directPeopleCount += 1;
-    await updateDoc(docRef, { count_scholarship_people: directPeopleCount });
+    await docRef.update({ count_scholarship_people: directPeopleCount });
 
     await addDoc(collection(db, `users/${sponsorId}/profits_details`), {
       amount: 0,
@@ -287,7 +287,7 @@ export class ScholarshipService {
         .update({
           email: body.email,
           sponsor_id: body.sponsor,
-          sponsor: sponsor.get('name'),
+          sponsor: sponsor.get('name') || '',
           avatar: user.get('avatar') || '',
           discord: user.get('discord') || '',
         });
@@ -299,7 +299,7 @@ export class ScholarshipService {
           email: body.email,
           sponsor_id: body.sponsor,
           position: body.position,
-          sponsor: sponsor.get('name'),
+          sponsor: sponsor.get('name') || '',
           avatar: user.get('avatar') || '',
           discord: user.get('discord') || '',
 

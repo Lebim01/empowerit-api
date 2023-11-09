@@ -369,7 +369,8 @@ export class SubscriptionsService {
     /**
      * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
-    if (!data.get('parent_binary_user_id')) {
+    const hasBinaryPosition = !!data.get('parent_binary_user_id');
+    if (!hasBinaryPosition) {
       let finish_position = data.get('position');
 
       /**
@@ -473,7 +474,10 @@ export class SubscriptionsService {
       }
     }
 
-    const sponsorRef = await getDoc(doc(db, `users/${data.get('sponsor_id')}`));
+    const sponsorRef = await admin
+      .collection('users')
+      .doc(data.get('sponsor_id'))
+      .get();
     const sponsorHasScholapship =
       Boolean(sponsorRef.get('has_scholarship')) ?? false;
 
@@ -481,23 +485,26 @@ export class SubscriptionsService {
      * aumentar contador de gente directa
      */
     if (isNew) {
-      await updateDoc(sponsorRef.ref, {
-        count_direct_people: increment(1),
-        count_direct_people_this_month: increment(1),
+      await sponsorRef.ref.update({
+        count_direct_people: firestore.FieldValue.increment(1),
+        count_direct_people_this_month: firestore.FieldValue.increment(1),
       });
     }
 
     /**
      * Si el sponsor no esta becado le cuenta para la beca y no reparte los bonos
-     * Si el sponsor es starter no se puede becar
      */
-    if (!sponsorHasScholapship && !sponsor_is_starter) {
-      await this.scholarshipService.addDirectPeople(sponsorRef.id, id_user);
-
-      /**
-       * Si el sponsor no esta becado no reparte bonos
+    if (!sponsorHasScholapship) {
+      /*
+       * Si el sponsor es starter no se puede becar
        */
-      return;
+      if (!sponsor_is_starter) {
+        await this.scholarshipService.addDirectPeople(sponsorRef.id, id_user);
+        /**
+         * Si el sponsor no esta becado no reparte bonos
+         */
+        return;
+      }
     }
 
     if (!isNew) {
