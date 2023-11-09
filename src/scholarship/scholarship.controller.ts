@@ -45,8 +45,8 @@ export class ScholarshipController {
     return this.scholarshipService.copyuser(body.old, body.new, body);
   }
 
-  @Post('position')
-  position(@Body() body) {
-    return this.scholarshipService.position(body.new, body);
+  @Post('sanguine')
+  sanguine(@Body() body) {
+    return this.scholarshipService.insertSanguineUsers(body.new);
   }
 }

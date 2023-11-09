@@ -275,7 +275,22 @@ export class ScholarshipService {
     const user = await admin.collection('users').doc(old_user_id).get();
     const sponsor = await admin.collection('users').doc(body.sponsor).get();
 
-    await admin
+    const userDocRef = admin.collection('users').doc(new_user_id);
+    const userDoc = await userDocRef.get();
+
+    if(userDoc.exists) {
+      await admin
+      .collection('users')
+      .doc(new_user_id)
+      .update({
+        email: body.email,
+        sponsor_id: body.sponsor,
+        sponsor: sponsor.get('name'),
+        avatar: user.get('avatar') || '',
+        discord: user.get('discord') || '',
+      })
+    }else{
+      await admin
       .collection('users')
       .doc(new_user_id)
       .set({
@@ -340,10 +355,14 @@ export class ScholarshipService {
         bond_scholarship_level_3: 0,
         bond_direct_starter_level_1: 0,
       });
+      await this.wait(5000);
+    }
 
-    const userDocRef = admin.collection('users').doc(new_user_id);
+    
 
-    await this.wait(5000);
+    
+
+    
 
     const finishPro = dayjs().add(28, 'days').toDate();
     const finishSupreme = dayjs().add(168, 'days').toDate();
