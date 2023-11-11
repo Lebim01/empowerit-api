@@ -97,8 +97,15 @@ export class CryptoapisService {
   }
 
   getBlockchainFromCurrency(currency: Coins) {
-    const blockchain = currency == 'BTC' ? 'bitcoin' : 'xrp';
-    return blockchain;
+    if (currency == 'USDT') return 'tron';
+    if (currency == 'XRP') return 'xrp';
+    return 'bitcoin';
+  }
+
+  getQRNameFromCurrency(currency: Coins) {
+    if (currency == 'USDT') return 'tron';
+    if (currency == 'XRP') return 'xrp';
+    return 'bitcoin';
   }
 
   async createFirstConfirmationTransaction(

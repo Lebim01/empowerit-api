@@ -81,13 +81,15 @@ export class SubscriptionsService {
     };
 
     let amount = 0;
-    if (currency == 'XRP') {
+    if (currency == 'USDT') {
+      amount = amount_type[type];
+    } else if (currency == 'XRP') {
       amount = await this.cryptoapisService.getXRPExchange(amount_type[type]);
     } else {
       amount = await this.cryptoapisService.getBTCExchange(amount_type[type]);
     }
 
-    const qr_name = currency == 'XRP' ? 'ripple' : 'bitcoin';
+    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
 
     // Estructurar el campo payment_link
     const payment_link = {
@@ -102,6 +104,7 @@ export class SubscriptionsService {
     };
 
     // Guardar payment_link
+    await userRef.collection('address-history').add({ ...payment_link, type });
     await userRef.update({
       [`subscription.${type}.payment_link`]: payment_link,
     });
@@ -155,7 +158,10 @@ export class SubscriptionsService {
     };
 
     let amountbtc;
-    if (currency == 'XRP') {
+
+    if (currency == 'USDT') {
+      amountbtc = amount_type[type];
+    } else if (currency == 'XRP') {
       amountbtc = await this.cryptoapisService.getXRPExchange(
         amount_type[type],
       );
@@ -165,7 +171,7 @@ export class SubscriptionsService {
       );
     }
 
-    const qr_name = currency == 'XRP' ? 'ripple' : 'bitcoin';
+    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
 
     // Estructurar el campo payment_link
     const payment_link = {
@@ -180,6 +186,7 @@ export class SubscriptionsService {
     };
 
     // Guardar payment_link
+    await userRef.collection('address-history').add({ ...payment_link, type });
     await userRef.update({
       [`payment_link.${type}`]: payment_link,
     });
