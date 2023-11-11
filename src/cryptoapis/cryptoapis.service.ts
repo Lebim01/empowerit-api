@@ -556,7 +556,7 @@ export class CryptoapisService {
 
   async getXRPExchange(usd: number) {
     const res = await api_conlayer.get<ResponseConvert>(
-      `/convert?from=XRP&to=USD&amount=${usd}&access_key=c4aa2042e33beee513ff1f915279a3c9`,
+      `/convert?from=USD&to=XRP&amount=${usd}&access_key=c4aa2042e33beee513ff1f915279a3c9`,
     );
 
     return res.data.result;
