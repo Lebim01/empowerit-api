@@ -3,15 +3,12 @@ import dayjs from 'dayjs';
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
-  updateDoc,
   query,
   where,
   writeBatch,
   collectionGroup,
   setDoc,
-  increment,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
@@ -37,7 +34,11 @@ export class SubscriptionsService {
     private readonly cryptoapisService: CryptoapisService,
   ) {}
 
-  async createPaymentAddress(id_user: string, type: Memberships) {
+  async createPaymentAddress(
+    id_user: string,
+    type: Memberships,
+    currency: Coins,
+  ) {
     // Obtener datos del usuario
     const userRef = admin.collection('users').doc(id_user);
     const userData = await userRef.get().then((r) => r.data());
@@ -75,19 +76,25 @@ export class SubscriptionsService {
       ibo: 30,
       starter: 50,
     };
-    const amount: any = await this.cryptoapisService.getBTCExchange(
-      amount_type[type],
-    );
+
+    let amount = 0;
+    if (currency == 'XRP') {
+      amount = await this.cryptoapisService.getXRPExchange(amount_type[type]);
+    } else {
+      amount = await this.cryptoapisService.getBTCExchange(amount_type[type]);
+    }
+
+    const qr_name = currency == 'XRP' ? 'ripple' : 'bitcoin';
 
     // Estructurar el campo payment_link
     const payment_link = {
       referenceId,
       address,
-      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amount}`,
+      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=${qr_name}:${address}?amount=${amount}`,
       status: 'pending',
       created_at: new Date(),
       amount,
-      currency: 'BTC',
+      currency,
       expires_at: dayjs().add(15, 'minutes').toDate(),
     };
 
@@ -104,7 +111,11 @@ export class SubscriptionsService {
     };
   }
 
-  async createPaymentAddressPack(id_user: string, type: 'pro+supreme') {
+  async createPaymentAddressPack(
+    id_user: string,
+    type: 'pro+supreme',
+    currency: Coins,
+  ) {
     // Obtener datos del usuario
     const userRef = admin.collection('users').doc(id_user);
     const userData = await userRef.get().then((r) => r.data());
@@ -136,19 +147,29 @@ export class SubscriptionsService {
     const amount_type = {
       'pro+supreme': 277,
     };
-    const amountbtc: any = await this.cryptoapisService.getBTCExchange(
-      amount_type[type],
-    );
+
+    let amountbtc;
+    if (currency == 'XRP') {
+      amountbtc = await this.cryptoapisService.getXRPExchange(
+        amount_type[type],
+      );
+    } else {
+      amountbtc = await this.cryptoapisService.getBTCExchange(
+        amount_type[type],
+      );
+    }
+
+    const qr_name = currency == 'XRP' ? 'ripple' : 'bitcoin';
 
     // Estructurar el campo payment_link
     const payment_link = {
       referenceId,
       address,
-      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amountbtc}`,
+      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=${qr_name}:${address}?amount=${amountbtc}`,
       status: 'pending',
       created_at: new Date(),
       amount: amountbtc,
-      currency: 'BTC',
+      currency,
       expires_at: dayjs().add(15, 'minutes').toDate(),
     };
 
@@ -344,7 +365,11 @@ export class SubscriptionsService {
     await this.assingMembership(id_user, 'ibo', customIBODays);
   }
 
-  async onPaymentProMembership(id_user: string, amount_btc: number) {
+  async onPaymentProMembership(
+    id_user: string,
+    amount_crypto: number,
+    currency: Coins,
+  ) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
     const isNew = await this.isNewMember(id_user);
@@ -358,7 +383,8 @@ export class SubscriptionsService {
         'subscription.pro.pending_activation': {
           created_at: new Date(),
           amount: 277,
-          amount_btc,
+          amount_crypto,
+          currency,
         },
       });
       return;
@@ -393,12 +419,9 @@ export class SubscriptionsService {
             position: sponsor_side,
           });
         }
-
-        await sponsorRef.update({
-          count_direct_people_this_cycle: firestore.FieldValue.increment(1),
-        });
       }
 
+      console.log('llegue aqui');
       const binaryPosition = await this.binaryService.calculatePositionOfBinary(
         data.get('sponsor_id'),
         finish_position,
@@ -409,6 +432,9 @@ export class SubscriptionsService {
        */
       await userDocRef.update({
         parent_binary_user_id: binaryPosition.parent_id,
+      });
+      await sponsorRef.update({
+        count_direct_people_this_cycle: firestore.FieldValue.increment(1),
       });
 
       try {
@@ -670,10 +696,13 @@ export class SubscriptionsService {
           await this.scholarshipService.useSchorlarship(doc.id);
         } else if (has_pending_activation) {
           try {
-            const amount_btc = Number(
-              doc.get('subscription.pro.pending_activation.amount_btc'),
+            const amount_crypto = Number(
+              doc.get('subscription.pro.pending_activation.amount_crypto'),
             );
-            await this.onPaymentProMembership(doc.id, amount_btc);
+            const currency = doc.get(
+              'subscription.pro.pending_activation.currency',
+            );
+            await this.onPaymentProMembership(doc.id, amount_crypto, currency);
             batch.update(doc.ref, {
               'subscription.pro.pending_activation': null,
             });
@@ -734,7 +763,7 @@ export class SubscriptionsService {
         'subscription.starter.start_at': null,
       });
       await this.bondService.resetUserProfits(id_user);
-      await this.onPaymentProMembership(id_user, btc_amount);
+      await this.onPaymentProMembership(id_user, btc_amount, 'BTC');
     }
   }
 }

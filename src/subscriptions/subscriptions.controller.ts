@@ -28,7 +28,11 @@ export class SubscriptionsController {
 
   @Post('createPaymentAddress/pro')
   async createPaymentAddressPro(@Body() body) {
-    return this.subscriptionService.createPaymentAddress(body.userId, 'pro');
+    return this.subscriptionService.createPaymentAddress(
+      body.userId,
+      'pro',
+      body.coin,
+    );
   }
 
   @Post('createPaymentAddress/supreme')
@@ -36,17 +40,26 @@ export class SubscriptionsController {
     return this.subscriptionService.createPaymentAddress(
       body.userId,
       'supreme',
+      body.coin,
     );
   }
 
   @Post('createPaymentAddress/ibo')
   async createPaymentAddressIbo(@Body() body) {
-    return this.subscriptionService.createPaymentAddress(body.userId, 'ibo');
+    return this.subscriptionService.createPaymentAddress(
+      body.userId,
+      'ibo',
+      body.coin,
+    );
   }
 
   @Post('createPaymentAddress/starter')
   async createPaymentAddressStarter(@Body() body) {
-    return this.subscriptionService.createPaymentAddress(body.userId, 'starter');
+    return this.subscriptionService.createPaymentAddress(
+      body.userId,
+      'starter',
+      body.coin,
+    );
   }
 
   @Post('createPaymentAddressPack')
@@ -55,6 +68,7 @@ export class SubscriptionsController {
       return this.subscriptionService.createPaymentAddressPack(
         body.userId,
         body.type,
+        body.coin,
       );
     }
     return new HttpException('Tipo invalido', 404);

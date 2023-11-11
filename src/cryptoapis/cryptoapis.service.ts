@@ -12,6 +12,7 @@ import {
 } from './types';
 import axios from 'axios';
 import { firestore } from 'firebase-admin';
+import { ResponseConvert } from './types/conlayer';
 
 const default_options = {
   hostname: 'rest.cryptoapis.io',
@@ -20,6 +21,10 @@ const default_options = {
     'X-API-Key': 'fb00b4aa1965ff6bc36b5fba67447a3c927f2f6a',
   },
 };
+
+const api_conlayer = axios.create({
+  baseURL: 'http://api.coinlayer.com/',
+});
 
 const streamResponse = (resolve: any, reject: any) => (res: any) => {
   const chunks: any[] = [];
@@ -535,5 +540,43 @@ export class CryptoapisService {
         },
       },
     });
+  }
+
+  async getXRPExchange(usd: number) {
+    const res = await api_conlayer.get<ResponseConvert>(
+      `/convert?from=XRP&to=USD&amount=${usd}&access_key=c4aa2042e33beee513ff1f915279a3c9`,
+    );
+
+    return res.data.result;
+  }
+
+  async saveRequestHistory(type: Packs, body: any, headers: any) {
+    await db.collection('cryptoapis-requests').add({
+      created_at: new Date(),
+      url: `cryptoapis/callbackPayment/${type}/packs`,
+      body,
+      headers,
+    });
+  }
+
+  async transactionIsCompletePaid(type: Memberships, id_user: string) {
+    const userDoc = await db.collection('users').doc(id_user).get();
+    // Verificar si el pago se completo
+    const required_amount = Number(
+      userDoc.get(`subscription.${type}.payment_link.amount`),
+    );
+    const tolerance = required_amount * 0.003;
+    const address = userDoc.get(`subscription.${type}.payment_link.address`);
+    const currency = userDoc.get(`subscription.${type}.payment_link.currency`);
+    const pendingAmount: number = await this.calculatePendingAmount(
+      userDoc.id,
+      address,
+      required_amount,
+    );
+    return {
+      is_complete: pendingAmount - tolerance <= 0,
+      pendingAmount,
+      currency,
+    };
   }
 }

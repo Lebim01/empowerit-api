@@ -39,6 +39,15 @@ export class CryptoapisController {
     private readonly googleTaskService: GoogletaskService,
   ) {}
 
+  isValidCryptoApis(body: CallbackNewConfirmedCoins) {
+    return (
+      body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
+      body.data.item.network == this.cryptoapisService.network &&
+      body.data.item.direction == 'incoming' &&
+      ['BTC', 'XRP'].includes(body.data.item.unit.toUpperCase())
+    );
+  }
+
   @Get('validateWallet')
   validateWallet(@Query('wallet') wallet: string) {
     return this.cryptoapisService.validateWallet(wallet);
@@ -100,12 +109,9 @@ export class CryptoapisController {
 
     if (body.data.item.direction == 'outgoing') return;
 
-    if (
-      body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
-      body.data.item.network == this.cryptoapisService.network &&
-      body.data.item.direction == 'incoming' &&
-      body.data.item.unit == 'BTC'
-    ) {
+    console.log(body)
+
+    if (this.isValidCryptoApis(body)) {
       const { address } = body.data.item;
       const userDoc = await this.usersService.getUserByPaymentAddress(
         address,
@@ -118,24 +124,20 @@ export class CryptoapisController {
         // Agregar registro de la transaccion
         await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
 
-        // Verificar si el pago se completo
-        const required_amount = Number(
-          data.subscription[type].payment_link.amount,
-        );
-        const tolerance = required_amount * 0.003;
-        const pendingAmount: number =
-          await this.cryptoapisService.calculatePendingAmount(
+        // Verificar si ya se pago todo o no
+        const { is_complete, pendingAmount, currency } =
+          await this.cryptoapisService.transactionIsCompletePaid(
+            type,
             userDoc.id,
-            address,
-            required_amount,
           );
 
-        if (pendingAmount - tolerance <= 0) {
+        if (is_complete) {
           switch (type) {
             case 'pro': {
               await this.subscriptionService.onPaymentProMembership(
                 userDoc.id,
                 Number(data.subscription[type].payment_link.amount),
+                currency,
               );
               break;
             }
@@ -191,8 +193,7 @@ export class CryptoapisController {
             },
           });
           throw new HttpException(
-            'El monto pagado es menor al requerido. ' +
-              `${pendingAmount - tolerance} < ${pendingAmount}`,
+            'El monto pagado es menor al requerido. ',
             HttpStatus.BAD_REQUEST,
           );
         }
@@ -210,14 +211,6 @@ export class CryptoapisController {
         );
       }
     } else {
-      Sentry.captureException('Inscripción: peticion invalida', {
-        extra: {
-          reference: body.referenceId,
-          address: body.data.item.address,
-          payload: JSON.stringify(body),
-          net: this.cryptoapisService.network,
-        },
-      });
       throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
     }
   }
@@ -232,21 +225,11 @@ export class CryptoapisController {
     @Headers() headers,
     @Param('type') type: Packs,
   ): Promise<any> {
-    await db.collection('cryptoapis-requests').add({
-      created_at: new Date(),
-      url: `cryptoapis/callbackPayment/${type}/packs`,
-      body,
-      headers,
-    });
+    await this.cryptoapisService.saveRequestHistory(type, body, headers);
 
     if (body.data.item.direction == 'outgoing') return;
 
-    if (
-      body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
-      body.data.item.network == this.cryptoapisService.network &&
-      body.data.item.direction == 'incoming' &&
-      body.data.item.unit == 'BTC'
-    ) {
+    if (this.isValidCryptoApis(body)) {
       const { address } = body.data.item;
       const userDoc = await this.usersService.getUserByPaymentAddressPack(
         address,
@@ -260,6 +243,7 @@ export class CryptoapisController {
         await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
 
         // Verificar si el pago se completo
+        const currency = data.payment_link[type].currency;
         const required_amount = Number(data.payment_link[type].amount);
         const tolerance = required_amount * 0.003;
         const pendingAmount: number =
@@ -268,13 +252,15 @@ export class CryptoapisController {
             address,
             required_amount,
           );
+        const is_complete = pendingAmount - tolerance <= 0;
 
-        if (pendingAmount - tolerance <= 0) {
+        if (is_complete) {
           switch (type) {
             case 'pro+supreme': {
               await this.subscriptionService.onPaymentProMembership(
                 userDoc.id,
                 Number(data.payment_link[type].amount),
+                currency,
               );
               await this.subscriptionService.onPaymentSupremeMembership(
                 userDoc.id,

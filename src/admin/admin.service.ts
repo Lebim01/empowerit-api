@@ -212,8 +212,6 @@ export class AdminService {
 
         const bonds = get_bonds(doc);
 
-        console.log(doc.ref.parent.parent.id, bonds);
-
         await doc.ref.parent.parent.update({
           bond_direct: firestore.FieldValue.increment(bonds.bond_direct),
           bond_direct_second_level: firestore.FieldValue.increment(
