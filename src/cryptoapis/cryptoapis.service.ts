@@ -76,11 +76,13 @@ export class CryptoapisService {
     await cryptoapisRequest(options);
   }
 
-  async createNewWalletAddress() {
+  async createNewWalletAddress(currency: Coins) {
+    const blockchain = this.getBlockchainFromCurrency(currency);
+
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${this.blockchain}/${this.network}/addresses`,
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/addresses`,
       qs: { context: 'yourExampleString' },
     };
     const res = await cryptoapisRequest<ResponseCreateWalletAddress>(options, {
@@ -94,16 +96,23 @@ export class CryptoapisService {
     return res.data.item.address;
   }
 
+  getBlockchainFromCurrency(currency: Coins) {
+    const blockchain = currency == 'BTC' ? 'bitcoin' : 'xrp';
+    return blockchain;
+  }
+
   async createFirstConfirmationTransaction(
     userId: string,
     address: string,
     type: Memberships | Packs,
+    currency: Coins,
   ) {
+    const blockchain = this.getBlockchainFromCurrency(currency);
     try {
       const options = {
         ...default_options,
         method: 'POST',
-        path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
+        path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
         qs: { context: userId },
       };
       const is_pack = type == 'pro+supreme';
@@ -131,11 +140,12 @@ export class CryptoapisService {
     }
   }
 
-  async removeCallbackEvent(refereceId: string) {
+  async removeCallbackEvent(refereceId: string, currency: Coins) {
+    const blockchain = this.getBlockchainFromCurrency(currency);
     const options = {
       ...default_options,
       method: 'DELETE',
-      path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/${refereceId}`,
+      path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/${refereceId}`,
     };
     await cryptoapisRequest(options);
   }
@@ -144,11 +154,13 @@ export class CryptoapisService {
     id_user: string,
     address: string,
     type: Memberships | Packs,
+    currency: Coins,
   ) {
+    const blockchain = this.getBlockchainFromCurrency(currency);
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/blockchain-events/${this.blockchain}/${this.network}/subscriptions/address-coins-transactions-confirmed`,
+      path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-confirmed`,
     };
     return await cryptoapisRequest<ResponseNewConfirmedCoinsTransactions>(
       options,
@@ -501,7 +513,7 @@ export class CryptoapisService {
 
       if (user.empty) {
         // eliminar callback
-        await this.removeCallbackEvent(event.referenceId);
+        await this.removeCallbackEvent(event.referenceId, 'BTC');
         console.log('deleted', event.referenceId);
       }
     }

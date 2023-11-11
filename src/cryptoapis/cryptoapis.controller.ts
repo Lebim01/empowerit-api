@@ -109,8 +109,6 @@ export class CryptoapisController {
 
     if (body.data.item.direction == 'outgoing') return;
 
-    console.log(body)
-
     if (this.isValidCryptoApis(body)) {
       const { address } = body.data.item;
       const userDoc = await this.usersService.getUserByPaymentAddress(
@@ -160,7 +158,10 @@ export class CryptoapisController {
           }
 
           // Eliminar el evento que esta en el servicio de la wallet
-          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.removeCallbackEvent(
+            body.referenceId,
+            currency,
+          );
 
           return 'transaccion correcta';
         }
@@ -168,13 +169,17 @@ export class CryptoapisController {
         // Sí el pago esta incompleto
         else {
           // Eliminar el evento que esta en el servicio de la wallet
-          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.removeCallbackEvent(
+            body.referenceId,
+            currency,
+          );
 
           // Crear nuevo evento
           await this.cryptoapisService.createCallbackConfirmation(
             userDoc.id,
             address,
             type,
+            currency,
           );
 
           // Actualizar QR
@@ -273,7 +278,10 @@ export class CryptoapisController {
           }
 
           // Eliminar el evento que esta en el servicio de la wallet
-          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.removeCallbackEvent(
+            body.referenceId,
+            currency,
+          );
 
           return 'transaccion correcta';
         }
@@ -281,13 +289,17 @@ export class CryptoapisController {
         // Sí el pago esta incompleto
         else {
           // Eliminar el evento que esta en el servicio de la wallet
-          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.removeCallbackEvent(
+            body.referenceId,
+            currency,
+          );
 
           // Crear nuevo evento
           await this.cryptoapisService.createCallbackConfirmation(
             userDoc.id,
             address,
             type,
+            currency,
           );
 
           // Actualizar QR
@@ -361,6 +373,8 @@ export class CryptoapisController {
         const doc = snap.docs[0];
         const data = doc.data();
 
+        const currency = doc.get(`subscription.${type}.payment_link.currency`);
+
         // Guardar registro de la transaccion.
         await this.cryptoapisService.addTransactionToUser(doc.id, body);
 
@@ -378,11 +392,15 @@ export class CryptoapisController {
             [`subscription.${type}.payment_link.status`]: 'confirming',
           });
 
-          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.removeCallbackEvent(
+            body.referenceId,
+            currency,
+          );
           await this.cryptoapisService.createCallbackConfirmation(
             data.id,
             body.data.item.address,
             type,
+            currency,
           );
         }
 
@@ -445,6 +463,8 @@ export class CryptoapisController {
         const doc = snap.docs[0];
         const data = doc.data();
 
+        const currency = doc.get(`payment_link.${type}.currency`);
+
         // Guardar registro de la transaccion.
         await this.cryptoapisService.addTransactionToUser(doc.id, body);
 
@@ -462,11 +482,15 @@ export class CryptoapisController {
             [`payment_link.${type}.status`]: 'confirming',
           });
 
-          await this.cryptoapisService.removeCallbackEvent(body.referenceId);
+          await this.cryptoapisService.removeCallbackEvent(
+            body.referenceId,
+            currency,
+          );
           await this.cryptoapisService.createCallbackConfirmation(
             data.id,
             body.data.item.address,
             type,
+            currency,
           );
         }
 
