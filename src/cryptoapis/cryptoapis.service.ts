@@ -97,6 +97,7 @@ export class CryptoapisService {
     await db.collection('wallets').add({
       currency,
       address: res.data.item.address,
+      blockchain,
       created_at: new Date(),
     });
 
