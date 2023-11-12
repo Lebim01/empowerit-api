@@ -93,6 +93,12 @@ export class CryptoapisService {
         },
       },
     });
+
+    await db.collection('wallets').add({
+      currency,
+      address: res.data.item.address,
+    });
+
     return res.data.item.address;
   }
 

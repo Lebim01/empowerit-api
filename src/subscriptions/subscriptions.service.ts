@@ -403,7 +403,9 @@ export class SubscriptionsService {
       return;
     }
 
-    const sponsor_is_starter = this.isStarterActiveUser(data.get('sponsor_id'));
+    const sponsor_is_starter = await this.isStarterActiveUser(
+      data.get('sponsor_id'),
+    );
 
     /**
      * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
@@ -434,7 +436,6 @@ export class SubscriptionsService {
         }
       }
 
-      console.log('llegue aqui');
       const binaryPosition = await this.binaryService.calculatePositionOfBinary(
         data.get('sponsor_id'),
         finish_position,
@@ -517,8 +518,7 @@ export class SubscriptionsService {
       .collection('users')
       .doc(data.get('sponsor_id'))
       .get();
-    const sponsorHasScholapship =
-      Boolean(sponsorRef.get('has_scholarship')) ?? false;
+    const sponsorHasScholapship = sponsorRef.get('has_scholarship') === true;
 
     /**
      * aumentar contador de gente directa
@@ -574,7 +574,7 @@ export class SubscriptionsService {
     /**
      * aumentar puntos de bono directo 2 niveles
      */
-    if (isNew) {
+    if (isNew && sponsorHasScholapship) {
       try {
         await this.bondService.execUserDirectBond(id_user);
       } catch (err) {
