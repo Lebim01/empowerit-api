@@ -62,7 +62,7 @@ export class CryptoapisController {
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == this.cryptoapisService.network &&
       body.data.item.direction == 'incoming' &&
-      body.data.item.unit == 'BTC'
+      this.isValidCryptoApis(body)
     ) {
       type Method = 'POST';
       const is_pack = type == 'pro+supreme';
