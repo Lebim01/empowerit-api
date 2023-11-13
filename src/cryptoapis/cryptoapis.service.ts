@@ -100,6 +100,7 @@ export class CryptoapisService {
       address: res.data.item.address,
       blockchain,
       created_at: new Date(),
+      using: true,
     });
 
     return res.data.item.address;
