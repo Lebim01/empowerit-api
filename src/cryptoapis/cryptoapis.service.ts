@@ -291,6 +291,7 @@ export class CryptoapisService {
               amount: firestore.FieldValue.increment(
                 Number(transactionBody.data.item.amount),
               ),
+              using: false,
             });
           }
 
