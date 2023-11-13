@@ -13,6 +13,7 @@ import {
 import axios from 'axios';
 import { firestore } from 'firebase-admin';
 import { ResponseConvert } from './types/conlayer';
+import { FieldValue } from 'firebase/firestore';
 
 const default_options = {
   hostname: 'rest.cryptoapis.io',
@@ -279,6 +280,20 @@ export class CryptoapisService {
           resultado = await this.addTransactionConfirmed(user_id, {
             ...transactionBody,
           } as CallbackNewConfirmedCoins);
+
+          const wallet = await db
+            .collection('wallets')
+            .where('address', '==', transactionBody.data.item.address)
+            .get();
+
+          if (!wallet.empty) {
+            await wallet.docs[0].ref.update({
+              amount: firestore.FieldValue.increment(
+                Number(transactionBody.data.item.amount),
+              ),
+            });
+          }
+
           break;
         }
         default: {
