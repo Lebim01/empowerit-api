@@ -148,6 +148,7 @@ export class CryptoapisService {
             },
           },
         );
+      console.log(res);
       return res;
     } catch (err) {
       console.error(err);
