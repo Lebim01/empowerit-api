@@ -18,6 +18,9 @@ import * as Sentry from '@sentry/node';
 import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 import { firestore } from 'firebase-admin';
+import { PayloadAssignBinaryPosition } from './types';
+import { google } from '@google-cloud/tasks/build/protos/protos';
+import { GoogletaskService } from 'src/googletask/googletask.service';
 
 const isExpired = (expires_at: { seconds: number }) => {
   const date = dayjs(expires_at.seconds * 1000);
@@ -32,6 +35,7 @@ export class SubscriptionsService {
     private readonly bondService: BondsService,
     private readonly scholarshipService: ScholarshipService,
     private readonly cryptoapisService: CryptoapisService,
+    private readonly googleTaskService: GoogletaskService,
   ) {}
 
   async createPaymentAddress(
@@ -421,83 +425,11 @@ export class SubscriptionsService {
       data.get('sponsor_id'),
     );
 
-    /**
-     * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
-     */
-    const hasBinaryPosition = !!data.get('parent_binary_user_id');
-    if (!hasBinaryPosition) {
-      let finish_position = data.get('position');
-
-      /**
-       * Las dos primeras personas de cada ciclo van al lado del derrame
-       */
-      const sponsorRef = admin.collection('users').doc(data.get('sponsor_id'));
-      const sponsor = await sponsorRef.get();
-      const sponsor_side = sponsor.get('position') ?? 'right';
-      const forceDerrame =
-        Number(sponsor.get('count_direct_people_this_cycle')) < 2 ||
-        sponsor_is_starter;
-
-      if (forceDerrame) {
-        /**
-         * Nos quiso hackear, y forzamos el lado correcto
-         */
-        if (data.get('position') != sponsor_side) {
-          finish_position = sponsor_side;
-          await userDocRef.update({
-            position: sponsor_side,
-          });
-        }
-      }
-
-      const binaryPosition = await this.binaryService.calculatePositionOfBinary(
-        data.get('sponsor_id'),
-        finish_position,
-      );
-
-      /**
-       * se setea el valor del usuario padre en el usuario que se registro
-       */
-      await userDocRef.update({
-        parent_binary_user_id: binaryPosition.parent_id,
-      });
-      await sponsorRef.update({
-        count_direct_people_this_cycle: firestore.FieldValue.increment(1),
-      });
-
-      try {
-        /**
-         * se setea el valor del hijo al usuario ascendente en el binario
-         */
-        await admin
-          .collection('users')
-          .doc(binaryPosition.parent_id)
-          .update(
-            finish_position == 'left'
-              ? { left_binary_user_id: id_user }
-              : { right_binary_user_id: id_user },
-          );
-      } catch (err) {
-        Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', id_user);
-          scope.setExtra('message', 'no se pudo setear al hijo');
-          Sentry.captureException(err);
-        });
-      }
-
-      try {
-        await this.binaryService.increaseUnderlinePeople(userDocRef.id);
-      } catch (err) {
-        Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', userDocRef.id);
-          scope.setExtra(
-            'message',
-            'no se pudo incrementar count_underline_people',
-          );
-          Sentry.captureException(err);
-        });
-      }
-    }
+    await this.addQueueBinaryPosition({
+      id_user,
+      sponsor_id: data.get('sponsor_id'),
+      position: data.get('position'),
+    });
 
     /**
      * Se activa la membresia
@@ -599,6 +531,25 @@ export class SubscriptionsService {
         });
       }
     }
+  }
+
+  async addQueueBinaryPosition(body: PayloadAssignBinaryPosition) {
+    type Method = 'POST';
+    const task: google.cloud.tasks.v2.ITask = {
+      httpRequest: {
+        httpMethod: 'POST' as Method,
+        url: `https://${process.env.VERCEL_URL}/subscriptions/assignBinaryPosition`,
+        body: Buffer.from(JSON.stringify(body)),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    };
+
+    await this.googleTaskService.addToQueue(
+      task,
+      this.googleTaskService.getPathQueue('assign-binary-position'),
+    );
   }
 
   async insertSanguineUsers(id_user: string) {
@@ -791,6 +742,91 @@ export class SubscriptionsService {
       });
       await this.bondService.resetUserProfits(id_user);
       await this.onPaymentProMembership(id_user, btc_amount, 'BTC');
+    }
+  }
+
+  async assignBinaryPosition(payload: PayloadAssignBinaryPosition) {
+    const user = await admin.collection('users').doc(payload.id_user).get();
+    const sponsor_is_starter = await this.isStarterActiveUser(
+      payload.sponsor_id,
+    );
+
+    /**
+     * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
+     */
+    const hasBinaryPosition = !!user.get('parent_binary_user_id');
+    if (!hasBinaryPosition) {
+      let finish_position = user.get('position');
+
+      /**
+       * Las dos primeras personas de cada ciclo van al lado del derrame
+       */
+      const sponsorRef = admin.collection('users').doc(user.get('sponsor_id'));
+      const sponsor = await sponsorRef.get();
+      const sponsor_side = sponsor.get('position') ?? 'right';
+      const forceDerrame =
+        Number(sponsor.get('count_direct_people_this_cycle')) < 2 ||
+        sponsor_is_starter;
+
+      if (forceDerrame) {
+        /**
+         * Nos quiso hackear, y forzamos el lado correcto
+         */
+        if (user.get('position') != sponsor_side) {
+          finish_position = sponsor_side;
+          await user.ref.update({
+            position: sponsor_side,
+          });
+        }
+      }
+
+      const binaryPosition = await this.binaryService.calculatePositionOfBinary(
+        user.get('sponsor_id'),
+        finish_position,
+      );
+
+      /**
+       * se setea el valor del usuario padre en el usuario que se registro
+       */
+      await user.ref.update({
+        parent_binary_user_id: binaryPosition.parent_id,
+      });
+      await sponsorRef.update({
+        count_direct_people_this_cycle: firestore.FieldValue.increment(1),
+      });
+
+      try {
+        /**
+         * se setea el valor del hijo al usuario ascendente en el binario
+         */
+        await admin
+          .collection('users')
+          .doc(binaryPosition.parent_id)
+          .update(
+            finish_position == 'left'
+              ? { left_binary_user_id: user.id }
+              : { right_binary_user_id: user.id },
+          );
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', user.id);
+          scope.setExtra('message', 'no se pudo setear al hijo');
+          Sentry.captureException(err);
+        });
+      }
+
+      try {
+        await this.binaryService.increaseUnderlinePeople(user.id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', user.id);
+          scope.setExtra(
+            'message',
+            'no se pudo incrementar count_underline_people',
+          );
+          Sentry.captureException(err);
+        });
+      }
     }
   }
 }

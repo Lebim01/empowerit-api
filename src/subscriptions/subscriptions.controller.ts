@@ -8,6 +8,7 @@ import {
   HttpException,
 } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
+import { PayloadAssignBinaryPosition } from './types';
 
 @Controller('subscriptions')
 export class SubscriptionsController {
@@ -77,5 +78,13 @@ export class SubscriptionsController {
   @Post('starterActivatePro')
   async starterActivatePro(@Body() body) {
     return this.subscriptionService.starterActivatePro(body.user_id);
+  }
+
+  @Post('assignBinaryPosition')
+  async assignBinaryPosition(
+    @Body()
+    body: PayloadAssignBinaryPosition,
+  ) {
+    return this.subscriptionService.assignBinaryPosition(body);
   }
 }
