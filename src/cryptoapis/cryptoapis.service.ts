@@ -203,7 +203,7 @@ export class CryptoapisService {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${this.blockchain}/${this.network}/transaction-requests`,
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/bitcoin/${this.network}/transaction-requests`,
     };
     return await cryptoapisRequest(options, {
       context: '',
@@ -234,11 +234,11 @@ export class CryptoapisService {
     return (Number(satoshi_amount) / 100000000).toString();
   };
 
-  async validateWallet(wallet: string) {
+  async validateWallet(wallet: string, blockchain = 'bitcoin') {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/blockchain-tools/bitcoin/mainnet/addresses/validate`,
+      path: `/v2/blockchain-tools/${blockchain}/mainnet/addresses/validate`,
     };
     return cryptoapisRequest(options, {
       context: 'yourExampleString',

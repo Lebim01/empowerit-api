@@ -152,6 +152,33 @@ export class AdminService {
     return payroll_data;
   }
 
+  async payrollWithXRP(payroll_users) {}
+
+  /**
+   * Obtiene un arreglo de wallets con el dinero suficiente para pagar
+   */
+  async getXRPWalletsToUse(total: number) {
+    const wallets = await db
+      .collection('wallets')
+      .where('currency', '==', 'XRP')
+      .where('amount', '>', 0)
+      .get();
+
+    let amount = 0;
+    const wallets_to_use = [];
+    for (const wallet of wallets.docs) {
+      amount += wallet.get('amount');
+      wallets_to_use.push(wallet);
+
+      if (amount >= total) break;
+    }
+
+    return wallets_to_use;
+  }
+
+  /**
+   * Enviar transacción a cryptoapis usando un registro de payroll
+   */
   async payrollFromPayroll(id: string) {
     const payroll_data = await db
       .collection('payroll')
@@ -169,6 +196,10 @@ export class AdminService {
     return res;
   }
 
+  /**
+   * Calcular payroll real
+   * Se usa para cuando se borra algun registro manual y hay que recalcular
+   */
   async fixPayrollAmount(id: string) {
     const payroll_data = await db
       .collection('payroll')

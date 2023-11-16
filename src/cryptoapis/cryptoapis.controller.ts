@@ -49,8 +49,11 @@ export class CryptoapisController {
   }
 
   @Get('validateWallet')
-  validateWallet(@Query('wallet') wallet: string) {
-    return this.cryptoapisService.validateWallet(wallet);
+  validateWallet(
+    @Query('wallet') wallet: string,
+    @Query('blockchain') blockchain: string,
+  ) {
+    return this.cryptoapisService.validateWallet(wallet, blockchain);
   }
 
   @Post('callbackPayment/:type/queue')
