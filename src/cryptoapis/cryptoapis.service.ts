@@ -650,7 +650,7 @@ export class CryptoapisService {
         item: {
           amount: amount.toString(),
           callbackSecretKey: 'a12k*?_1ds',
-          callbackUrl: `${this.hostapi}/cryptoapis/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
+          callbackUrl: `${this.hostapi}/admin/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
           feePriority: 'standard',
           note: 'yourAdditionalInformationhere',
           recipientAddress: xAddress,
