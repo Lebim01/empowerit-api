@@ -177,6 +177,8 @@ export class AdminService {
 
     const wallets_users = [];
 
+    console.log(payroll_users);
+
     for (const user of payroll_users) {
       let total_remaing = user.amount;
       const user_address = {
@@ -203,9 +205,8 @@ export class AdminService {
       wallets_users.push(user_address);
     }
 
-    wallets_users.forEach((a) => console.log(a));
-
     for (const wu of wallets_users) {
+      console.log(wu);
       for (const address of wu.addresses) {
         await this.cryptoapisService.sendXRPTransactionFromAddress(
           wu.address,
