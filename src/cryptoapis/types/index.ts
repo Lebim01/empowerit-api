@@ -126,3 +126,14 @@ export interface ResponseListOfEvents {
     }[];
   };
 }
+
+export interface ResponseEncodeXAddress {
+  apiVersion: string;
+  requestId: string;
+  context: string;
+  data: {
+    item: {
+      xAddress: string;
+    };
+  };
+}

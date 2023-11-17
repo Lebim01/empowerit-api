@@ -9,6 +9,7 @@ import {
   CallbackNewConfirmedCoins,
   ResponseBalanceAddress,
   ResponseListOfEvents,
+  ResponseEncodeXAddress,
 } from './types';
 import axios from 'axios';
 import { firestore } from 'firebase-admin';
@@ -623,5 +624,50 @@ export class CryptoapisService {
       pendingAmount,
       currency,
     };
+  }
+
+  async sendXRPTransactionFromAddress(
+    toAddress: string,
+    tagAddress: string,
+    fromAddress: string,
+    amount: string,
+  ) {
+    const xAddress = await this.encodeXAddress(toAddress, tagAddress).then(
+      (res) => res.data.item.xAddress,
+    );
+    if (!xAddress) {
+      throw new Error('Fallo al encodear X address');
+    }
+
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/transaction-requests?context=yourExampleString`,
+    };
+    return await cryptoapisRequest(options, {
+      context: '',
+      data: {
+        item: {
+          amount: amount.toString(),
+          callbackSecretKey: 'a12k*?_1ds',
+          callbackUrl: `${this.hostapi}/cryptoapis/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
+          feePriority: 'standard',
+          note: 'yourAdditionalInformationhere',
+          recipientAddress: xAddress,
+        },
+      },
+    });
+  }
+
+  async encodeXAddress(
+    address: string,
+    tag: string,
+  ): Promise<ResponseEncodeXAddress> {
+    const options = {
+      ...default_options,
+      method: 'GET',
+      path: `/v2/blockchain-tools/xrp/${this.network}/encode-x-address/${address}/${tag}?context=yourExampleString`,
+    };
+    return await cryptoapisRequest<ResponseEncodeXAddress>(options);
   }
 }

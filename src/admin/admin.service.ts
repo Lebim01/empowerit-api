@@ -15,7 +15,7 @@ export class AdminService {
     private readonly binaryService: BinaryService,
   ) {}
 
-  async getPayroll() {
+  async getPayroll(blockchain: 'bitcoin' | 'xrp') {
     const users = await db.collection('users').get();
     const docs = users.docs.map((r) => ({ id: r.id, ...r.data() }));
 
@@ -61,6 +61,8 @@ export class AdminService {
           left_points: docData.left_points,
           right_points: docData.right_points,
           wallet_bitcoin: docData.wallet_bitcoin,
+          wallet_ripple: docData.wallet_ripple,
+          wallet_ripple_tag: docData.wallet_ripple_tag,
           profits: docData.profits || 0,
           rank: docData.rank,
           profits_this_month: docData.profits_this_month || 0,
@@ -96,19 +98,24 @@ export class AdminService {
     const payroll_data_2 = await Promise.all(
       payroll_data.map(async (doc) => ({
         ...doc,
-        btc_amount: await this.cryptoapisService.getBTCExchange(doc.total),
+        crypto_amount:
+          blockchain == 'bitcoin'
+            ? await this.cryptoapisService.getBTCExchange(doc.total)
+            : blockchain == 'xrp'
+            ? await this.cryptoapisService.getXRPExchange(doc.total)
+            : 0,
       })),
     );
 
     return payroll_data_2;
   }
 
-  async payroll() {
-    const payroll_data = await this.getPayroll();
+  async payroll(blockchain: 'bitcoin' | 'xrp') {
+    const payroll_data = await this.getPayroll(blockchain);
 
     const ref = await db.collection('payroll').add({
       total_usd: payroll_data.reduce((a, b) => a + b.total, 0),
-      total_btc: payroll_data.reduce((a, b) => a + b.btc_amount, 0),
+      total_btc: payroll_data.reduce((a, b) => a + b.crypto_amount, 0),
       created_at: new Date(),
     });
     await Promise.all(
@@ -142,17 +149,73 @@ export class AdminService {
       });
     }
 
-    await this.cryptoapisService.sendRequestTransaction(
-      payroll_data.map((doc) => ({
-        address: doc.wallet_bitcoin,
-        amount: `${doc.btc_amount}`,
-      })),
-    );
+    if (blockchain == 'bitcoin') {
+      await this.cryptoapisService.sendRequestTransaction(
+        payroll_data.map((doc) => ({
+          address: doc.wallet_bitcoin,
+          amount: `${doc.crypto_amount}`,
+        })),
+      );
+    } else if (blockchain == 'xrp') {
+      await this.payrollWithXRP(
+        payroll_data.map((doc) => ({
+          address: doc.wallet_ripple,
+          tag: doc.wallet_ripple_tag,
+          amount: doc.total,
+        })),
+      );
+    }
 
     return payroll_data;
   }
 
-  async payrollWithXRP(payroll_users) {}
+  async payrollWithXRP(
+    payroll_users: { address: string; tag: string; amount: number }[],
+  ) {
+    const total = payroll_users.reduce((a, b) => a + b.amount, 0);
+    const wallets_to_pay = await this.getXRPWalletsToUse(total);
+
+    const wallets_users = [];
+
+    for (const user of payroll_users) {
+      let total_remaing = user.amount;
+      const user_address = {
+        ...user,
+        addresses: [],
+      };
+
+      while (total_remaing > 0) {
+        const wallet_to_extract = wallets_to_pay.find((w) => w.amount > 0);
+
+        if (wallet_to_extract.amount >= total_remaing) {
+          wallet_to_extract.amount = wallet_to_extract.amount - total_remaing;
+          wallet_to_extract.amount_to_transfer = total_remaing;
+          total_remaing = 0;
+        } else {
+          wallet_to_extract.amount = 0;
+          wallet_to_extract.amount_to_transfer = wallet_to_extract.amount;
+          total_remaing -= wallet_to_extract.amount;
+        }
+
+        user_address.addresses.push(wallet_to_extract);
+      }
+
+      wallets_users.push(user_address);
+    }
+
+    console.log(wallets_users[0]);
+
+    for (const wu of wallets_users) {
+      for (const address of wu.addresses) {
+        await this.cryptoapisService.sendXRPTransactionFromAddress(
+          wu.address,
+          wu.tag,
+          address.address,
+          address.amount_to_transfer,
+        );
+      }
+    }
+  }
 
   /**
    * Obtiene un arreglo de wallets con el dinero suficiente para pagar
@@ -168,7 +231,7 @@ export class AdminService {
     const wallets_to_use = [];
     for (const wallet of wallets.docs) {
       amount += wallet.get('amount');
-      wallets_to_use.push(wallet);
+      wallets_to_use.push(wallet.data());
 
       if (amount >= total) break;
     }
@@ -179,21 +242,37 @@ export class AdminService {
   /**
    * Enviar transacción a cryptoapis usando un registro de payroll
    */
-  async payrollFromPayroll(id: string) {
+  async payrollFromPayroll(id: string, blockchain: 'bitcoin' | 'xrp') {
     const payroll_data = await db
       .collection('payroll')
       .doc(id)
       .collection('details')
       .get();
 
-    const res = await this.cryptoapisService.sendRequestTransaction(
-      payroll_data.docs.map((doc) => ({
-        address: doc.get('wallet_bitcoin'),
-        amount: `${doc.get('btc_amount')}`,
-      })),
-    );
-
-    return res;
+    if (blockchain == 'bitcoin') {
+      const res = await this.cryptoapisService.sendRequestTransaction(
+        payroll_data.docs.map((doc) => ({
+          address: doc.get('wallet_bitcoin'),
+          amount: `${doc.get('crypto_amount')}`,
+        })),
+      );
+      return res;
+    } else if (blockchain == 'xrp') {
+      const wallets = await Promise.all(
+        payroll_data.docs.map(async (doc) => {
+          const user = await db.collection('users').doc(doc.get('id')).get();
+          const total_xrp = await this.cryptoapisService.getXRPExchange(
+            doc.get('total'),
+          );
+          return {
+            address: user.get('wallet_ripple'),
+            tag: user.get('wallet_ripple_tag'),
+            amount: total_xrp,
+          };
+        }),
+      );
+      await this.payrollWithXRP(wallets);
+    }
   }
 
   /**
@@ -279,6 +358,19 @@ export class AdminService {
 
         await doc.ref.delete();
       }
+    }
+  }
+
+  async reduceWalletAmount(address: string, amount: number) {
+    const addresses = await db
+      .collection('wallets')
+      .where('address', '==', address)
+      .get();
+
+    if (addresses.size > 0) {
+      await addresses.docs[0].ref.update({
+        amount: firestore.FieldValue.increment(amount * -1),
+      });
     }
   }
 }
