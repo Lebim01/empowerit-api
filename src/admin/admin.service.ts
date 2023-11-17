@@ -188,12 +188,12 @@ export class AdminService {
         const wallet_to_extract = wallets_to_pay.find((w) => w.amount > 0);
 
         if (wallet_to_extract.amount >= total_remaing) {
-          wallet_to_extract.amount = wallet_to_extract.amount - total_remaing;
           wallet_to_extract.amount_to_transfer = total_remaing;
+          wallet_to_extract.amount = wallet_to_extract.amount - total_remaing;
           total_remaing = 0;
         } else {
-          wallet_to_extract.amount = 0;
           wallet_to_extract.amount_to_transfer = wallet_to_extract.amount;
+          wallet_to_extract.amount = 0;
           total_remaing -= wallet_to_extract.amount;
         }
 
