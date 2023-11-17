@@ -203,7 +203,7 @@ export class AdminService {
       wallets_users.push(user_address);
     }
 
-    console.log(wallets_users[0]);
+    console.log(wallets_users);
 
     for (const wu of wallets_users) {
       for (const address of wu.addresses) {
