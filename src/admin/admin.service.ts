@@ -378,8 +378,14 @@ export class AdminService {
       .get();
 
     if (addresses.size > 0) {
+      await addresses.docs[0].ref.collection('history').add({
+        description: 'Withdraw',
+        amount,
+        created_at: new Date(),
+      });
       await addresses.docs[0].ref.update({
         amount: firestore.FieldValue.increment(amount * -1),
+        updated_at: new Date(),
       });
     }
   }
