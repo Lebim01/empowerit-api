@@ -298,13 +298,14 @@ export class AdminService {
             doc.get('total'),
           );
           return {
+            id_user: user.id,
             address: user.get('wallet_ripple'),
             tag: user.get('wallet_ripple_tag'),
             amount: total_xrp,
           };
         }),
       );
-      await this.payrollWithXRP(wallets);
+      await this.payrollWithXRP(id, wallets);
     }
   }
 
