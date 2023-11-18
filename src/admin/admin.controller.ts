@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
+import { CallbackTransaction } from 'src/cryptoapis/types';
 
 @Controller('admin')
 export class AdminController {
@@ -37,9 +38,12 @@ export class AdminController {
   confirmPayment(
     @Param('address') address: string,
     @Param('amount') amount: string,
-    @Body() body: any,
+    @Body() body: CallbackTransaction,
   ) {
-    console.log(body);
-    return this.adminService.reduceWalletAmount(address, Number(amount));
+    if (body.data.event != 'TRANSACTION_REQUEST_REJECTION') {
+      return this.adminService.reduceWalletAmount(address, Number(amount));
+    } else {
+      return 'OK';
+    }
   }
 }

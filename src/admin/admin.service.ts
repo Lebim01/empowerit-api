@@ -177,8 +177,10 @@ export class AdminService {
 
     const wallets_users = [];
 
+    const parse = (val) => parseFloat(Number(val).toFixed(6));
+
     for (const user of payroll_users) {
-      let total_remaing = user.amount;
+      let total_remaing = parse(user.amount);
       const user_address = {
         ...user,
         addresses: [],
@@ -194,13 +196,15 @@ export class AdminService {
         };
 
         if (wallet_to_extract.amount >= total_remaing) {
-          from_wallet_to_pay.amount_to_transfer = total_remaing;
+          from_wallet_to_pay.amount_to_transfer = parse(total_remaing);
           wallets_to_pay[index].amount =
-            wallet_to_extract.amount - total_remaing;
+            parse(wallet_to_extract.amount) - parse(total_remaing);
           total_remaing = 0;
         } else {
-          from_wallet_to_pay.amount_to_transfer = wallet_to_extract.amount;
-          total_remaing -= wallet_to_extract.amount;
+          from_wallet_to_pay.amount_to_transfer = parse(
+            wallet_to_extract.amount,
+          );
+          total_remaing -= parse(wallet_to_extract.amount);
           wallets_to_pay[index].amount = 0;
         }
 

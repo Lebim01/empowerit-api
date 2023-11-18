@@ -137,3 +137,21 @@ export interface ResponseEncodeXAddress {
     };
   };
 }
+
+export interface CallbackTransaction {
+  apiVersion: string;
+  referenceId: string;
+  idempotencyKey: string;
+  data: {
+    product: 'WALLET_AS_A_SERVICE';
+    event: string;
+    item: {
+      blockchain: string;
+      network: string;
+      requiredApprovals: '1';
+      requiredRejections: '1';
+      currentApprovals: '0';
+      currentRejections: '1';
+    };
+  };
+}
