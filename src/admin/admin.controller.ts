@@ -37,7 +37,9 @@ export class AdminController {
   confirmPayment(
     @Param('address') address: string,
     @Param('amount') amount: string,
+    @Body() body: any,
   ) {
+    console.log(body);
     return this.adminService.reduceWalletAmount(address, Number(amount));
   }
 }

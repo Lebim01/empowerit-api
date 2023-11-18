@@ -177,8 +177,6 @@ export class AdminService {
 
     const wallets_users = [];
 
-    console.log(payroll_users);
-
     for (const user of payroll_users) {
       let total_remaing = user.amount;
       const user_address = {
@@ -187,19 +185,26 @@ export class AdminService {
       };
 
       while (total_remaing > 0) {
-        const wallet_to_extract = wallets_to_pay.find((w) => w.amount > 0);
+        const index = wallets_to_pay.findIndex((w) => w.amount > 0);
+        const wallet_to_extract = wallets_to_pay[index];
+
+        const from_wallet_to_pay = {
+          address: wallet_to_extract.address,
+          amount_to_transfer: 0,
+        };
 
         if (wallet_to_extract.amount >= total_remaing) {
-          wallet_to_extract.amount_to_transfer = total_remaing;
-          wallet_to_extract.amount = wallet_to_extract.amount - total_remaing;
+          from_wallet_to_pay.amount_to_transfer = total_remaing;
+          wallets_to_pay[index].amount =
+            wallet_to_extract.amount - total_remaing;
           total_remaing = 0;
         } else {
-          wallet_to_extract.amount_to_transfer = wallet_to_extract.amount;
-          wallet_to_extract.amount = 0;
+          from_wallet_to_pay.amount_to_transfer = wallet_to_extract.amount;
           total_remaing -= wallet_to_extract.amount;
+          wallets_to_pay[index].amount = 0;
         }
 
-        user_address.addresses.push(wallet_to_extract);
+        user_address.addresses.push(from_wallet_to_pay);
       }
 
       wallets_users.push(user_address);
@@ -208,12 +213,16 @@ export class AdminService {
     for (const wu of wallets_users) {
       console.log(wu);
       for (const address of wu.addresses) {
-        await this.cryptoapisService.sendXRPTransactionFromAddress(
-          wu.address,
-          wu.tag,
-          address.address,
-          address.amount_to_transfer,
-        );
+        try {
+          await this.cryptoapisService.sendXRPTransactionFromAddress(
+            wu.address,
+            wu.tag,
+            address.address,
+            address.amount_to_transfer.toFixed(6),
+          );
+        } catch (err) {
+          console.error(err);
+        }
       }
     }
   }

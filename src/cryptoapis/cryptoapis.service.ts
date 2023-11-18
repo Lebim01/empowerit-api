@@ -14,7 +14,6 @@ import {
 import axios from 'axios';
 import { firestore } from 'firebase-admin';
 import { ResponseConvert } from './types/conlayer';
-import { FieldValue } from 'firebase/firestore';
 
 const default_options = {
   hostname: 'rest.cryptoapis.io',
