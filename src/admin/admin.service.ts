@@ -158,10 +158,12 @@ export class AdminService {
       );
     } else if (blockchain == 'xrp') {
       await this.payrollWithXRP(
+        ref.id,
         payroll_data.map((doc) => ({
           address: doc.wallet_ripple,
           tag: doc.wallet_ripple_tag,
           amount: doc.total,
+          id_user: doc.id,
         })),
       );
     }
@@ -170,7 +172,13 @@ export class AdminService {
   }
 
   async payrollWithXRP(
-    payroll_users: { address: string; tag: string; amount: number }[],
+    payroll_id: string,
+    payroll_users: {
+      id_user: string;
+      address: string;
+      tag: string;
+      amount: number;
+    }[],
   ) {
     const total = payroll_users.reduce((a, b) => a + b.amount, 0);
     const wallets_to_pay = await this.getXRPWalletsToUse(total);
@@ -213,6 +221,17 @@ export class AdminService {
 
       wallets_users.push(user_address);
     }
+
+    await Promise.all(
+      wallets_users.map(async (doc) => {
+        await db
+          .collection('payroll')
+          .doc(payroll_id)
+          .collection('transactions')
+          .doc(doc.id_user)
+          .set(doc);
+      }),
+    );
 
     for (const wu of wallets_users) {
       console.log(wu);
