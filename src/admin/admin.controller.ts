@@ -46,9 +46,4 @@ export class AdminController {
       return 'OK';
     }
   }
-
-  @Post('/sendLack')
-  sendLack() {
-    return this.adminService.sendLackXRP();
-  }
 }

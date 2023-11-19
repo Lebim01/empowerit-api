@@ -157,15 +157,17 @@ export class AdminService {
         })),
       );
     } else if (blockchain == 'xrp') {
-      await this.payrollWithXRP(
-        ref.id,
-        payroll_data.map((doc) => ({
-          address: doc.wallet_ripple,
-          tag: doc.wallet_ripple_tag,
-          amount: doc.total,
-          id_user: doc.id,
-        })),
+      const wallets = await Promise.all(
+        payroll_data.map(async (doc) => {
+          const xAddress = await this.getXAddressUser(doc.id);
+          return {
+            xAddress,
+            amount: doc.total,
+            id_user: doc.id,
+          };
+        }),
       );
+      await this.payrollWithXRP(ref.id, wallets);
     }
 
     return payroll_data;
@@ -175,8 +177,7 @@ export class AdminService {
     payroll_id: string,
     payroll_users: {
       id_user: string;
-      address: string;
-      tag: string;
+      xAddress: string;
       amount: number;
     }[],
   ) {
@@ -238,8 +239,7 @@ export class AdminService {
       for (const address of wu.addresses) {
         try {
           await this.cryptoapisService.sendXRPTransactionFromAddress(
-            wu.address,
-            wu.tag,
+            wu.xAddress,
             address.address,
             address.amount_to_transfer.toFixed(6),
           );
@@ -272,17 +272,6 @@ export class AdminService {
     return wallets_to_use;
   }
 
-  sendLackXRP() {
-    return this.payrollWithXRP('nlXeb5DGligZLwTVfRyT', [
-      {
-        address: 'rLSn6Z3T8uCxbcd1oxwfGQN1Fdn5CyGujK',
-        tag: '29989961',
-        amount: 41.707506,
-        id_user: 'EZ9FiYponNaRQcBXzUjN0QaSjSF2',
-      },
-    ]);
-  }
-
   /**
    * Enviar transacción a cryptoapis usando un registro de payroll
    */
@@ -304,19 +293,21 @@ export class AdminService {
     } else if (blockchain == 'xrp') {
       const wallets = await Promise.all(
         payroll_data.docs.map(async (doc) => {
-          const user = await db.collection('users').doc(doc.get('id')).get();
+          const id_user = doc.get('id');
           const total_xrp = await this.cryptoapisService.getXRPExchange(
             doc.get('total'),
           );
+          const xAddress = await this.getXAddressUser(id_user);
           return {
-            id_user: user.id,
-            address: user.get('wallet_ripple'),
-            tag: user.get('wallet_ripple_tag'),
+            id_user: id_user,
+            xAddress,
             amount: total_xrp,
           };
         }),
       );
       await this.payrollWithXRP(id, wallets);
+
+      return wallets;
     }
   }
 
@@ -423,5 +414,32 @@ export class AdminService {
         updated_at: new Date(),
       });
     }
+  }
+
+  async getXAddressUser(id_user: string) {
+    const user = await db.collection('users').doc(id_user).get();
+    const address = user.get('wallet_ripple');
+    const tag = user.get('wallet_ripple_tag');
+
+    if (!address) {
+      throw new Error('No wallet');
+    }
+
+    let xAddress = user.get('wallet_xripple');
+
+    if (!xAddress) {
+      /**
+       * Si no existe la saca y la guarda
+       */
+      xAddress = await this.cryptoapisService
+        .encodeXAddress(address, tag)
+        .then((res) => res.data.item.xAddress);
+
+      await user.ref.update({
+        wallet_xripple: xAddress,
+      });
+    }
+
+    return xAddress;
   }
 }

@@ -626,14 +626,10 @@ export class CryptoapisService {
   }
 
   async sendXRPTransactionFromAddress(
-    toAddress: string,
-    tagAddress: string,
+    xAddress: string,
     fromAddress: string,
     amount: string,
   ) {
-    const xAddress = await this.encodeXAddress(toAddress, tagAddress).then(
-      (res) => res.data.item.xAddress,
-    );
     if (!xAddress) {
       throw new Error('Fallo al encodear X address');
     }
