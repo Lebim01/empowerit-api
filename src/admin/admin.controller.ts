@@ -12,7 +12,7 @@ export class AdminController {
   }
 
   @Post('/payroll')
-  payroll(@Query('blockchain') blockchain: 'bitcoin' | 'xrp') {
+  payroll(@Query('blockchain') blockchain: 'bitcoin' | 'xrp' = 'xrp') {
     return this.adminService.payroll(blockchain);
   }
 
@@ -45,5 +45,10 @@ export class AdminController {
     } else {
       return 'OK';
     }
+  }
+
+  @Post('/sendLack')
+  sendLack() {
+    return this.adminService.sendLackXRP();
   }
 }

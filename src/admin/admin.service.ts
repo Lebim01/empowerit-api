@@ -272,6 +272,17 @@ export class AdminService {
     return wallets_to_use;
   }
 
+  sendLackXRP() {
+    return this.payrollWithXRP('nlXeb5DGligZLwTVfRyT', [
+      {
+        address: 'rLSn6Z3T8uCxbcd1oxwfGQN1Fdn5CyGujK',
+        tag: '29989961',
+        amount: 41.707506,
+        id_user: 'EZ9FiYponNaRQcBXzUjN0QaSjSF2',
+      },
+    ]);
+  }
+
   /**
    * Enviar transacción a cryptoapis usando un registro de payroll
    */
