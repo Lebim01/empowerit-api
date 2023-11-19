@@ -427,7 +427,7 @@ export class AdminService {
 
     let xAddress = user.get('wallet_xripple');
 
-    if (!xAddress) {
+    if (!xAddress && tag) {
       /**
        * Si no existe la saca y la guarda
        */
@@ -438,6 +438,8 @@ export class AdminService {
       await user.ref.update({
         wallet_xripple: xAddress,
       });
+    } else {
+      xAddress = address;
     }
 
     return xAddress;
