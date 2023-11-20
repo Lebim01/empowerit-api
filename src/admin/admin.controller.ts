@@ -46,4 +46,9 @@ export class AdminController {
       return 'OK';
     }
   }
+
+  @Post('paylack')
+  test(@Body() body) {
+    return this.adminService.payLack(body.id, body.usd);
+  }
 }

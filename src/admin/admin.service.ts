@@ -5,6 +5,7 @@ import { ranks_object } from '../ranks/ranks_object';
 import { BinaryService } from '../binary/binary.service';
 import dayjs from 'dayjs';
 import { firestore } from 'firebase-admin';
+import { Encode } from 'xrpl-tagged-address-codec';
 
 const ADMIN_BINARY_PERCENT = 17 / 100;
 
@@ -431,17 +432,30 @@ export class AdminService {
       /**
        * Si no existe la saca y la guarda
        */
-      xAddress = await this.cryptoapisService
-        .encodeXAddress(address, tag)
-        .then((res) => res.data.item.xAddress);
+      xAddress = Encode({
+        account: address,
+        tag,
+      });
 
       await user.ref.update({
         wallet_xripple: xAddress,
       });
-    } else {
+    } else if (!xAddress) {
       xAddress = address;
     }
 
     return xAddress;
+  }
+
+  async payLack(id_user: string, amount_usd: number) {
+    const xrp = await this.cryptoapisService.getXRPExchange(amount_usd);
+    const xAddress = await this.getXAddressUser(id_user);
+    return this.payrollWithXRP('nlXeb5DGligZLwTVfRyT', [
+      {
+        id_user,
+        amount: xrp,
+        xAddress,
+      },
+    ]);
   }
 }
