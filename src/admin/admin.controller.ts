@@ -31,7 +31,11 @@ export class AdminController {
 
   @Post('/withdraw')
   withdraw(@Body() body) {
-    return this.adminService.withdraw(body.address, body.amount);
+    return this.adminService.withdraw(
+      body.address,
+      body.amount,
+      body.blockchain,
+    );
   }
 
   @Post('/callbackSendedCoins/xrp/:address/:amount')
@@ -45,10 +49,5 @@ export class AdminController {
     } else {
       return 'OK';
     }
-  }
-
-  @Post('paylack')
-  test(@Body() body) {
-    return this.adminService.payLack(body.id, body.usd);
   }
 }

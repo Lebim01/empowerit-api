@@ -175,7 +175,7 @@ export class AdminService {
   }
 
   async payrollWithXRP(
-    payroll_id: string,
+    payroll_id: string | null,
     payroll_users: {
       id_user: string;
       xAddress: string;
@@ -197,7 +197,7 @@ export class AdminService {
       };
 
       while (total_remaing > 0) {
-        const index = wallets_to_pay.findIndex((w) => w.amount > 0);
+        const index = wallets_to_pay.findIndex((w) => w.amount > 0.02);
         const wallet_to_extract = wallets_to_pay[index];
 
         const from_wallet_to_pay = {
@@ -205,14 +205,18 @@ export class AdminService {
           amount_to_transfer: 0,
         };
 
+        const FEE = 0.02;
+
         if (wallet_to_extract.amount >= total_remaing) {
-          from_wallet_to_pay.amount_to_transfer = parse(total_remaing);
+          from_wallet_to_pay.amount_to_transfer = parse(
+            parse(total_remaing) - FEE,
+          );
           wallets_to_pay[index].amount =
             parse(wallet_to_extract.amount) - parse(total_remaing);
           total_remaing = 0;
         } else {
           from_wallet_to_pay.amount_to_transfer = parse(
-            wallet_to_extract.amount,
+            parse(wallet_to_extract.amount) - FEE,
           );
           total_remaing -= parse(wallet_to_extract.amount);
           wallets_to_pay[index].amount = 0;
@@ -224,16 +228,18 @@ export class AdminService {
       wallets_users.push(user_address);
     }
 
-    await Promise.all(
-      wallets_users.map(async (doc) => {
-        await db
-          .collection('payroll')
-          .doc(payroll_id)
-          .collection('transactions')
-          .doc(doc.id_user)
-          .set(doc);
-      }),
-    );
+    if (payroll_id != null) {
+      await Promise.all(
+        wallets_users.map(async (doc) => {
+          await db
+            .collection('payroll')
+            .doc(payroll_id)
+            .collection('transactions')
+            .doc(doc.id_user)
+            .set(doc);
+        }),
+      );
+    }
 
     for (const wu of wallets_users) {
       console.log(wu);
@@ -258,7 +264,7 @@ export class AdminService {
     const wallets = await db
       .collection('wallets')
       .where('currency', '==', 'XRP')
-      .where('amount', '>', 0)
+      .where('amount', '>', 0.02)
       .get();
 
     let amount = 0;
@@ -270,7 +276,7 @@ export class AdminService {
       if (amount >= total) break;
     }
 
-    return wallets_to_use;
+    return wallets_to_use.filter(Boolean);
   }
 
   /**
@@ -331,8 +337,28 @@ export class AdminService {
     return amount;
   }
 
-  withdraw(address: string, amount: string) {
-    return this.cryptoapisService.withdraw(address, amount);
+  async withdraw(
+    address: string,
+    amount_usd: string,
+    blockchain: 'xrp' | 'bitcoin',
+  ) {
+    if (blockchain == 'bitcoin')
+      return this.cryptoapisService.withdraw(address, amount_usd);
+    else if (blockchain == 'xrp') {
+      const amount_xrp = await this.cryptoapisService.getXRPExchange(
+        Number(amount_usd),
+      );
+      const xAddress = await this.getXAddressUser(
+        'JpdntP2OQzNSBi3IylyMfSEqqSD2',
+      );
+      return this.payrollWithXRP(null, [
+        {
+          amount: amount_xrp,
+          id_user: 'JpdntP2OQzNSBi3IylyMfSEqqSD2',
+          xAddress,
+        },
+      ]);
+    }
   }
 
   async regresardinero() {
@@ -411,7 +437,7 @@ export class AdminService {
         created_at: new Date(),
       });
       await addresses.docs[0].ref.update({
-        amount: firestore.FieldValue.increment(amount * -1),
+        amount: addresses.docs[0].get('amount') - amount,
         updated_at: new Date(),
       });
     }
