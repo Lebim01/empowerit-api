@@ -44,6 +44,7 @@ export class AdminController {
     @Param('amount') amount: string,
     @Body() body: CallbackTransaction,
   ) {
+    console.log(body);
     if (body.data.event != 'TRANSACTION_REQUEST_REJECTION') {
       return this.adminService.reduceWalletAmount(address, Number(amount));
     } else {
