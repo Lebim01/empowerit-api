@@ -160,10 +160,10 @@ export class CryptoapisService {
           options,
           payload,
         );
-      console.log(res);
+      console.log(JSON.stringify(res));
       return res;
     } catch (err) {
-      console.error(err);
+      console.error(JSON.stringify(err));
       return null;
     }
   }
