@@ -52,7 +52,8 @@ export class SubscriptionsService {
     // Si no existe registro de la informacion de pago...
     if (
       !userData.subscription[type] ||
-      !userData.subscription[type].payment_link
+      !userData.subscription[type].payment_link ||
+      userData.payment_link[type].currency != currency
     ) {
       // Obtener un nuevo wallet para el pago
       const newAddress = await this.cryptoapisService.createNewWalletAddress(
