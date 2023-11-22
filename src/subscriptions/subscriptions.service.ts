@@ -146,6 +146,7 @@ export class SubscriptionsService {
     let address = '';
     let referenceId = '';
 
+    console.log(id_user);
     console.log(userData);
 
     // Si no existe registro de la informacion de pago...
