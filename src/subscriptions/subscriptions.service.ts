@@ -146,11 +146,12 @@ export class SubscriptionsService {
     let address = '';
     let referenceId = '';
 
-    console.log(id_user);
-    console.log(userData);
-
     // Si no existe registro de la informacion de pago...
-    if (userData.payment_link && userData.payment_link[type]) {
+    if (
+      userData.payment_link &&
+      userData.payment_link[type] &&
+      userData.payment_link[type].currency == currency
+    ) {
       address = userData.payment_link[type].address;
       referenceId = userData.payment_link[type].referenceId;
     } else {
