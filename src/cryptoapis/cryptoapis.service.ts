@@ -23,6 +23,14 @@ const default_options = {
   },
 };
 
+const cryptoApis = axios.create({
+  baseURL: 'https://rest.cryptoapis.io',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'fb00b4aa1965ff6bc36b5fba67447a3c927f2f6a',
+  },
+});
+
 const api_conlayer = axios.create({
   baseURL: 'http://api.coinlayer.com/',
 });
@@ -637,7 +645,7 @@ export class CryptoapisService {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/transaction-requests?context=yourExampleString`,
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/feeless-transaction-requests?context=yourExampleString`,
     };
     return await cryptoapisRequest(options, {
       context: '',
@@ -646,8 +654,8 @@ export class CryptoapisService {
           amount: amount.toString(),
           callbackSecretKey: 'a12k*?_1ds',
           callbackUrl: `${this.hostapi}/admin/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
-          feePriority: 'standard',
-          note: 'yourAdditionalInformationhere',
+          //feePriority: 'standard',
+          note: 'withdraw',
           recipientAddress: xAddress,
         },
       },
@@ -664,5 +672,26 @@ export class CryptoapisService {
       path: `/v2/blockchain-tools/xrp/${this.network}/encode-x-address/${address}/${tag}?context=yourExampleString`,
     };
     return await cryptoapisRequest<ResponseEncodeXAddress>(options);
+  }
+
+  async listAllXRP() {
+    const res = await cryptoApis.get(
+      `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=0`,
+    );
+
+    const total_pages = Math.ceil(res.data.data.total / 50);
+
+    let wallets = res.data.data.items;
+
+    for (let i = 2; i < total_pages; i++) {
+      const res = await cryptoApis.get(
+        `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
+          (i - 1) * 500
+        }`,
+      );
+      wallets = [...wallets, ...res.data.data.items];
+    }
+    
+    return wallets;
   }
 }

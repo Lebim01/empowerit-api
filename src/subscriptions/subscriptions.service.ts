@@ -146,8 +146,13 @@ export class SubscriptionsService {
     let address = '';
     let referenceId = '';
 
+    console.log(userData);
+
     // Si no existe registro de la informacion de pago...
-    if (!userData.payment_link || !userData.payment_link[type]) {
+    if (userData.payment_link && userData.payment_link[type]) {
+      address = userData.payment_link[type].address;
+      referenceId = userData.payment_link[type].referenceId;
+    } else {
       // Obtener un nuevo wallet para el pago
       const newAddress = await this.cryptoapisService.createNewWalletAddress(
         currency,
@@ -163,12 +168,6 @@ export class SubscriptionsService {
           currency,
         );
       referenceId = resConfirmation.data.item.referenceId;
-    }
-
-    // Si existe registro...
-    else {
-      address = userData.payment_link[type].address;
-      referenceId = userData.payment_link[type].referenceId;
     }
 
     const amount_type = {
