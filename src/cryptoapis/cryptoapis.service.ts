@@ -141,22 +141,24 @@ export class CryptoapisService {
         qs: { context: userId },
       };
       const is_pack = type == 'pro+supreme';
+      const payload = {
+        context: userId,
+        data: {
+          item: {
+            address: address,
+            allowDuplicates: true,
+            callbackSecretKey: 'a12k*?_1ds',
+            callbackUrl:
+              `${this.hostapi}/cryptoapis/callbackCoins/${type}` +
+              (is_pack ? '/packs' : ''),
+          },
+        },
+      };
+      console.log(payload);
       const res =
         await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
           options,
-          {
-            context: userId,
-            data: {
-              item: {
-                address: address,
-                allowDuplicates: true,
-                callbackSecretKey: 'a12k*?_1ds',
-                callbackUrl:
-                  `${this.hostapi}/cryptoapis/callbackCoins/${type}` +
-                  (is_pack ? '/packs' : ''),
-              },
-            },
-          },
+          payload,
         );
       console.log(res);
       return res;
@@ -691,7 +693,7 @@ export class CryptoapisService {
       );
       wallets = [...wallets, ...res.data.data.items];
     }
-    
+
     return wallets;
   }
 }
