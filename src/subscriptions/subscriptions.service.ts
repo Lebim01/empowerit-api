@@ -160,15 +160,25 @@ export class SubscriptionsService {
       );
       address = newAddress;
 
-      // Crear primera confirmación de la transaccion
-      const resConfirmation =
-        await this.cryptoapisService.createFirstConfirmationTransaction(
-          id_user,
-          newAddress,
-          type,
-          currency,
-        );
-      referenceId = resConfirmation.data.item.referenceId;
+      if (currency == 'BTC') {
+        const resConfirmation =
+          await this.cryptoapisService.createFirstConfirmationTransaction(
+            id_user,
+            newAddress,
+            type,
+            currency,
+          );
+        referenceId = resConfirmation.data.item.referenceId;
+      } else {
+        const resConfirmation =
+          await this.cryptoapisService.createCallbackConfirmation(
+            id_user,
+            newAddress,
+            type,
+            currency,
+          );
+        referenceId = resConfirmation.data.item.referenceId;
+      }
     }
 
     const amount_type = {
