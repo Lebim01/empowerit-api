@@ -107,16 +107,17 @@ export class ScholarshipService {
   }
 
   async useAllScholarship() {
-    const q = query(
-      collection(db, 'users'),
-      where('subscription.pro.expires_at', '<=', new Date()),
-      where('has_scholarship', '==', true),
-      orderBy('subscription.pro.expires_at', 'asc'),
-    );
-    const users = await getDocs(q);
+    const users = await admin
+      .collection('users')
+      .where('subscription.pro.expires_at', '<=', new Date())
+      .where('has_scholarship', '==', true)
+      .orderBy('subscription.pro.expires_at', 'asc')
+      .get();
 
     for (const u of users.docs) {
-      await this.useSchorlarship(u.id);
+      console.log(u.id);
+      const res = await this.useSchorlarship(u.id);
+      console.log(res);
     }
 
     return users.docs.map((d) => d.id);
@@ -127,10 +128,10 @@ export class ScholarshipService {
    * y se reinicia el status de la beca a "false"
    */
   async useSchorlarship(idUser: string) {
-    const docRef = doc(db, 'users', idUser);
-    const user = await getDoc(docRef);
+    const docRef = admin.collection('users').doc(idUser);
+    const user = await docRef.get();
 
-    if (!user.exists()) {
+    if (!user.exists) {
       return 'El usuario no existe';
     }
 
@@ -154,7 +155,7 @@ export class ScholarshipService {
       'subscription.pro.status': 'paid',
       is_new: false,
     };
-    await updateDoc(docRef, scholarship);
+    await docRef.update(scholarship);
     await admin.collection('users').doc(idUser).collection('pro-cycles').add({
       start_at: initialDate,
       expires_at: finalDate,
@@ -165,8 +166,10 @@ export class ScholarshipService {
       .doc(user.get('sponsor_id'))
       .get();
 
+    console.log('sponsor has_scholarship', sponsor.get('has_scholarship'));
+
     if (sponsor.get('has_scholarship')) {
-      await this.bondService.execUserResidualBond(user.get('sponsor_id'));
+      await this.bondService.execUserResidualBond(user.id);
       await this.binaryService.increaseBinaryPoints(idUser);
     } else {
       await this.addDirectPeople(user.get('sponsor_id'), idUser);
@@ -179,6 +182,7 @@ export class ScholarshipService {
       expires_at: finalDate,
       created_at: new Date(),
     });
+
     return 'Se utilizo la beca';
   }
 
