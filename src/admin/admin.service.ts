@@ -189,6 +189,8 @@ export class AdminService {
 
     const parse = (val) => parseFloat(Number(val).toFixed(6));
 
+    const MINIMAL_AMOUNT = 20;
+
     for (const user of payroll_users) {
       let total_remaing = parse(user.amount);
       const user_address = {
@@ -197,7 +199,9 @@ export class AdminService {
       };
 
       while (total_remaing > 0) {
-        const index = wallets_to_pay.findIndex((w) => w.amount > 0.02);
+        const index = wallets_to_pay.findIndex(
+          (w) => w.amount > MINIMAL_AMOUNT,
+        );
         const wallet_to_extract = wallets_to_pay[index];
 
         const from_wallet_to_pay = {
@@ -205,18 +209,16 @@ export class AdminService {
           amount_to_transfer: 0,
         };
 
-        const FEE = 0.02;
-
         if (wallet_to_extract.amount >= total_remaing) {
           from_wallet_to_pay.amount_to_transfer = parse(
-            parse(total_remaing) - FEE,
+            parse(total_remaing) - MINIMAL_AMOUNT,
           );
           wallets_to_pay[index].amount =
             parse(wallet_to_extract.amount) - parse(total_remaing);
           total_remaing = 0;
         } else {
           from_wallet_to_pay.amount_to_transfer = parse(
-            parse(wallet_to_extract.amount) - FEE,
+            parse(wallet_to_extract.amount) - MINIMAL_AMOUNT,
           );
           total_remaing -= parse(wallet_to_extract.amount);
           wallets_to_pay[index].amount = 0;
@@ -432,9 +434,12 @@ export class AdminService {
 
     if (addresses.size > 0) {
       await addresses.docs[0].ref.collection('history').add({
-        description: 'Withdraw',
-        amount,
-        created_at: new Date(),
+        before: addresses.docs[0].data(),
+        payload: {
+          description: 'Withdraw',
+          amount,
+          created_at: new Date(),
+        },
       });
       await addresses.docs[0].ref.update({
         amount: addresses.docs[0].get('amount') - amount,
@@ -471,17 +476,5 @@ export class AdminService {
     }
 
     return xAddress;
-  }
-
-  async payLack(id_user: string, amount_usd: number) {
-    const xrp = await this.cryptoapisService.getXRPExchange(amount_usd);
-    const xAddress = await this.getXAddressUser(id_user);
-    return this.payrollWithXRP('nlXeb5DGligZLwTVfRyT', [
-      {
-        id_user,
-        amount: xrp,
-        xAddress,
-      },
-    ]);
   }
 }

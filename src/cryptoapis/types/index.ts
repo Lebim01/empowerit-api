@@ -176,3 +176,30 @@ export interface XRPWallet {
     },
   ];
 }
+
+export interface TransactionRequest {
+  apiVersion: string;
+  requestId: string;
+  context: string;
+  data: {
+    item: {
+      addressTag: number;
+      callbackSecretKey: string;
+      callbackUrl: string;
+      classicAddress: string;
+      feePriority: 'standard' | 'slow' | 'fast';
+      note: string;
+      recipients: {
+        address: string;
+        addressTag: number;
+        amount: string;
+        classicAddress: string;
+      }[];
+      senders: {
+        address: string;
+      };
+      transactionRequestId: string;
+      transactionRequestStatus: 'created';
+    };
+  };
+}

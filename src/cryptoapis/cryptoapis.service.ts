@@ -10,6 +10,7 @@ import {
   ResponseBalanceAddress,
   ResponseListOfEvents,
   ResponseEncodeXAddress,
+  TransactionRequest,
 } from './types';
 import axios from 'axios';
 import { firestore } from 'firebase-admin';
@@ -647,21 +648,36 @@ export class CryptoapisService {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/feeless-transaction-requests?context=yourExampleString`,
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/transaction-requests?context=yourExampleString`,
     };
-    return await cryptoapisRequest(options, {
+    const payload = {
       context: '',
       data: {
         item: {
           amount: amount.toString(),
           callbackSecretKey: 'a12k*?_1ds',
           callbackUrl: `${this.hostapi}/admin/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
-          //feePriority: 'standard',
+          feePriority: 'standard',
           note: 'withdraw',
           recipientAddress: xAddress,
         },
       },
-    });
+    };
+
+    const res: TransactionRequest = await cryptoApis
+      .post(options.path, payload)
+      .then((r) => r.data);
+
+    await db
+      .collection('cryptoapis-transaction-requests')
+      .doc(res.data.item.transactionRequestId)
+      .set({
+        fromAddress,
+        payload,
+        response: res,
+      });
+
+    return res;
   }
 
   async encodeXAddress(
@@ -685,15 +701,57 @@ export class CryptoapisService {
 
     let wallets = res.data.data.items;
 
-    for (let i = 2; i < total_pages; i++) {
+    for (let i = 2; i <= total_pages; i++) {
       const res = await cryptoApis.get(
         `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
-          (i - 1) * 500
+          (i - 1) * 50
         }`,
       );
       wallets = [...wallets, ...res.data.data.items];
     }
 
     return wallets;
+  }
+
+  async fixAllXRP() {
+    const wallets = await this.listAllXRP();
+
+    for (const wallet of wallets) {
+      const res = await db
+        .collection('wallets')
+        .where('address', '==', wallet.address)
+        .get();
+      if (!res.empty) {
+        await res.docs[0].ref.update({
+          amount: Number(wallet.confirmedBalance.amount),
+        });
+      }
+    }
+  }
+
+  async recoverTransactionRequest(
+    transactionRequestId: string,
+    coin_amount?: string,
+  ) {
+    const transactionRequest = await db
+      .collection('cryptoapis-transaction-requests')
+      .doc(transactionRequestId)
+      .get()
+      .then((r) => r.data());
+
+    const custom_payload = { ...transactionRequest.payload };
+
+    if (coin_amount) {
+      custom_payload.data.item.amount = coin_amount;
+    }
+
+    const res: TransactionRequest = await cryptoApis
+      .post(
+        `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${transactionRequest.fromAddress}/transaction-requests?context=yourExampleString`,
+        custom_payload,
+      )
+      .then((r) => r.data);
+
+    return res;
   }
 }

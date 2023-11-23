@@ -544,4 +544,25 @@ export class CryptoapisController {
   deleteUnusedBlockChainEvents() {
     return this.cryptoapisService.deleteUnusedBlockChainEvents();
   }
+
+  @Get('xrp-wallets')
+  getXRPWallets() {
+    return this.cryptoapisService.listAllXRP();
+  }
+
+  @Post('fix-xrp-wallets')
+  fixXRPWallets() {
+    return this.cryptoapisService.fixAllXRP();
+  }
+
+  @Post('recover-transaction-request/:id')
+  recoverTransactionRequest(
+    @Param('id') transactionRequestId: string,
+    @Body() body,
+  ) {
+    return this.cryptoapisService.recoverTransactionRequest(
+      transactionRequestId,
+      body.amount,
+    );
+  }
 }
