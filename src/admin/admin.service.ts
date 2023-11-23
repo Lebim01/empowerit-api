@@ -9,6 +9,8 @@ import { Encode } from 'xrpl-tagged-address-codec';
 
 const ADMIN_BINARY_PERCENT = 17 / 100;
 
+const MINIMAL_XRP_AMOUNT = 20;
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -182,26 +184,41 @@ export class AdminService {
       amount: number;
     }[],
   ) {
-    const total = payroll_users.reduce((a, b) => a + b.amount, 0);
+    /**
+     * Total a liquidar descontando la cantidad ya confirmada
+     */
+    let total = 0;
+    for (const user of payroll_users) {
+      const transactionRef = await db
+        .collection('payroll')
+        .doc(payroll_id)
+        .collection('transactions')
+        .doc(user.id_user)
+        .get();
+
+      user.amount -= transactionRef.get('confirmed_amount') || 0;
+      total += user.amount;
+    }
+
+    /**
+     * Obtener las wallets que tienen mas de 20 XRP
+     */
     const wallets_to_pay = await this.getXRPWalletsToUse(total);
 
     const wallets_users = [];
 
     const parse = (val) => parseFloat(Number(val).toFixed(6));
 
-    const MINIMAL_AMOUNT = 20;
-
     for (const user of payroll_users) {
       let total_remaing = parse(user.amount);
+
       const user_address = {
         ...user,
         addresses: [],
       };
 
       while (total_remaing > 0) {
-        const index = wallets_to_pay.findIndex(
-          (w) => w.amount > MINIMAL_AMOUNT,
-        );
+        const index = wallets_to_pay.findIndex((w) => w.amount > 20.1);
         const wallet_to_extract = wallets_to_pay[index];
 
         const from_wallet_to_pay = {
@@ -209,19 +226,18 @@ export class AdminService {
           amount_to_transfer: 0,
         };
 
-        if (wallet_to_extract.amount >= total_remaing) {
-          from_wallet_to_pay.amount_to_transfer = parse(
-            parse(total_remaing) - MINIMAL_AMOUNT,
-          );
+        const amount_to_withdraw =
+          wallet_to_extract.amount - MINIMAL_XRP_AMOUNT;
+
+        if (amount_to_withdraw >= total_remaing) {
+          from_wallet_to_pay.amount_to_transfer = parse(total_remaing);
           wallets_to_pay[index].amount =
-            parse(wallet_to_extract.amount) - parse(total_remaing);
+            wallet_to_extract.amount - parse(total_remaing);
           total_remaing = 0;
         } else {
-          from_wallet_to_pay.amount_to_transfer = parse(
-            parse(wallet_to_extract.amount) - MINIMAL_AMOUNT,
-          );
-          total_remaing -= parse(wallet_to_extract.amount);
-          wallets_to_pay[index].amount = 0;
+          from_wallet_to_pay.amount_to_transfer = parse(amount_to_withdraw);
+          total_remaing -= parse(amount_to_withdraw);
+          wallets_to_pay[index].amount -= parse(amount_to_withdraw);
         }
 
         user_address.addresses.push(from_wallet_to_pay);
@@ -231,16 +247,26 @@ export class AdminService {
     }
 
     if (payroll_id != null) {
-      await Promise.all(
-        wallets_users.map(async (doc) => {
-          await db
-            .collection('payroll')
-            .doc(payroll_id)
-            .collection('transactions')
-            .doc(doc.id_user)
-            .set(doc);
-        }),
-      );
+      for (const doc of wallets_users) {
+        const transactionRef = await db
+          .collection('payroll')
+          .doc(payroll_id)
+          .collection('transactions')
+          .doc(doc.id_user)
+          .get();
+
+        if (transactionRef.exists) {
+          const addresses = [
+            ...transactionRef.data().addresses,
+            ...doc.addresses,
+          ];
+          await transactionRef.ref.update({
+            addresses,
+          });
+        } else {
+          await transactionRef.ref.set(doc);
+        }
+      }
     }
 
     for (const wu of wallets_users) {
@@ -266,13 +292,14 @@ export class AdminService {
     const wallets = await db
       .collection('wallets')
       .where('currency', '==', 'XRP')
-      .where('amount', '>', 0.02)
+      .where('amount', '>', 20.1)
       .get();
 
     let amount = 0;
     const wallets_to_use = [];
+
     for (const wallet of wallets.docs) {
-      amount += wallet.get('amount');
+      amount += wallet.get('amount') - MINIMAL_XRP_AMOUNT;
       wallets_to_use.push(wallet.data());
 
       if (amount >= total) break;
