@@ -189,14 +189,16 @@ export class AdminService {
      */
     let total = 0;
     for (const user of payroll_users) {
-      const transactionRef = await db
-        .collection('payroll')
-        .doc(payroll_id)
-        .collection('transactions')
-        .doc(user.id_user)
-        .get();
+      if (payroll_id) {
+        const transactionRef = await db
+          .collection('payroll')
+          .doc(payroll_id)
+          .collection('transactions')
+          .doc(user.id_user)
+          .get();
+        user.amount -= transactionRef.get('confirmed_amount') || 0;
+      }
 
-      user.amount -= transactionRef.get('confirmed_amount') || 0;
       total += user.amount;
     }
 
@@ -370,6 +372,7 @@ export class AdminService {
     address: string,
     amount_usd: string,
     blockchain: 'xrp' | 'bitcoin',
+    tag?: string,
   ) {
     if (blockchain == 'bitcoin')
       return this.cryptoapisService.withdraw(address, amount_usd);
@@ -377,9 +380,10 @@ export class AdminService {
       const amount_xrp = await this.cryptoapisService.getXRPExchange(
         Number(amount_usd),
       );
-      const xAddress = await this.getXAddressUser(
-        'JpdntP2OQzNSBi3IylyMfSEqqSD2',
-      );
+      const xAddress = Encode({
+        account: address,
+        tag,
+      });
       return this.payrollWithXRP(null, [
         {
           amount: amount_xrp,

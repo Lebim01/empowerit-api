@@ -166,8 +166,6 @@ export class ScholarshipService {
       .doc(user.get('sponsor_id'))
       .get();
 
-    console.log('sponsor has_scholarship', sponsor.get('has_scholarship'));
-
     if (sponsor.get('has_scholarship')) {
       await this.bondService.execUserResidualBond(user.id);
       await this.binaryService.increaseBinaryPoints(idUser);
