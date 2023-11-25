@@ -165,7 +165,7 @@ export class AdminService {
           const xAddress = await this.getXAddressUser(doc.id);
           return {
             xAddress,
-            amount: doc.total,
+            amount: doc.crypto_amount,
             id_user: doc.id,
           };
         }),
