@@ -65,7 +65,7 @@ export class AdminService {
           right_points: docData.right_points,
           wallet_bitcoin: docData.wallet_bitcoin,
           wallet_ripple: docData.wallet_ripple,
-          wallet_ripple_tag: docData.wallet_ripple_tag,
+          wallet_ripple_tag: docData.wallet_ripple_tag || null,
           profits: docData.profits || 0,
           rank: docData.rank,
           profits_this_month: docData.profits_this_month || 0,
@@ -96,7 +96,11 @@ export class AdminService {
         total: doc.subtotal - doc.fee,
       }))
       .filter((doc) => doc.total >= 40)
-      .filter((doc) => Boolean(doc.wallet_bitcoin));
+      .filter((doc) =>
+        blockchain == 'bitcoin'
+          ? Boolean(doc.wallet_bitcoin)
+          : Boolean(doc.wallet_ripple),
+      );
 
     const payroll_data_2 = await Promise.all(
       payroll_data.map(async (doc) => ({
