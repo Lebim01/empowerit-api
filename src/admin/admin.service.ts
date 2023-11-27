@@ -169,7 +169,7 @@ export class AdminService {
           const xAddress = await this.getXAddressUser(doc.id);
           return {
             xAddress,
-            amount: doc.total,
+            amount: doc.crypto_amount,
             id_user: doc.id,
           };
         }),
@@ -511,5 +511,40 @@ export class AdminService {
     }
 
     return xAddress;
+  }
+
+  async fixPayLack(payrollID: string) {
+    const payroll_users = await db
+      .collection('payroll')
+      .doc(payrollID)
+      .collection('details')
+      .get();
+
+    const lack_to_pay = [];
+
+    for (const u of payroll_users.docs) {
+      const transactions = await db
+        .collection('payroll')
+        .doc(payrollID)
+        .collection('transactions')
+        .doc(u.get('id'))
+        .get();
+
+      const total_amount = await this.cryptoapisService.getXRPExchange(
+        u.get('total'),
+      );
+      const lack = Number(total_amount) - Number(transactions.get('amount'));
+      const xAddress = await this.getXAddressUser(u.get('id'));
+
+      if (lack > 0) {
+        lack_to_pay.push({
+          amount: lack,
+          id_user: u.get('id'),
+          xAddress,
+        });
+      }
+    }
+
+    await this.payrollWithXRP(payrollID, lack_to_pay);
   }
 }

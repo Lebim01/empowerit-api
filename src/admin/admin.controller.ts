@@ -45,11 +45,15 @@ export class AdminController {
     @Param('amount') amount: string,
     @Body() body: CallbackTransaction,
   ) {
-    console.log(body);
     if (body.data.event != 'TRANSACTION_REQUEST_REJECTION') {
       return this.adminService.reduceWalletAmount(address, Number(amount));
     } else {
       return 'OK';
     }
+  }
+
+  @Post('/lacktopay/:payroll')
+  lacktopay(@Param('payroll') payrollID: string) {
+    return this.adminService.fixPayLack(payrollID);
   }
 }
