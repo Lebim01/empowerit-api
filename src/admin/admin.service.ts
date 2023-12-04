@@ -52,6 +52,11 @@ export class AdminService {
           supreme_second_level: docData.bond_supreme_level_2 || 0,
           supreme_third_level: docData.bond_supreme_level_3 || 0,
           bond_direct_starter_level_1: docData.bond_direct_starter_level_1 || 0,
+          bond_crypto_elite_level_1: docData.bond_crypto_elite_level_1 || 0,
+          bond_crypto_elite_level_2: docData.bond_crypto_elite_level_2 || 0,
+          bond_toprice_xpert_level_1: docData.bond_toprice_xpert_level_1 || 0,
+          bond_toprice_xpert_level_2: docData.bond_toprice_xpert_level_2 || 0,
+
           binary:
             Math.floor(
               binary_points *
@@ -85,7 +90,11 @@ export class AdminService {
           doc.supreme +
           doc.supreme_second_level +
           doc.supreme_third_level +
-          doc.bond_direct_starter_level_1,
+          doc.bond_direct_starter_level_1 +
+          doc.bond_crypto_elite_level_1 +
+          doc.bond_crypto_elite_level_2 +
+          doc.bond_toprice_xpert_level_1 +
+          doc.bond_toprice_xpert_level_2,
       }))
       .map((doc) => ({
         ...doc,
@@ -152,6 +161,10 @@ export class AdminService {
         bond_supreme_level_2: 0,
         bond_supreme_level_3: 0,
         bond_direct_starter_level_1: 0,
+        bond_crypto_elite_level_1: 0,
+        bond_crypto_elite_level_2: 0,
+        bond_toprice_xpert_level_1: 0,
+        bond_toprice_xpert_level_2: 0,
         profits_this_month: doc.profits_this_month + doc.total,
       });
     }
@@ -425,6 +438,10 @@ export class AdminService {
           bond_supreme_level_2: doc.get('supreme_second_level'),
           bond_supreme_level_3: doc.get('supreme_third_level'),
           bond_direct_starter_level_1: doc.get('bond_direct_starter_level_1'),
+          bond_crypto_elite_level_1: doc.get('bond_crypto_elite_level_1'),
+          bond_crypto_elite_level_2: doc.get('bond_crypto_elite_level_2'),
+          bond_toprice_xpert_level_1: doc.get('bond_toprice_xpert_level_1'),
+          bond_toprice_xpert_level_2: doc.get('bond_toprice_xpert_level_2'),
         });
 
         const bonds = get_bonds(doc);
@@ -460,6 +477,18 @@ export class AdminService {
           ),
           bond_direct_starter_level_1: firestore.FieldValue.increment(
             bonds.bond_direct_starter_level_1,
+          ),
+          bond_crypto_elite_level_1: firestore.FieldValue.increment(
+            bonds.bond_crypto_elite_level_1,
+          ),
+          bond_crypto_elite_level_2: firestore.FieldValue.increment(
+            bonds.bond_crypto_elite_level_2,
+          ),
+          bond_toprice_xpert_level_1: firestore.FieldValue.increment(
+            bonds.bond_toprice_xpert_level_1,
+          ),
+          bond_toprice_xpert_level_2: firestore.FieldValue.increment(
+            bonds.bond_toprice_xpert_level_2,
           ),
         });
 
