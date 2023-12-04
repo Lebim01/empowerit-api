@@ -54,6 +54,24 @@ export class SubscriptionsController {
     );
   }
 
+  @Post('createPaymentAddress/toprice_xpert')
+  async createPaymentAddressTopriceXpert(@Body() body) {
+    return this.subscriptionService.createPaymentAddress(
+      body.userId,
+      'toprice_xpert',
+      body.coin,
+    );
+  }
+
+  @Post('createPaymentAddress/crypto_elite')
+  async createPaymentAddressCryptoElite(@Body() body) {
+    return this.subscriptionService.createPaymentAddress(
+      body.userId,
+      'crypto_elite',
+      body.coin,
+    );
+  }
+
   @Post('createPaymentAddress/starter')
   async createPaymentAddressStarter(@Body() body) {
     return this.subscriptionService.createPaymentAddress(
