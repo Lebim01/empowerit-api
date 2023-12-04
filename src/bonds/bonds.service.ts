@@ -375,6 +375,10 @@ export class BondsService {
       bond_scholarship_level_2: 0,
       bond_scholarship_level_3: 0,
       bond_direct_starter_level_1: 0,
+      bond_crypto_elite_level_1: 0,
+      bond_crypto_elite_level_2: 0,
+      bond_toprice_xpert_level_1: 0,
+      bond_toprice_xpert_level_2: 0,
     });
   }
 
