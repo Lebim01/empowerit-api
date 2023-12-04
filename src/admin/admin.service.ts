@@ -252,38 +252,45 @@ export class AdminService {
       wallets_users.push(user_address);
     }
 
-    if (payroll_id != null) {
-      for (const doc of wallets_users) {
-        const transactionRef = await db
-          .collection('payroll')
-          .doc(payroll_id)
-          .collection('transactions')
-          .doc(doc.id_user)
-          .get();
+    for (const wu of wallets_users) {
+      const transactionRef = await db
+        .collection('payroll')
+        .doc(payroll_id)
+        .collection('transactions')
+        .doc(wu.id_user)
+        .get();
 
-        if (transactionRef.exists) {
-          const addresses = [
-            ...transactionRef.data().addresses,
-            ...doc.addresses,
-          ];
-          await transactionRef.ref.update({
-            addresses,
-          });
+      let addresses: any[] = [];
+
+      if (payroll_id) {
+        if (!transactionRef.exists) {
+          await transactionRef.ref.set(wu);
         } else {
-          await transactionRef.ref.set(doc);
+          addresses = transactionRef.data().addresses;
         }
       }
-    }
 
-    for (const wu of wallets_users) {
       console.log(wu);
       for (const address of wu.addresses) {
         try {
-          await this.cryptoapisService.sendXRPTransactionFromAddress(
-            wu.xAddress,
-            address.address,
-            address.amount_to_transfer.toFixed(6),
-          );
+          const response =
+            await this.cryptoapisService.sendXRPTransactionFromAddress(
+              wu.xAddress,
+              address.address,
+              address.amount_to_transfer.toFixed(6),
+            );
+
+          addresses.push({
+            ...address,
+            cryptoapis_transaction_request_id:
+              response.data.item.transactionRequestId,
+          });
+
+          if (payroll_id) {
+            await transactionRef.ref.update({
+              addresses,
+            });
+          }
         } catch (err) {
           console.error(err);
         }
@@ -378,9 +385,9 @@ export class AdminService {
     blockchain: 'xrp' | 'bitcoin',
     tag?: string,
   ) {
-    if (blockchain == 'bitcoin')
+    if (blockchain == 'bitcoin') {
       return this.cryptoapisService.withdraw(address, amount_usd);
-    else if (blockchain == 'xrp') {
+    } else if (blockchain == 'xrp') {
       const amount_xrp = await this.cryptoapisService.getXRPExchange(
         Number(amount_usd),
       );
@@ -477,7 +484,7 @@ export class AdminService {
         },
       });
       await addresses.docs[0].ref.update({
-        amount: addresses.docs[0].get('amount') - amount,
+        amount: Number(addresses.docs[0].get('amount')) - amount,
         updated_at: new Date(),
       });
     }
@@ -546,5 +553,15 @@ export class AdminService {
     }
 
     await this.payrollWithXRP(payrollID, lack_to_pay);
+  }
+
+  async transfer({ from_address, to_x_address, xrp_amount }) {
+    const response = await this.cryptoapisService.sendXRPTransactionFromAddress(
+      to_x_address,
+      from_address,
+      xrp_amount,
+    );
+
+    return response;
   }
 }

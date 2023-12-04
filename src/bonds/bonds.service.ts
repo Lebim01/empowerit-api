@@ -25,6 +25,10 @@ const messages = {
   bond_scholarship_level_2: 'Bono beca segundo nivel',
   bond_scholarship_level_3: 'Bono beca tercer nivel',
   bond_direct_starter_level_1: 'Bono directo starter primer nivel',
+  bond_crypto_elite_level_1: 'Bono crypto elite directo primero nivel',
+  bond_crypto_elite_level_2: 'Bono crypto elite directo segundo nivel',
+  bond_toprice_xpert_level_1: 'Bono toprice xpert directo primero nivel',
+  bond_toprice_xpert_level_2: 'Bono toprice xpert directo segundo nivel',
 };
 type Messages = typeof messages;
 type Types = keyof Messages;
@@ -372,5 +376,92 @@ export class BondsService {
       bond_scholarship_level_3: 0,
       bond_direct_starter_level_1: 0,
     });
+  }
+
+  async bondHighTicket(registerUserId: string, type: HightTicket) {
+    const {
+      id: sponsor_id,
+      ref: sponsorRef,
+      data: sponsor,
+    } = await this.getSponsor(registerUserId);
+
+    // primer nivel
+    if (sponsor) {
+      const isStarterActive = await this.userService.isStarterActiveUser(
+        sponsor_id,
+      );
+      const isProActive = await this.userService.isProActiveUser(sponsor_id);
+      const isIBOActive = await this.userService.isIBOActive(sponsor_id);
+      const isHighTicketActive = await this.userService.isHighTicketActive(
+        sponsor_id,
+      );
+      const amount = 200;
+
+      if (isStarterActive) {
+        // Convertir a pro
+      } else if ((isProActive || isHighTicketActive) && isIBOActive) {
+        await sponsorRef.update({
+          [`bond_${type}_level_1`]: firestore.FieldValue.increment(amount),
+        });
+        await this.addProfitDetail(
+          sponsorRef.id,
+          `bond_${type}_level_1`,
+          amount,
+          registerUserId,
+        );
+      } else {
+        await this.addLostProfit(
+          sponsorRef.id,
+          `bond_${type}_level_1`,
+          amount,
+          registerUserId,
+        );
+      }
+    }
+
+    // segundo nivel
+    if (sponsor && sponsor.get('sponsor_id')) {
+      const sponsor2Ref = admin
+        .collection('users')
+        .doc(sponsor.get('sponsor_id'));
+
+      const isActive = await this.userService.isProActiveUser(sponsor2Ref.id);
+      const isIBOActive = await this.userService.isIBOActive(sponsor2Ref.id);
+      const isHighTicketActive = await this.userService.isHighTicketActive(
+        sponsor2Ref.id,
+      );
+      const amount = 120;
+
+      if ((isActive || isHighTicketActive) && isIBOActive) {
+        await sponsor2Ref.update({
+          [`bond_${type}_level_2`]: firestore.FieldValue.increment(amount),
+        });
+        await this.addProfitDetail(
+          sponsor2Ref.id,
+          `bond_${type}_level_2`,
+          amount,
+          registerUserId,
+        );
+      } else {
+        await this.addLostProfit(
+          sponsor2Ref.id,
+          `bond_${type}_level_2`,
+          amount,
+          registerUserId,
+        );
+      }
+    }
+  }
+
+  async getSponsor(user_id: string) {
+    const user = await admin.collection('users').doc(user_id).get();
+    const sponsor_id = user.get('sponsor_id');
+    const sponsor = await admin.collection('users').doc(sponsor_id).get();
+
+    return {
+      id: sponsor_id,
+      ref: sponsor.ref,
+      data: sponsor,
+    };
   }
 }

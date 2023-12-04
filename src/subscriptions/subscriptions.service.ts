@@ -287,6 +287,16 @@ export class SubscriptionsService {
         cycle = `supreme-cycles`;
         break;
       }
+      case 'crypto_elite': {
+        changes = {
+          'subscription.crypto_elite.payment_link': null,
+          'subscription.crypto_elite.start_at': startAt,
+          'subscription.crypto_elite.expires_at': expiresAt,
+          'subscription.crypto_elite.status': 'paid',
+        };
+        cycle = `crypto_elite-cycles`;
+        break;
+      }
       case 'ibo': {
         changes = {
           'subscription.ibo.payment_link': null,
@@ -356,8 +366,10 @@ export class SubscriptionsService {
           days = isNew ? 56 : 28;
           break;
         }
+        case 'crypto_elite':
+        case 'toprice_xpert':
         case 'supreme': {
-          days = 168;
+          days = 168; // 6 meses
           break;
         }
         case 'ibo': {
@@ -403,6 +415,16 @@ export class SubscriptionsService {
 
     const customIBODays = 56;
     await this.assingMembership(id_user, 'ibo', customIBODays);
+  }
+
+  async onPaymentCryptoEliteMembership(id_user: string) {
+    await this.assingMembership(id_user, 'crypto_elite');
+    await this.bondService.bondHighTicket(id_user, 'crypto_elite');
+  }
+
+  async onPaymentTopriceXpertMembership(id_user: string) {
+    await this.assingMembership(id_user, 'toprice_xpert');
+    await this.bondService.bondHighTicket(id_user, 'toprice_xpert');
   }
 
   async onPaymentProMembership(

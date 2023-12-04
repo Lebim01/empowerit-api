@@ -27,6 +27,8 @@ const QUEUE_NAMES = {
   ibo: 'payment-membership-ibo',
   supreme: 'payment-membership-supreme',
   starter: 'payment-membership-starter',
+  crypto_elite: 'payment-membership-crypto-elite',
+  toprice_xpert: 'payment-membership-toprice-xpert',
   'pro+supreme': 'payment-membership-prosupreme',
 };
 
@@ -154,6 +156,18 @@ export class CryptoapisController {
             }
             case 'starter': {
               await this.subscriptionService.onPaymentStarterMembership(
+                userDoc.id,
+              );
+              break;
+            }
+            case 'crypto_elite': {
+              await this.subscriptionService.onPaymentCryptoEliteMembership(
+                userDoc.id,
+              );
+              break;
+            }
+            case 'toprice_xpert': {
+              await this.subscriptionService.onPaymentTopriceXpertMembership(
                 userDoc.id,
               );
               break;

@@ -19,34 +19,4 @@ export class ScholarshipController {
   useScholarship() {
     return this.scholarshipService.useAllScholarship();
   }
-
-  @Post('residual')
-  residual(@Body() body) {
-    return this.scholarshipService.residual(body.id);
-  }
-
-  @Post('direct')
-  direct(@Body() body) {
-    return this.scholarshipService.direct(body.id);
-  }
-
-  @Post('scholarship')
-  scholarship(@Body() body) {
-    return this.scholarshipService.distributeBond(body.id, body.registerUser);
-  }
-
-  @Post('revisar')
-  revisar(@Body() body) {
-    return this.scholarshipService.revisar(body.id);
-  }
-
-  @Post('copyuser')
-  copyuser(@Body() body) {
-    return this.scholarshipService.copyuser(body.old, body.new, body);
-  }
-
-  @Post('sanguine')
-  sanguine(@Body() body) {
-    return this.scholarshipService.insertSanguineUsers(body.new);
-  }
 }

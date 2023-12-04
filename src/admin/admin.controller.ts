@@ -56,4 +56,9 @@ export class AdminController {
   lacktopay(@Param('payroll') payrollID: string) {
     return this.adminService.fixPayLack(payrollID);
   }
+
+  @Post('/transfer')
+  transfer(@Body() body) {
+    return this.adminService.transfer(body);
+  }
 }

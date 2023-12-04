@@ -721,12 +721,28 @@ export class CryptoapisService {
         .collection('wallets')
         .where('address', '==', wallet.address)
         .get();
+      const amount = await this.getAddressBalance(wallet.address, 'xrp');
+
       if (!res.empty) {
         await res.docs[0].ref.update({
-          amount: Number(wallet.confirmedBalance.amount),
+          amount,
+        });
+      } else {
+        await db.collection('wallets').add({
+          address: wallet.address,
+          amount,
         });
       }
     }
+  }
+
+  async getAddressBalance(address: string, blockchain: 'xrp' | 'btc') {
+    const res = await cryptoApis
+      .get(
+        `/v2/blockchain-data/${blockchain}/${this.network}/addresses/${address}/balance?context=yourExampleString`,
+      )
+      .then((r) => r.data);
+    return Number(res.data.item.confirmedBalance.amount);
   }
 
   async recoverTransactionRequest(

@@ -41,6 +41,30 @@ export class UsersService {
       : false;
   }
 
+  async isHighTicketActive(id_user: string) {
+    const elite = await this.isCryptoEliteActive(id_user);
+    const price = await this.isTopriceXpertActive(id_user);
+    return elite || price;
+  }
+
+  async isCryptoEliteActive(id_user: string) {
+    const user = await getDoc(doc(db, 'users/' + id_user));
+    const expires_at = user.get('subscription.crypto_elite.expires_at');
+
+    return expires_at
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
+  }
+
+  async isTopriceXpertActive(id_user: string) {
+    const user = await getDoc(doc(db, 'users/' + id_user));
+    const expires_at = user.get('subscription.toprice_xpert.expires_at');
+
+    return expires_at
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
+  }
+
   async isProActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
     const expires_at = user.get('subscription.pro.expires_at');
