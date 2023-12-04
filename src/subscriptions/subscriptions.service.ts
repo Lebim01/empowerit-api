@@ -94,6 +94,8 @@ export class SubscriptionsService {
       pro: 177,
       ibo: 30,
       starter: 50,
+      crypto_elite: 800,
+      toprice_xpert: 800,
     };
 
     let amount = 0;
@@ -295,6 +297,16 @@ export class SubscriptionsService {
           'subscription.crypto_elite.status': 'paid',
         };
         cycle = `crypto_elite-cycles`;
+        break;
+      }
+      case 'toprice_xpert': {
+        changes = {
+          'subscription.toprice_xpert.payment_link': null,
+          'subscription.toprice_xpert.start_at': startAt,
+          'subscription.toprice_xpert.expires_at': expiresAt,
+          'subscription.toprice_xpert.status': 'paid',
+        };
+        cycle = `toprice_xpert-cycles`;
         break;
       }
       case 'ibo': {
