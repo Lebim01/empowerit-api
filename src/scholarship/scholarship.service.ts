@@ -197,7 +197,9 @@ export class ScholarshipService {
     if (!docData.exists()) return undefined;
 
     const isActive = await this.isActiveUser(userId);
-    if (isActive) {
+    const hasScholarship = await this.hasScholarship(userId);
+
+    if (isActive && hasScholarship) {
       let bond = Number(docData.get(BOND_FIELD[bondValue]));
       if (!bond) {
         bond = 0;
