@@ -198,6 +198,7 @@ export class ScholarshipService {
 
     const isActive = await this.isActiveUser(userId);
     const hasScholarship = await this.hasScholarship(userId);
+    const level = bondValue == 50 ? 1 : bondValue == 20 ? 2 : 3;
 
     if (isActive && hasScholarship) {
       let bond = Number(docData.get(BOND_FIELD[bondValue]));
@@ -211,10 +212,16 @@ export class ScholarshipService {
         [BOND_FIELD[bondValue]]: bond,
       });
 
-      const level = bondValue == 50 ? 1 : bondValue == 20 ? 2 : 3;
       await this.bondService.addProfitDetail(
         userId,
         `bond_scholarship_level_${level}` as any,
+        bondValue,
+        registerUserId,
+      );
+    } else {
+      await this.bondService.addLostProfit(
+        userId,
+        `bond_scholarship_level_${level}`,
         bondValue,
         registerUserId,
       );
