@@ -721,7 +721,7 @@ export class CryptoapisService {
         .collection('wallets')
         .where('address', '==', wallet.address)
         .get();
-      const amount = await this.getAddressBalance(wallet.address, 'xrp');
+      const amount = Number(wallet.confirmedBalance.amount); //await this.getAddressBalance(wallet.address, 'xrp');
 
       if (!res.empty) {
         await res.docs[0].ref.update({

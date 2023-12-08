@@ -6,6 +6,7 @@ import { BinaryService } from '../binary/binary.service';
 import dayjs from 'dayjs';
 import { firestore } from 'firebase-admin';
 import { Encode } from 'xrpl-tagged-address-codec';
+import fs from 'fs';
 
 const ADMIN_BINARY_PERCENT = 17 / 100;
 
@@ -592,5 +593,11 @@ export class AdminService {
     );
 
     return response;
+  }
+
+  async usersJson() {
+    const res = await db.collection('users').get();
+    const users = res.docs.map((r) => ({ id: r.id, ...r.data() }));
+    fs.writeFileSync('users.json', JSON.stringify(users));
   }
 }

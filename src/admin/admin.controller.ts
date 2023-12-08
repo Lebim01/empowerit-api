@@ -61,4 +61,9 @@ export class AdminController {
   transfer(@Body() body) {
     return this.adminService.transfer(body);
   }
+
+  @Get('/users')
+  getUsersJson() {
+    return this.adminService.usersJson();
+  }
 }
