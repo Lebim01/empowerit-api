@@ -25,11 +25,14 @@ export class CloudflareService {
     });
   }
 
-  async getUploadVideoUrl(courseId: string, path: string) {
+  async getUploadVideoUrl(courseId: string, path: string, courseType: string) {
     const uuid = v4();
     const filename = uuid + '.mp4';
 
-    const course = await this.academyService.getCourseById(courseId);
+    const course = await this.academyService.getCourseById(
+      courseId,
+      courseType,
+    );
 
     if (course) {
       return {
