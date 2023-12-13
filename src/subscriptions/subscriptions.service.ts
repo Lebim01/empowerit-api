@@ -548,19 +548,6 @@ export class SubscriptionsService {
     }
 
     /**
-     * aumenta los puntos del binario hacia arriba
-     */
-    try {
-      await this.binaryService.increaseBinaryPoints(id_user);
-    } catch (err) {
-      Sentry.configureScope((scope) => {
-        scope.setExtra('id_user', id_user);
-        scope.setExtra('message', 'no se repartio el bono binario');
-        Sentry.captureException(err);
-      });
-    }
-
-    /**
      * aumentar puntos de bono directo 2 niveles
      */
     if (isNew && sponsorHasScholapship) {
@@ -870,6 +857,19 @@ export class SubscriptionsService {
           Sentry.captureException(err);
         });
       }
+    }
+
+    /**
+     * aumenta los puntos del binario hacia arriba
+     */
+    try {
+      await this.binaryService.increaseBinaryPoints(user.id);
+    } catch (err) {
+      Sentry.configureScope((scope) => {
+        scope.setExtra('id_user', user.id);
+        scope.setExtra('message', 'no se repartio el bono binario');
+        Sentry.captureException(err);
+      });
     }
   }
 }
