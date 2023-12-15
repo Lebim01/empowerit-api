@@ -46,7 +46,7 @@ export class CryptoapisController {
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == this.cryptoapisService.network &&
       body.data.item.direction == 'incoming' &&
-      ['BTC', 'XRP', 'USDT'].includes(body.data.item.unit.toUpperCase())
+      ['BTC', 'USDT', 'LTC'].includes(body.data.item.unit.toUpperCase())
     );
   }
 
@@ -559,24 +559,24 @@ export class CryptoapisController {
     return this.cryptoapisService.deleteUnusedBlockChainEvents();
   }
 
-  @Get('xrp-wallets')
-  getXRPWallets() {
-    return this.cryptoapisService.listAllXRP();
-  }
+  // @Get('xrp-wallets')
+  // getXRPWallets() {
+  //   return this.cryptoapisService.listAllXRP();
+  // }
 
-  @Post('fix-xrp-wallets')
-  fixXRPWallets() {
-    return this.cryptoapisService.fixAllXRP();
-  }
+  // @Post('fix-xrp-wallets')
+  // fixXRPWallets() {
+  //   return this.cryptoapisService.fixAllXRP();
+  // }
 
-  @Post('recover-transaction-request/:id')
-  recoverTransactionRequest(
-    @Param('id') transactionRequestId: string,
-    @Body() body,
-  ) {
-    return this.cryptoapisService.recoverTransactionRequest(
-      transactionRequestId,
-      body.amount,
-    );
-  }
+  // @Post('recover-transaction-request/:id')
+  // recoverTransactionRequest(
+  //   @Param('id') transactionRequestId: string,
+  //   @Body() body,
+  // ) {
+  //   return this.cryptoapisService.recoverTransactionRequest(
+  //     transactionRequestId,
+  //     body.amount,
+  //   );
+  // }
 }

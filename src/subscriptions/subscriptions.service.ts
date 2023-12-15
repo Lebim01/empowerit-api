@@ -101,8 +101,8 @@ export class SubscriptionsService {
     let amount = 0;
     if (currency == 'USDT') {
       amount = amount_type[type];
-    } else if (currency == 'XRP') {
-      amount = await this.cryptoapisService.getXRPExchange(amount_type[type]);
+    } else if (currency == 'LTC') {
+      amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
     } else {
       amount = await this.cryptoapisService.getBTCExchange(amount_type[type]);
     }
@@ -190,8 +190,8 @@ export class SubscriptionsService {
 
     if (currency == 'USDT') {
       amountbtc = amount_type[type];
-    } else if (currency == 'XRP') {
-      amountbtc = await this.cryptoapisService.getXRPExchange(
+    } else if (currency == 'LTC') {
+      amountbtc = await this.cryptoapisService.getLTCExchange(
         amount_type[type],
       );
     } else {

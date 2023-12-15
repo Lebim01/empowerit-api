@@ -5,12 +5,11 @@ import { ranks_object } from '../ranks/ranks_object';
 import { BinaryService } from '../binary/binary.service';
 import dayjs from 'dayjs';
 import { firestore } from 'firebase-admin';
-import { Encode } from 'xrpl-tagged-address-codec';
 import fs from 'fs';
 
 const ADMIN_BINARY_PERCENT = 17 / 100;
 
-const MINIMAL_XRP_AMOUNT = 20;
+// const MINIMAL_XRP_AMOUNT = 20;
 
 @Injectable()
 export class AdminService {
@@ -19,7 +18,7 @@ export class AdminService {
     private readonly binaryService: BinaryService,
   ) {}
 
-  async getPayroll(blockchain: 'bitcoin' | 'xrp') {
+  async getPayroll(blockchain: 'bitcoin' | 'litecoin') {
     const users = await db.collection('users').get();
     const docs = users.docs.map((r) => ({ id: r.id, ...r.data() }));
 
@@ -70,8 +69,7 @@ export class AdminService {
           left_points: docData.left_points,
           right_points: docData.right_points,
           wallet_bitcoin: docData.wallet_bitcoin,
-          wallet_ripple: docData.wallet_ripple,
-          wallet_ripple_tag: docData.wallet_ripple_tag || null,
+          wallet_litecoin: docData.wallet_bitcoin,
           profits: docData.profits || 0,
           rank: docData.rank,
           profits_this_month: docData.profits_this_month || 0,
@@ -109,7 +107,7 @@ export class AdminService {
       .filter((doc) =>
         blockchain == 'bitcoin'
           ? Boolean(doc.wallet_bitcoin)
-          : Boolean(doc.wallet_ripple),
+          : Boolean(doc.wallet_litecoin),
       );
 
     const payroll_data_2 = await Promise.all(
@@ -118,8 +116,8 @@ export class AdminService {
         crypto_amount:
           blockchain == 'bitcoin'
             ? await this.cryptoapisService.getBTCExchange(doc.total)
-            : blockchain == 'xrp'
-            ? await this.cryptoapisService.getXRPExchange(doc.total)
+            : blockchain == 'litecoin'
+            ? await this.cryptoapisService.getLTCExchange(doc.total)
             : 0,
       })),
     );
@@ -127,7 +125,7 @@ export class AdminService {
     return payroll_data_2;
   }
 
-  async payroll(blockchain: 'bitcoin' | 'xrp') {
+  async payroll(blockchain: 'bitcoin' | 'litecoin') {
     const payroll_data = await this.getPayroll(blockchain);
 
     const ref = await db.collection('payroll').add({
@@ -177,168 +175,163 @@ export class AdminService {
           amount: `${doc.crypto_amount}`,
         })),
       );
-    } else if (blockchain == 'xrp') {
-      const wallets = await Promise.all(
-        payroll_data.map(async (doc) => {
-          const xAddress = await this.getXAddressUser(doc.id);
-          return {
-            xAddress,
-            amount: doc.crypto_amount,
-            id_user: doc.id,
-          };
-        }),
+    } else if (blockchain == 'litecoin') {
+      await this.cryptoapisService.sendRequestTransaction(
+        payroll_data.map((doc) => ({
+          address: doc.wallet_litecoin,
+          amount: `${doc.crypto_amount}`,
+        })),
       );
-      await this.payrollWithXRP(ref.id, wallets);
     }
 
     return payroll_data;
   }
 
-  async payrollWithXRP(
-    payroll_id: string | null,
-    payroll_users: {
-      id_user: string;
-      xAddress: string;
-      amount: number;
-    }[],
-  ) {
-    /**
-     * Total a liquidar descontando la cantidad ya confirmada
-     */
-    let total = 0;
-    for (const user of payroll_users) {
-      if (payroll_id) {
-        const transactionRef = await db
-          .collection('payroll')
-          .doc(payroll_id)
-          .collection('transactions')
-          .doc(user.id_user)
-          .get();
-        user.amount -= transactionRef.get('confirmed_amount') || 0;
-      }
+  // async payrollWithXRP(
+  //   payroll_id: string | null,
+  //   payroll_users: {
+  //     id_user: string;
+  //     xAddress: string;
+  //     amount: number;
+  //   }[],
+  // ) {
+  //   /**
+  //    * Total a liquidar descontando la cantidad ya confirmada
+  //    */
+  //   let total = 0;
+  //   for (const user of payroll_users) {
+  //     if (payroll_id) {
+  //       const transactionRef = await db
+  //         .collection('payroll')
+  //         .doc(payroll_id)
+  //         .collection('transactions')
+  //         .doc(user.id_user)
+  //         .get();
+  //       user.amount -= transactionRef.get('confirmed_amount') || 0;
+  //     }
 
-      total += user.amount;
-    }
+  //     total += user.amount;
+  //   }
 
-    /**
-     * Obtener las wallets que tienen mas de 20 XRP
-     */
-    const wallets_to_pay = await this.getXRPWalletsToUse(total);
+  //   /**
+  //    * Obtener las wallets que tienen mas de 20 XRP
+  //    */
+  //   const wallets_to_pay = await this.getXRPWalletsToUse(total);
 
-    const wallets_users = [];
+  //   const wallets_users = [];
 
-    const parse = (val) => parseFloat(Number(val).toFixed(6));
+  //   const parse = (val) => parseFloat(Number(val).toFixed(6));
 
-    for (const user of payroll_users) {
-      let total_remaing = parse(user.amount);
+  //   for (const user of payroll_users) {
+  //     let total_remaing = parse(user.amount);
 
-      const user_address = {
-        ...user,
-        addresses: [],
-      };
+  //     const user_address = {
+  //       ...user,
+  //       addresses: [],
+  //     };
 
-      while (total_remaing > 0) {
-        const index = wallets_to_pay.findIndex((w) => w.amount > 20.1);
-        const wallet_to_extract = wallets_to_pay[index];
+  //     while (total_remaing > 0) {
+  //       const index = wallets_to_pay.findIndex((w) => w.amount > 20.1);
+  //       const wallet_to_extract = wallets_to_pay[index];
 
-        const from_wallet_to_pay = {
-          address: wallet_to_extract.address,
-          amount_to_transfer: 0,
-        };
+  //       const from_wallet_to_pay = {
+  //         address: wallet_to_extract.address,
+  //         amount_to_transfer: 0,
+  //       };
 
-        const amount_to_withdraw =
-          wallet_to_extract.amount - MINIMAL_XRP_AMOUNT;
+  //       const amount_to_withdraw =
+  //         wallet_to_extract.amount - MINIMAL_XRP_AMOUNT;
 
-        if (amount_to_withdraw >= total_remaing) {
-          from_wallet_to_pay.amount_to_transfer = parse(total_remaing);
-          wallets_to_pay[index].amount =
-            wallet_to_extract.amount - parse(total_remaing);
-          total_remaing = 0;
-        } else {
-          from_wallet_to_pay.amount_to_transfer = parse(amount_to_withdraw);
-          total_remaing -= parse(amount_to_withdraw);
-          wallets_to_pay[index].amount -= parse(amount_to_withdraw);
-        }
+  //       if (amount_to_withdraw >= total_remaing) {
+  //         from_wallet_to_pay.amount_to_transfer = parse(total_remaing);
+  //         wallets_to_pay[index].amount =
+  //           wallet_to_extract.amount - parse(total_remaing);
+  //         total_remaing = 0;
+  //       } else {
+  //         from_wallet_to_pay.amount_to_transfer = parse(amount_to_withdraw);
+  //         total_remaing -= parse(amount_to_withdraw);
+  //         wallets_to_pay[index].amount -= parse(amount_to_withdraw);
+  //       }
 
-        user_address.addresses.push(from_wallet_to_pay);
-      }
+  //       user_address.addresses.push(from_wallet_to_pay);
+  //     }
 
-      wallets_users.push(user_address);
-    }
+  //     wallets_users.push(user_address);
+  //   }
 
-    for (const wu of wallets_users) {
-      const transactionRef = await db
-        .collection('payroll')
-        .doc(payroll_id)
-        .collection('transactions')
-        .doc(wu.id_user)
-        .get();
+  //   for (const wu of wallets_users) {
+  //     const transactionRef = await db
+  //       .collection('payroll')
+  //       .doc(payroll_id)
+  //       .collection('transactions')
+  //       .doc(wu.id_user)
+  //       .get();
 
-      let addresses: any[] = [];
+  //     let addresses: any[] = [];
 
-      if (payroll_id) {
-        if (!transactionRef.exists) {
-          await transactionRef.ref.set(wu);
-        } else {
-          addresses = transactionRef.data().addresses;
-        }
-      }
+  //     if (payroll_id) {
+  //       if (!transactionRef.exists) {
+  //         await transactionRef.ref.set(wu);
+  //       } else {
+  //         addresses = transactionRef.data().addresses;
+  //       }
+  //     }
 
-      console.log(wu);
-      for (const address of wu.addresses) {
-        try {
-          const response =
-            await this.cryptoapisService.sendXRPTransactionFromAddress(
-              wu.xAddress,
-              address.address,
-              address.amount_to_transfer.toFixed(6),
-            );
+  //     console.log(wu);
+  //     for (const address of wu.addresses) {
+  //       try {
+  //         const response =
+  //           await this.cryptoapisService.sendXRPTransactionFromAddress(
+  //             wu.xAddress,
+  //             address.address,
+  //             address.amount_to_transfer.toFixed(6),
+  //           );
 
-          addresses.push({
-            ...address,
-            cryptoapis_transaction_request_id:
-              response.data.item.transactionRequestId,
-          });
+  //         addresses.push({
+  //           ...address,
+  //           cryptoapis_transaction_request_id:
+  //             response.data.item.transactionRequestId,
+  //         });
 
-          if (payroll_id) {
-            await transactionRef.ref.update({
-              addresses,
-            });
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      }
-    }
-  }
+  //         if (payroll_id) {
+  //           await transactionRef.ref.update({
+  //             addresses,
+  //           });
+  //         }
+  //       } catch (err) {
+  //         console.error(err);
+  //       }
+  //     }
+  //   }
+  // }
 
-  /**
-   * Obtiene un arreglo de wallets con el dinero suficiente para pagar
-   */
-  async getXRPWalletsToUse(total: number) {
-    const wallets = await db
-      .collection('wallets')
-      .where('currency', '==', 'XRP')
-      .where('amount', '>', 20.1)
-      .get();
+  // /**
+  //  * Obtiene un arreglo de wallets con el dinero suficiente para pagar
+  //  */
+  // async getXRPWalletsToUse(total: number) {
+  //   const wallets = await db
+  //     .collection('wallets')
+  //     .where('currency', '==', 'XRP')
+  //     .where('amount', '>', 20.1)
+  //     .get();
 
-    let amount = 0;
-    const wallets_to_use = [];
+  //   let amount = 0;
+  //   const wallets_to_use = [];
 
-    for (const wallet of wallets.docs) {
-      amount += wallet.get('amount') - MINIMAL_XRP_AMOUNT;
-      wallets_to_use.push(wallet.data());
+  //   for (const wallet of wallets.docs) {
+  //     amount += wallet.get('amount') - MINIMAL_XRP_AMOUNT;
+  //     wallets_to_use.push(wallet.data());
 
-      if (amount >= total) break;
-    }
+  //     if (amount >= total) break;
+  //   }
 
-    return wallets_to_use.filter(Boolean);
-  }
+  //   return wallets_to_use.filter(Boolean);
+  // }
 
   /**
    * Enviar transacción a cryptoapis usando un registro de payroll
    */
-  async payrollFromPayroll(id: string, blockchain: 'bitcoin' | 'xrp') {
+  async payrollFromPayroll(id: string, blockchain: 'bitcoin' | 'litecoin') {
     const payroll_data = await db
       .collection('payroll')
       .doc(id)
@@ -353,24 +346,14 @@ export class AdminService {
         })),
       );
       return res;
-    } else if (blockchain == 'xrp') {
-      const wallets = await Promise.all(
-        payroll_data.docs.map(async (doc) => {
-          const id_user = doc.get('id');
-          const total_xrp = await this.cryptoapisService.getXRPExchange(
-            doc.get('total'),
-          );
-          const xAddress = await this.getXAddressUser(id_user);
-          return {
-            id_user: id_user,
-            xAddress,
-            amount: total_xrp,
-          };
-        }),
+    } else if (blockchain === 'litecoin') {
+      const res = await this.cryptoapisService.sendRequestTransaction(
+        payroll_data.docs.map((doc) => ({
+          address: doc.get('wallet_litecoin'),
+          amount: `${doc.get('crypto_amount')}`,
+        })),
       );
-      await this.payrollWithXRP(id, wallets);
-
-      return wallets;
+      return res;
     }
   }
 
@@ -396,26 +379,11 @@ export class AdminService {
   async withdraw(
     address: string,
     amount_usd: string,
-    blockchain: 'xrp' | 'bitcoin',
+    blockchain: 'bitcoin' | 'litecoin',
     tag?: string,
   ) {
-    if (blockchain == 'bitcoin') {
+    if (blockchain == 'bitcoin' || blockchain == 'litecoin') {
       return this.cryptoapisService.withdraw(address, amount_usd);
-    } else if (blockchain == 'xrp') {
-      const amount_xrp = await this.cryptoapisService.getXRPExchange(
-        Number(amount_usd),
-      );
-      const xAddress = Encode({
-        account: address,
-        tag,
-      });
-      return this.payrollWithXRP(null, [
-        {
-          amount: amount_xrp,
-          id_user: 'JpdntP2OQzNSBi3IylyMfSEqqSD2',
-          xAddress,
-        },
-      ]);
     }
   }
 
@@ -520,80 +488,80 @@ export class AdminService {
     }
   }
 
-  async getXAddressUser(id_user: string) {
-    const user = await db.collection('users').doc(id_user).get();
-    const address = user.get('wallet_ripple');
-    const tag = user.get('wallet_ripple_tag');
+  // async getXAddressUser(id_user: string) {
+  //   const user = await db.collection('users').doc(id_user).get();
+  //   const address = user.get('wallet_ripple');
+  //   const tag = user.get('wallet_ripple_tag');
 
-    if (!address) {
-      throw new Error('No wallet');
-    }
+  //   if (!address) {
+  //     throw new Error('No wallet');
+  //   }
 
-    let xAddress = user.get('wallet_xripple');
+  //   let xAddress = user.get('wallet_xripple');
 
-    if (!xAddress && tag) {
-      /**
-       * Si no existe la saca y la guarda
-       */
-      xAddress = Encode({
-        account: address,
-        tag,
-      });
+  //   if (!xAddress && tag) {
+  //     /**
+  //      * Si no existe la saca y la guarda
+  //      */
+  //     xAddress = Encode({
+  //       account: address,
+  //       tag,
+  //     });
 
-      await user.ref.update({
-        wallet_xripple: xAddress,
-      });
-    } else if (!xAddress) {
-      xAddress = address;
-    }
+  //     await user.ref.update({
+  //       wallet_xripple: xAddress,
+  //     });
+  //   } else if (!xAddress) {
+  //     xAddress = address;
+  //   }
 
-    return xAddress;
-  }
+  //   return xAddress;
+  // }
 
-  async fixPayLack(payrollID: string) {
-    const payroll_users = await db
-      .collection('payroll')
-      .doc(payrollID)
-      .collection('details')
-      .get();
+  // async fixPayLack(payrollID: string) {
+  //   const payroll_users = await db
+  //     .collection('payroll')
+  //     .doc(payrollID)
+  //     .collection('details')
+  //     .get();
 
-    const lack_to_pay = [];
+  //   const lack_to_pay = [];
 
-    for (const u of payroll_users.docs) {
-      const transactions = await db
-        .collection('payroll')
-        .doc(payrollID)
-        .collection('transactions')
-        .doc(u.get('id'))
-        .get();
+  //   for (const u of payroll_users.docs) {
+  //     const transactions = await db
+  //       .collection('payroll')
+  //       .doc(payrollID)
+  //       .collection('transactions')
+  //       .doc(u.get('id'))
+  //       .get();
 
-      const total_amount = await this.cryptoapisService.getXRPExchange(
-        u.get('total'),
-      );
-      const lack = Number(total_amount) - Number(transactions.get('amount'));
-      const xAddress = await this.getXAddressUser(u.get('id'));
+  //     const total_amount = await this.cryptoapisService.getXRPExchange(
+  //       u.get('total'),
+  //     );
+  //     const lack = Number(total_amount) - Number(transactions.get('amount'));
+  //     const xAddress = await this.getXAddressUser(u.get('id'));
 
-      if (lack > 0) {
-        lack_to_pay.push({
-          amount: lack,
-          id_user: u.get('id'),
-          xAddress,
-        });
-      }
-    }
+  //     if (lack > 0) {
+  //       lack_to_pay.push({
+  //         amount: lack,
+  //         id_user: u.get('id'),
+  //         xAddress,
+  //       });
+  //     }
+  //   }
 
-    await this.payrollWithXRP(payrollID, lack_to_pay);
-  }
+  //   await this.payrollWithXRP(payrollID, lack_to_pay);
+  // }
 
-  async transfer({ from_address, to_x_address, xrp_amount }) {
-    const response = await this.cryptoapisService.sendXRPTransactionFromAddress(
-      to_x_address,
-      from_address,
-      xrp_amount,
-    );
+  // async transfer({ from_address, to_x_address, xrp_amount }) {
+  //   const response = await this.cryptoapisService.sendXRPTransactionFromAddress(
+  //     to_x_address,
+  //     from_address,
+  //     xrp_amount,
+  //   );
 
-    return response;
-  }
+  //   return response;
+  // }
 
   async usersJson() {
     const res = await db.collection('users').get();

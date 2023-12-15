@@ -9,6 +9,7 @@ export interface ResponseCreateWalletAddress {
       label: string;
     };
   };
+  details: any;
 }
 
 export interface ResponseNewUnconfirmedCoinsTransactions {
@@ -156,26 +157,26 @@ export interface CallbackTransaction {
   };
 }
 
-export interface XRPWallet {
-  address: string;
-  confirmedBalance: {
-    amount: string;
-    unit: 'XRP';
-  };
-  createdTimestamp: number;
-  fungibleTokens: any[];
-  index: string;
-  label: string;
-  nonFungibleTokens: [
-    {
-      identifier: '0x90ca8a3eb2574f937f514749ce619fdcca187d45';
-      name: 'Tether';
-      symbol: 'ENS';
-      tokenId: '0x000000000000000000000000000000000000000000000000000000000000195b';
-      type: 'ERC-721';
-    },
-  ];
-}
+// export interface XRPWallet {
+//   address: string;
+//   confirmedBalance: {
+//     amount: string;
+//     unit: 'XRP';
+//   };
+//   createdTimestamp: number;
+//   fungibleTokens: any[];
+//   index: string;
+//   label: string;
+//   nonFungibleTokens: [
+//     {
+//       identifier: '0x90ca8a3eb2574f937f514749ce619fdcca187d45';
+//       name: 'Tether';
+//       symbol: 'ENS';
+//       tokenId: '0x000000000000000000000000000000000000000000000000000000000000195b';
+//       type: 'ERC-721';
+//     },
+//   ];
+// }
 
 export interface TransactionRequest {
   apiVersion: string;

@@ -117,13 +117,13 @@ export class CryptoapisService {
 
   getBlockchainFromCurrency(currency: Coins) {
     if (currency == 'USDT') return 'tron';
-    if (currency == 'XRP') return 'xrp';
+    if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
 
   getQRNameFromCurrency(currency: Coins) {
     if (currency == 'USDT') return 'tron';
-    if (currency == 'XRP') return 'xrp';
+    if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
 
@@ -262,9 +262,9 @@ export class CryptoapisService {
   }
 
   /**
-   * Guardar registro de la transaccion
-   * dentro de una subcoleccion llamada 'transactions'
-   * perneteciente a 'users'.
+   * Guardar registro de la transacción
+   * dentro de una subcolección llamada 'transactions'
+   * perteneciente a 'users'.
    */
   addTransactionToUser = async (
     user_id: string,
@@ -598,13 +598,13 @@ export class CryptoapisService {
     });
   }
 
-  async getXRPExchange(usd: number) {
-    const res = await api_conlayer.get<ResponseConvert>(
-      `/convert?from=USD&to=XRP&amount=${usd}&access_key=c4aa2042e33beee513ff1f915279a3c9`,
-    );
+  // async getXRPExchange(usd: number) {
+  //   const res = await api_conlayer.get<ResponseConvert>(
+  //     `/convert?from=USD&to=XRP&amount=${usd}&access_key=c4aa2042e33beee513ff1f915279a3c9`,
+  //   );
 
-    return res.data.result;
-  }
+  //   return res.data.result;
+  // }
 
   async saveRequestHistory(type: Packs, body: any, headers: any) {
     await db.collection('cryptoapis-requests').add({
@@ -636,107 +636,107 @@ export class CryptoapisService {
     };
   }
 
-  async sendXRPTransactionFromAddress(
-    xAddress: string,
-    fromAddress: string,
-    amount: string,
-  ) {
-    if (!xAddress) {
-      throw new Error('Fallo al encodear X address');
-    }
+  // async sendXRPTransactionFromAddress(
+  //   xAddress: string,
+  //   fromAddress: string,
+  //   amount: string,
+  // ) {
+  //   if (!xAddress) {
+  //     throw new Error('Fallo al encodear X address');
+  //   }
 
-    const options = {
-      ...default_options,
-      method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/transaction-requests?context=yourExampleString`,
-    };
-    const payload = {
-      context: '',
-      data: {
-        item: {
-          amount: amount.toString(),
-          callbackSecretKey: 'a12k*?_1ds',
-          callbackUrl: `${this.hostapi}/admin/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
-          feePriority: 'standard',
-          note: 'withdraw',
-          recipientAddress: xAddress,
-        },
-      },
-    };
+  //   const options = {
+  //     ...default_options,
+  //     method: 'POST',
+  //     path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/transaction-requests?context=yourExampleString`,
+  //   };
+  //   const payload = {
+  //     context: '',
+  //     data: {
+  //       item: {
+  //         amount: amount.toString(),
+  //         callbackSecretKey: 'a12k*?_1ds',
+  //         callbackUrl: `${this.hostapi}/admin/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
+  //         feePriority: 'standard',
+  //         note: 'withdraw',
+  //         recipientAddress: xAddress,
+  //       },
+  //     },
+  //   };
 
-    const res: TransactionRequest = await cryptoApis
-      .post(options.path, payload)
-      .then((r) => r.data);
+  //   const res: TransactionRequest = await cryptoApis
+  //     .post(options.path, payload)
+  //     .then((r) => r.data);
 
-    await db
-      .collection('cryptoapis-transaction-requests')
-      .doc(res.data.item.transactionRequestId)
-      .set({
-        fromAddress,
-        payload,
-        response: res,
-      });
+  //   await db
+  //     .collection('cryptoapis-transaction-requests')
+  //     .doc(res.data.item.transactionRequestId)
+  //     .set({
+  //       fromAddress,
+  //       payload,
+  //       response: res,
+  //     });
 
-    return res;
-  }
+  //   return res;
+  // }
 
-  async encodeXAddress(
-    address: string,
-    tag: string,
-  ): Promise<ResponseEncodeXAddress> {
-    const options = {
-      ...default_options,
-      method: 'GET',
-      path: `/v2/blockchain-tools/xrp/${this.network}/encode-x-address/${address}/${tag}?context=yourExampleString`,
-    };
-    return await cryptoapisRequest<ResponseEncodeXAddress>(options);
-  }
+  // async encodeXAddress(
+  //   address: string,
+  //   tag: string,
+  // ): Promise<ResponseEncodeXAddress> {
+  //   const options = {
+  //     ...default_options,
+  //     method: 'GET',
+  //     path: `/v2/blockchain-tools/xrp/${this.network}/encode-x-address/${address}/${tag}?context=yourExampleString`,
+  //   };
+  //   return await cryptoapisRequest<ResponseEncodeXAddress>(options);
+  // }
 
-  async listAllXRP() {
-    const res = await cryptoApis.get(
-      `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=0`,
-    );
+  // async listAllXRP() {
+  //   const res = await cryptoApis.get(
+  //     `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=0`,
+  //   );
 
-    const total_pages = Math.ceil(res.data.data.total / 50);
+  //   const total_pages = Math.ceil(res.data.data.total / 50);
 
-    let wallets = res.data.data.items;
+  //   let wallets = res.data.data.items;
 
-    for (let i = 2; i <= total_pages; i++) {
-      const res = await cryptoApis.get(
-        `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
-          (i - 1) * 50
-        }`,
-      );
-      wallets = [...wallets, ...res.data.data.items];
-    }
+  //   for (let i = 2; i <= total_pages; i++) {
+  //     const res = await cryptoApis.get(
+  //       `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
+  //         (i - 1) * 50
+  //       }`,
+  //     );
+  //     wallets = [...wallets, ...res.data.data.items];
+  //   }
 
-    return wallets;
-  }
+  //   return wallets;
+  // }
 
-  async fixAllXRP() {
-    const wallets = await this.listAllXRP();
+  // async fixAllXRP() {
+  //   const wallets = await this.listAllXRP();
 
-    for (const wallet of wallets) {
-      const res = await db
-        .collection('wallets')
-        .where('address', '==', wallet.address)
-        .get();
-      const amount = Number(wallet.confirmedBalance.amount); //await this.getAddressBalance(wallet.address, 'xrp');
+  //   for (const wallet of wallets) {
+  //     const res = await db
+  //       .collection('wallets')
+  //       .where('address', '==', wallet.address)
+  //       .get();
+  //     const amount = Number(wallet.confirmedBalance.amount); //await this.getAddressBalance(wallet.address, 'xrp');
 
-      if (!res.empty) {
-        await res.docs[0].ref.update({
-          amount,
-        });
-      } else {
-        await db.collection('wallets').add({
-          address: wallet.address,
-          amount,
-        });
-      }
-    }
-  }
+  //     if (!res.empty) {
+  //       await res.docs[0].ref.update({
+  //         amount,
+  //       });
+  //     } else {
+  //       await db.collection('wallets').add({
+  //         address: wallet.address,
+  //         amount,
+  //       });
+  //     }
+  //   }
+  // }
 
-  async getAddressBalance(address: string, blockchain: 'xrp' | 'btc') {
+  async getAddressBalance(address: string, blockchain: 'bitcoin' | 'litecoin') {
     const res = await cryptoApis
       .get(
         `/v2/blockchain-data/${blockchain}/${this.network}/addresses/${address}/balance?context=yourExampleString`,
@@ -745,29 +745,41 @@ export class CryptoapisService {
     return Number(res.data.item.confirmedBalance.amount);
   }
 
-  async recoverTransactionRequest(
-    transactionRequestId: string,
-    coin_amount?: string,
-  ) {
-    const transactionRequest = await db
-      .collection('cryptoapis-transaction-requests')
-      .doc(transactionRequestId)
-      .get()
-      .then((r) => r.data());
+  // async recoverTransactionRequest(
+  //   transactionRequestId: string,
+  //   coin_amount?: string,
+  // ) {
+  //   const transactionRequest = await db
+  //     .collection('cryptoapis-transaction-requests')
+  //     .doc(transactionRequestId)
+  //     .get()
+  //     .then((r) => r.data());
 
-    const custom_payload = { ...transactionRequest.payload };
+  //   const custom_payload = { ...transactionRequest.payload };
 
-    if (coin_amount) {
-      custom_payload.data.item.amount = coin_amount;
-    }
+  //   if (coin_amount) {
+  //     custom_payload.data.item.amount = coin_amount;
+  //   }
 
-    const res: TransactionRequest = await cryptoApis
-      .post(
-        `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${transactionRequest.fromAddress}/transaction-requests?context=yourExampleString`,
-        custom_payload,
-      )
-      .then((r) => r.data);
+  //   const res: TransactionRequest = await cryptoApis
+  //     .post(
+  //       `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${transactionRequest.fromAddress}/transaction-requests?context=yourExampleString`,
+  //       custom_payload,
+  //     )
+  //     .then((r) => r.data);
 
-    return res;
+  //   return res;
+  // }
+
+  /**
+   * LITECOIN
+   */
+
+  async getLTCExchange(usd: number) {
+    const res = await api_conlayer.get<ResponseConvert>(
+      `/convert?from=USD&to=LTC&amount=${usd}&access_key=c4aa2042e33beee513ff1f915279a3c9`,
+    );
+
+    return res.data.result;
   }
 }
