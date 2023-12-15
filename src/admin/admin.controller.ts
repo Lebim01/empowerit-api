@@ -6,19 +6,19 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('/payroll')
-  getpayroll(@Query('blockchain') blockchain: 'bitcoin' | 'ltc') {
+  getpayroll(@Query('blockchain') blockchain: 'bitcoin' | 'litecoin') {
     return this.adminService.getPayroll(blockchain);
   }
 
   @Post('/payroll')
-  payroll(@Query('blockchain') blockchain: 'bitcoin' | 'ltc') {
+  payroll(@Query('blockchain') blockchain: 'bitcoin' | 'litecoin') {
     return this.adminService.payroll(blockchain);
   }
 
   @Post('/payroll/:payrollid')
   payrollFromPayroll(
     @Param('payrollid') id: string,
-    @Query('blockchain') blockchain: 'ltc' | 'bitcoin',
+    @Query('blockchain') blockchain: 'litecoin' | 'bitcoin',
   ) {
     return this.adminService.payrollFromPayroll(id, blockchain);
   }

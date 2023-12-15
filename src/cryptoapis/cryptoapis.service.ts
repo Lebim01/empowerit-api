@@ -117,13 +117,13 @@ export class CryptoapisService {
 
   getBlockchainFromCurrency(currency: Coins) {
     if (currency == 'USDT') return 'tron';
-    if (currency == 'LTC') return 'ltc';
+    if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
 
   getQRNameFromCurrency(currency: Coins) {
     if (currency == 'USDT') return 'tron';
-    if (currency == 'LTC') return 'ltc';
+    if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
 
@@ -736,7 +736,7 @@ export class CryptoapisService {
   //   }
   // }
 
-  async getAddressBalance(address: string, blockchain: 'btc' | 'ltc') {
+  async getAddressBalance(address: string, blockchain: 'bitcoin' | 'litecoin') {
     const res = await cryptoApis
       .get(
         `/v2/blockchain-data/${blockchain}/${this.network}/addresses/${address}/balance?context=yourExampleString`,

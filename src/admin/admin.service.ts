@@ -18,7 +18,7 @@ export class AdminService {
     private readonly binaryService: BinaryService,
   ) {}
 
-  async getPayroll(blockchain: 'bitcoin' | 'ltc') {
+  async getPayroll(blockchain: 'bitcoin' | 'litecoin') {
     const users = await db.collection('users').get();
     const docs = users.docs.map((r) => ({ id: r.id, ...r.data() }));
 
@@ -116,7 +116,7 @@ export class AdminService {
         crypto_amount:
           blockchain == 'bitcoin'
             ? await this.cryptoapisService.getBTCExchange(doc.total)
-            : blockchain == 'ltc'
+            : blockchain == 'litecoin'
             ? await this.cryptoapisService.getLTCExchange(doc.total)
             : 0,
       })),
@@ -125,7 +125,7 @@ export class AdminService {
     return payroll_data_2;
   }
 
-  async payroll(blockchain: 'bitcoin' | 'ltc') {
+  async payroll(blockchain: 'bitcoin' | 'litecoin') {
     const payroll_data = await this.getPayroll(blockchain);
 
     const ref = await db.collection('payroll').add({
@@ -175,7 +175,7 @@ export class AdminService {
           amount: `${doc.crypto_amount}`,
         })),
       );
-    } else if (blockchain == 'ltc') {
+    } else if (blockchain == 'litecoin') {
       await this.cryptoapisService.sendRequestTransaction(
         payroll_data.map((doc) => ({
           address: doc.wallet_litecoin,
@@ -331,7 +331,7 @@ export class AdminService {
   /**
    * Enviar transacción a cryptoapis usando un registro de payroll
    */
-  async payrollFromPayroll(id: string, blockchain: 'bitcoin' | 'ltc') {
+  async payrollFromPayroll(id: string, blockchain: 'bitcoin' | 'litecoin') {
     const payroll_data = await db
       .collection('payroll')
       .doc(id)
@@ -346,7 +346,7 @@ export class AdminService {
         })),
       );
       return res;
-    } else if (blockchain === 'ltc') {
+    } else if (blockchain === 'litecoin') {
       const res = await this.cryptoapisService.sendRequestTransaction(
         payroll_data.docs.map((doc) => ({
           address: doc.get('wallet_litecoin'),
@@ -379,10 +379,10 @@ export class AdminService {
   async withdraw(
     address: string,
     amount_usd: string,
-    blockchain: 'bitcoin' | 'ltc',
+    blockchain: 'bitcoin' | 'litecoin',
     tag?: string,
   ) {
-    if (blockchain == 'bitcoin' || blockchain == 'ltc') {
+    if (blockchain == 'bitcoin' || blockchain == 'litecoin') {
       return this.cryptoapisService.withdraw(address, amount_usd);
     }
   }

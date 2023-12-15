@@ -9,6 +9,7 @@ export interface ResponseCreateWalletAddress {
       label: string;
     };
   };
+  details: any;
 }
 
 export interface ResponseNewUnconfirmedCoinsTransactions {
