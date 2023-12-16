@@ -89,19 +89,19 @@ export class CryptoapisService {
   async createNewWalletAddress(currency: Coins) {
     const blockchain = this.getBlockchainFromCurrency(currency);
 
-    const res: ResponseCreateWalletAddress = await cryptoApis.post(
-      `/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/addresses`,
-      {
-        context: 'yourExampleString',
-        data: {
-          item: {
-            label: 'yourLabelStringHere',
+    const res: ResponseCreateWalletAddress = await cryptoApis
+      .post(
+        `/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/addresses`,
+        {
+          context: 'yourExampleString',
+          data: {
+            item: {
+              label: 'yourLabelStringHere',
+            },
           },
         },
-      },
-    );
-
-    console.log(res.data);
+      )
+      .then((r) => r.data);
 
     await db.collection('wallets').add({
       currency,
