@@ -101,6 +101,8 @@ export class CryptoapisService {
       },
     );
 
+    console.log(res)
+
     await db.collection('wallets').add({
       currency,
       address: res.data.item.address,
