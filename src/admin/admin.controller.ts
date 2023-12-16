@@ -43,10 +43,10 @@ export class AdminController {
   //   return this.adminService.fixPayLack(payrollID);
   // }
 
-  // @Post('/transfer')
-  // transfer(@Body() body) {
-  //   return this.adminService.transfer(body);
-  // }
+  @Post('/transfer')
+  transfer(@Body() body) {
+    return this.adminService.transfer(body);
+  }
 
   @Get('/users')
   getUsersJson() {

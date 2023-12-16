@@ -89,20 +89,17 @@ export class CryptoapisService {
   async createNewWalletAddress(currency: Coins) {
     const blockchain = this.getBlockchainFromCurrency(currency);
 
-    const options = {
-      ...default_options,
-      method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/addresses`,
-      qs: { context: 'yourExampleString' },
-    };
-    const res = await cryptoapisRequest<ResponseCreateWalletAddress>(options, {
-      context: 'yourExampleString',
-      data: {
-        item: {
-          label: 'yourLabelStringHere',
+    const res: ResponseCreateWalletAddress = await cryptoApis.post(
+      `/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/addresses`,
+      {
+        context: 'yourExampleString',
+        data: {
+          item: {
+            label: 'yourLabelStringHere',
+          },
         },
       },
-    });
+    );
 
     await db.collection('wallets').add({
       currency,
@@ -636,61 +633,61 @@ export class CryptoapisService {
     };
   }
 
-  // async sendXRPTransactionFromAddress(
-  //   xAddress: string,
-  //   fromAddress: string,
-  //   amount: string,
-  // ) {
-  //   if (!xAddress) {
-  //     throw new Error('Fallo al encodear X address');
-  //   }
+  async sendXRPTransactionFromAddress(
+    xAddress: string,
+    fromAddress: string,
+    amount: string,
+  ) {
+    if (!xAddress) {
+      throw new Error('Fallo al encodear X address');
+    }
 
-  //   const options = {
-  //     ...default_options,
-  //     method: 'POST',
-  //     path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/transaction-requests?context=yourExampleString`,
-  //   };
-  //   const payload = {
-  //     context: '',
-  //     data: {
-  //       item: {
-  //         amount: amount.toString(),
-  //         callbackSecretKey: 'a12k*?_1ds',
-  //         callbackUrl: `${this.hostapi}/admin/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
-  //         feePriority: 'standard',
-  //         note: 'withdraw',
-  //         recipientAddress: xAddress,
-  //       },
-  //     },
-  //   };
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/transaction-requests?context=yourExampleString`,
+    };
+    const payload = {
+      context: '',
+      data: {
+        item: {
+          amount: amount.toString(),
+          callbackSecretKey: 'a12k*?_1ds',
+          callbackUrl: `${this.hostapi}/admin/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
+          feePriority: 'standard',
+          note: 'withdraw',
+          recipientAddress: xAddress,
+        },
+      },
+    };
 
-  //   const res: TransactionRequest = await cryptoApis
-  //     .post(options.path, payload)
-  //     .then((r) => r.data);
+    const res: TransactionRequest = await cryptoApis
+      .post(options.path, payload)
+      .then((r) => r.data);
 
-  //   await db
-  //     .collection('cryptoapis-transaction-requests')
-  //     .doc(res.data.item.transactionRequestId)
-  //     .set({
-  //       fromAddress,
-  //       payload,
-  //       response: res,
-  //     });
+    await db
+      .collection('cryptoapis-transaction-requests')
+      .doc(res.data.item.transactionRequestId)
+      .set({
+        fromAddress,
+        payload,
+        response: res,
+      });
 
-  //   return res;
-  // }
+    return res;
+  }
 
-  // async encodeXAddress(
-  //   address: string,
-  //   tag: string,
-  // ): Promise<ResponseEncodeXAddress> {
-  //   const options = {
-  //     ...default_options,
-  //     method: 'GET',
-  //     path: `/v2/blockchain-tools/xrp/${this.network}/encode-x-address/${address}/${tag}?context=yourExampleString`,
-  //   };
-  //   return await cryptoapisRequest<ResponseEncodeXAddress>(options);
-  // }
+  async encodeXAddress(
+    address: string,
+    tag: string,
+  ): Promise<ResponseEncodeXAddress> {
+    const options = {
+      ...default_options,
+      method: 'GET',
+      path: `/v2/blockchain-tools/xrp/${this.network}/encode-x-address/${address}/${tag}?context=yourExampleString`,
+    };
+    return await cryptoapisRequest<ResponseEncodeXAddress>(options);
+  }
 
   // async listAllXRP() {
   //   const res = await cryptoApis.get(

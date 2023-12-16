@@ -553,15 +553,15 @@ export class AdminService {
   //   await this.payrollWithXRP(payrollID, lack_to_pay);
   // }
 
-  // async transfer({ from_address, to_x_address, xrp_amount }) {
-  //   const response = await this.cryptoapisService.sendXRPTransactionFromAddress(
-  //     to_x_address,
-  //     from_address,
-  //     xrp_amount,
-  //   );
+  async transfer({ from_address, to_x_address, xrp_amount }) {
+    const response = await this.cryptoapisService.sendXRPTransactionFromAddress(
+      to_x_address,
+      from_address,
+      xrp_amount,
+    );
 
-  //   return response;
-  // }
+    return response;
+  }
 
   async usersJson() {
     const res = await db.collection('users').get();
