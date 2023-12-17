@@ -11,7 +11,7 @@ export class AdminController {
   }
 
   @Post('/payroll')
-  payroll(@Query('blockchain') blockchain: 'bitcoin' | 'litecoin') {
+  payroll(@Query('blockchain') blockchain: Blockchains) {
     return this.adminService.payroll(blockchain);
   }
 

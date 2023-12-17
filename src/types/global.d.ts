@@ -4,4 +4,6 @@ type HightTicket = 'crypto_elite' | 'toprice_xpert';
 
 type Packs = 'pro+supreme';
 
-type Coins = 'BTC' | 'USDT' | 'LTC';
+type Coins = 'BTC' | 'LTC' | 'XRP';
+
+type Blockchains = 'bitcoin' | 'litecoin' | 'xrp';

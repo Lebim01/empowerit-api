@@ -115,13 +115,13 @@ export class CryptoapisService {
   }
 
   getBlockchainFromCurrency(currency: Coins) {
-    if (currency == 'USDT') return 'tron';
+    if (currency == 'XRP') return 'xrp';
     if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
 
   getQRNameFromCurrency(currency: Coins) {
-    if (currency == 'USDT') return 'tron';
+    if (currency == 'XRP') return 'xrp';
     if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
@@ -691,49 +691,49 @@ export class CryptoapisService {
     return await cryptoapisRequest<ResponseEncodeXAddress>(options);
   }
 
-  // async listAllXRP() {
-  //   const res = await cryptoApis.get(
-  //     `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=0`,
-  //   );
+  async listAllXRP() {
+    const res = await cryptoApis.get(
+      `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=0`,
+    );
 
-  //   const total_pages = Math.ceil(res.data.data.total / 50);
+    const total_pages = Math.ceil(res.data.data.total / 50);
 
-  //   let wallets = res.data.data.items;
+    let wallets = res.data.data.items;
 
-  //   for (let i = 2; i <= total_pages; i++) {
-  //     const res = await cryptoApis.get(
-  //       `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
-  //         (i - 1) * 50
-  //       }`,
-  //     );
-  //     wallets = [...wallets, ...res.data.data.items];
-  //   }
+    for (let i = 2; i <= total_pages; i++) {
+      const res = await cryptoApis.get(
+        `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
+          (i - 1) * 50
+        }`,
+      );
+      wallets = [...wallets, ...res.data.data.items];
+    }
 
-  //   return wallets;
-  // }
+    return wallets;
+  }
 
-  // async fixAllXRP() {
-  //   const wallets = await this.listAllXRP();
+  async fixAllXRP() {
+    const wallets = await this.listAllXRP();
 
-  //   for (const wallet of wallets) {
-  //     const res = await db
-  //       .collection('wallets')
-  //       .where('address', '==', wallet.address)
-  //       .get();
-  //     const amount = Number(wallet.confirmedBalance.amount); //await this.getAddressBalance(wallet.address, 'xrp');
+    for (const wallet of wallets) {
+      const res = await db
+        .collection('wallets')
+        .where('address', '==', wallet.address)
+        .get();
+      const amount = Number(wallet.confirmedBalance.amount); //await this.getAddressBalance(wallet.address, 'xrp');
 
-  //     if (!res.empty) {
-  //       await res.docs[0].ref.update({
-  //         amount,
-  //       });
-  //     } else {
-  //       await db.collection('wallets').add({
-  //         address: wallet.address,
-  //         amount,
-  //       });
-  //     }
-  //   }
-  // }
+      if (!res.empty) {
+        await res.docs[0].ref.update({
+          amount,
+        });
+      } else {
+        await db.collection('wallets').add({
+          address: wallet.address,
+          amount,
+        });
+      }
+    }
+  }
 
   async getAddressBalance(address: string, blockchain: 'bitcoin' | 'litecoin') {
     const res = await cryptoApis
@@ -744,31 +744,31 @@ export class CryptoapisService {
     return Number(res.data.item.confirmedBalance.amount);
   }
 
-  // async recoverTransactionRequest(
-  //   transactionRequestId: string,
-  //   coin_amount?: string,
-  // ) {
-  //   const transactionRequest = await db
-  //     .collection('cryptoapis-transaction-requests')
-  //     .doc(transactionRequestId)
-  //     .get()
-  //     .then((r) => r.data());
+  async recoverTransactionRequest(
+    transactionRequestId: string,
+    coin_amount?: string,
+  ) {
+    const transactionRequest = await db
+      .collection('cryptoapis-transaction-requests')
+      .doc(transactionRequestId)
+      .get()
+      .then((r) => r.data());
 
-  //   const custom_payload = { ...transactionRequest.payload };
+    const custom_payload = { ...transactionRequest.payload };
 
-  //   if (coin_amount) {
-  //     custom_payload.data.item.amount = coin_amount;
-  //   }
+    if (coin_amount) {
+      custom_payload.data.item.amount = coin_amount;
+    }
 
-  //   const res: TransactionRequest = await cryptoApis
-  //     .post(
-  //       `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${transactionRequest.fromAddress}/transaction-requests?context=yourExampleString`,
-  //       custom_payload,
-  //     )
-  //     .then((r) => r.data);
+    const res: TransactionRequest = await cryptoApis
+      .post(
+        `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${transactionRequest.fromAddress}/transaction-requests?context=yourExampleString`,
+        custom_payload,
+      )
+      .then((r) => r.data);
 
-  //   return res;
-  // }
+    return res;
+  }
 
   /**
    * LITECOIN
