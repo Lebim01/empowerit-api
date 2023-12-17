@@ -339,14 +339,14 @@ export class AdminService {
   /**
    * Enviar transacción a cryptoapis usando un registro de payroll
    */
-  async payrollFromPayroll(id: string, blockchain: 'bitcoin' | 'litecoin') {
+  async payrollFromPayroll(id: string, blockchain: Blockchains) {
     const payroll_data = await db
       .collection('payroll')
       .doc(id)
       .collection('details')
       .get();
 
-    if (blockchain == 'bitcoin') {
+    if (['bitcoin', 'litecoin'].includes(blockchain)) {
       const res = await this.cryptoapisService.sendRequestTransaction(
         payroll_data.docs.map((doc) => ({
           address: doc.get('wallet_bitcoin'),
@@ -354,14 +354,24 @@ export class AdminService {
         })),
       );
       return res;
-    } else if (blockchain === 'litecoin') {
-      const res = await this.cryptoapisService.sendRequestTransaction(
-        payroll_data.docs.map((doc) => ({
-          address: doc.get('wallet_litecoin'),
-          amount: `${doc.get('crypto_amount')}`,
-        })),
+    } else if (blockchain == 'xrp') {
+      const wallets = await Promise.all(
+        payroll_data.docs.map(async (doc) => {
+          const id_user = doc.get('id');
+          const total_xrp = await this.cryptoapisService.getXRPExchange(
+            doc.get('total'),
+          );
+          const xAddress = await this.getXAddressUser(id_user);
+          return {
+            id_user: id_user,
+            xAddress,
+            amount: total_xrp,
+          };
+        }),
       );
-      return res;
+      await this.payrollWithXRP(id, wallets);
+
+      return wallets;
     }
   }
 

@@ -18,7 +18,7 @@ export class AdminController {
   @Post('/payroll/:payrollid')
   payrollFromPayroll(
     @Param('payrollid') id: string,
-    @Query('blockchain') blockchain: 'litecoin' | 'bitcoin',
+    @Query('blockchain') blockchain: Blockchains,
   ) {
     return this.adminService.payrollFromPayroll(id, blockchain);
   }
