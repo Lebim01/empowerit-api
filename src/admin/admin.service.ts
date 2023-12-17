@@ -119,6 +119,8 @@ export class AdminService {
             ? await this.cryptoapisService.getBTCExchange(doc.total)
             : blockchain == 'litecoin'
             ? await this.cryptoapisService.getLTCExchange(doc.total)
+            : blockchain == 'xrp'
+            ? await this.cryptoapisService.getXRPExchange(doc.total)
             : 0,
       })),
     );
