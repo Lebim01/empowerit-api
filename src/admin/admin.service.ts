@@ -347,12 +347,24 @@ export class AdminService {
       .get();
 
     if (['bitcoin', 'litecoin'].includes(blockchain)) {
-      const res = await this.cryptoapisService.sendRequestTransaction(
-        payroll_data.docs.map((doc) => ({
-          address: doc.get('wallet_bitcoin'),
-          amount: `${doc.get('crypto_amount')}`,
+      const wallet =
+        blockchain == 'bitcoin' ? 'wallet_bitcoin' : 'wallet_litecoin';
+
+      const requests = await Promise.all(
+        payroll_data.docs.map(async (doc) => ({
+          address: doc.get(wallet),
+          amount:
+            blockchain == 'bitcoin'
+              ? await this.cryptoapisService.getBTCExchange(
+                  Number(doc.get('total')),
+                )
+              : await this.cryptoapisService.getLTCExchange(
+                  Number(doc.get('total')),
+                ),
         })),
       );
+
+      const res = await this.cryptoapisService.sendRequestTransaction(requests);
       return res;
     } else if (blockchain == 'xrp') {
       const wallets = await Promise.all(
