@@ -352,17 +352,20 @@ export class AdminService {
         blockchain == 'bitcoin' ? 'wallet_bitcoin' : 'wallet_litecoin';
 
       const requests = await Promise.all(
-        payroll_data.docs.map(async (doc) => ({
-          address: doc.get(wallet),
-          amount:
+        payroll_data.docs.map(async (doc) => {
+          const amount =
             blockchain == 'bitcoin'
               ? await this.cryptoapisService.getBTCExchange(
                   Number(doc.get('total')),
                 )
               : await this.cryptoapisService.getLTCExchange(
                   Number(doc.get('total')),
-                ),
-        })),
+                );
+          return {
+            address: doc.get(wallet),
+            amount: amount.toString(),
+          };
+        }),
       );
 
       const res = await this.cryptoapisService.sendRequestTransaction(
