@@ -209,11 +209,12 @@ export class CryptoapisService {
 
   sendRequestTransaction = async (
     recipients: { address: string; amount: string }[],
+    blockchain: 'bitcoin' | 'litecoin',
   ) => {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/bitcoin/${this.network}/transaction-requests`,
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/transaction-requests`,
     };
     return await cryptoapisRequest(options, {
       context: '',

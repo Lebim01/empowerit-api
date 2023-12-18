@@ -177,6 +177,7 @@ export class AdminService {
           address: doc.wallet_bitcoin,
           amount: `${doc.crypto_amount}`,
         })),
+        blockchain as 'bitcoin' | 'litecoin',
       );
     } else if (blockchain == 'xrp') {
       const wallets = await Promise.all(
@@ -364,7 +365,11 @@ export class AdminService {
         })),
       );
 
-      const res = await this.cryptoapisService.sendRequestTransaction(requests);
+      const res = await this.cryptoapisService.sendRequestTransaction(
+        requests,
+        blockchain as 'bitcoin' | 'litecoin',
+      );
+
       return res;
     } else if (blockchain == 'xrp') {
       const wallets = await Promise.all(
