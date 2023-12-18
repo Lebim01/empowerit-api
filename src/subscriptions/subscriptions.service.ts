@@ -99,9 +99,7 @@ export class SubscriptionsService {
     };
 
     let amount = 0;
-    if (currency == 'USDT') {
-      amount = amount_type[type];
-    } else if (currency == 'LTC') {
+    if (currency == 'LTC') {
       amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
     } else {
       amount = await this.cryptoapisService.getBTCExchange(amount_type[type]);
@@ -188,9 +186,7 @@ export class SubscriptionsService {
 
     let amountbtc;
 
-    if (currency == 'USDT') {
-      amountbtc = amount_type[type];
-    } else if (currency == 'LTC') {
+    if (currency == 'LTC') {
       amountbtc = await this.cryptoapisService.getLTCExchange(
         amount_type[type],
       );
