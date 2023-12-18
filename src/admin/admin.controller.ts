@@ -11,14 +11,14 @@ export class AdminController {
   }
 
   @Post('/payroll')
-  payroll(@Query('blockchain') blockchain: 'bitcoin' | 'litecoin') {
+  payroll(@Query('blockchain') blockchain: Blockchains) {
     return this.adminService.payroll(blockchain);
   }
 
   @Post('/payroll/:payrollid')
   payrollFromPayroll(
     @Param('payrollid') id: string,
-    @Query('blockchain') blockchain: 'litecoin' | 'bitcoin',
+    @Query('blockchain') blockchain: Blockchains,
   ) {
     return this.adminService.payrollFromPayroll(id, blockchain);
   }
@@ -43,10 +43,10 @@ export class AdminController {
   //   return this.adminService.fixPayLack(payrollID);
   // }
 
-  // @Post('/transfer')
-  // transfer(@Body() body) {
-  //   return this.adminService.transfer(body);
-  // }
+  @Post('/transfer')
+  transfer(@Body() body) {
+    return this.adminService.transfer(body);
+  }
 
   @Get('/users')
   getUsersJson() {

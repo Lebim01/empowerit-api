@@ -50,7 +50,6 @@ import { Neo4jModule } from './neo4j/neo4j.module';
     GoogletaskModule,
     CloudflareModule,
     AcademyModule,
-    Neo4jModule,
   ],
   controllers: [AppController],
   providers: [

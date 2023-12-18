@@ -564,10 +564,10 @@ export class CryptoapisController {
   //   return this.cryptoapisService.listAllXRP();
   // }
 
-  // @Post('fix-xrp-wallets')
-  // fixXRPWallets() {
-  //   return this.cryptoapisService.fixAllXRP();
-  // }
+  @Post('fix-xrp-wallets')
+  fixXRPWallets() {
+    return this.cryptoapisService.fixAllXRP();
+  }
 
   // @Post('recover-transaction-request/:id')
   // recoverTransactionRequest(
