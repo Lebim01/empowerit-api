@@ -116,13 +116,13 @@ export class CryptoapisService {
   }
 
   getBlockchainFromCurrency(currency: Coins) {
-    if (currency == 'USDT') return 'tron';
+    if (currency == 'XRP') return 'ripple';
     if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
 
   getQRNameFromCurrency(currency: Coins) {
-    if (currency == 'USDT') return 'tron';
+    if (currency == 'XRP') return 'ripple';
     if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }

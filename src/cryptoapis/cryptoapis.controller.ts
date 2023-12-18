@@ -46,7 +46,7 @@ export class CryptoapisController {
       body.data.event == 'ADDRESS_COINS_TRANSACTION_CONFIRMED' &&
       body.data.item.network == this.cryptoapisService.network &&
       body.data.item.direction == 'incoming' &&
-      ['BTC', 'USDT', 'LTC'].includes(body.data.item.unit.toUpperCase())
+      ['BTC', 'LTC', 'XRP'].includes(body.data.item.unit.toUpperCase())
     );
   }
 
