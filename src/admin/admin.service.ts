@@ -353,6 +353,7 @@ export class AdminService {
 
       const requests = await Promise.all(
         payroll_data.docs.map(async (doc) => {
+          const user = await db.collection('users').doc(doc.get('id')).get();
           const amount =
             blockchain == 'bitcoin'
               ? await this.cryptoapisService.getBTCExchange(
@@ -361,15 +362,19 @@ export class AdminService {
               : await this.cryptoapisService.getLTCExchange(
                   Number(doc.get('total')),
                 );
+          await doc.ref.update({
+            [`total_${wallet}`]: amount,
+          });
           return {
-            address: doc.get(wallet),
+            address: user.get(wallet),
             amount: amount.toString(),
           };
         }),
       );
 
+      const requests_empty = requests.filter((r) => r.address);
       const res = await this.cryptoapisService.sendRequestTransaction(
-        requests,
+        requests_empty,
         blockchain as 'bitcoin' | 'litecoin',
       );
 
