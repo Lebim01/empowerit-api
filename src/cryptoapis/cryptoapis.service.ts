@@ -20,7 +20,7 @@ const default_options = {
   hostname: 'rest.cryptoapis.io',
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': 'fb00b4aa1965ff6bc36b5fba67447a3c927f2f6a',
+    'X-API-Key': '036b3c89bba2994ab578abf9eb529dd0f775309d',
   },
 };
 
@@ -28,7 +28,7 @@ const cryptoApis = axios.create({
   baseURL: 'https://rest.cryptoapis.io',
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': 'fb00b4aa1965ff6bc36b5fba67447a3c927f2f6a',
+    'X-API-Key': '036b3c89bba2994ab578abf9eb529dd0f775309d',
   },
 });
 
