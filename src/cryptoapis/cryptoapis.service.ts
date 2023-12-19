@@ -68,8 +68,8 @@ const cryptoapisRequest = async <Response>(
 export class CryptoapisService {
   walletId =
     process.env.CUSTOM_ENV == 'production'
-      ? '64cbde4178ffd80007affa0f'
-      : '64c6dd54aa48640007b8e26f';
+      ? '658213a1b50a7c0007a7a30b'
+      : '658213c9b50a7c0007a7a30d';
   blockchain = 'bitcoin';
   network = process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
   hostapi =
@@ -694,7 +694,7 @@ export class CryptoapisService {
 
   async listAllXRP() {
     const res = await cryptoApis.get(
-      `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=0`,
+      `/wallet-as-a-service/wallets/658213a1b50a7c0007a7a30b/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=0`,
     );
 
     const total_pages = Math.ceil(res.data.data.total / 50);
@@ -703,7 +703,7 @@ export class CryptoapisService {
 
     for (let i = 2; i <= total_pages; i++) {
       const res = await cryptoApis.get(
-        `/wallet-as-a-service/wallets/64cbde4178ffd80007affa0f/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
+        `/wallet-as-a-service/wallets/658213a1b50a7c0007a7a30b/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
           (i - 1) * 50
         }`,
       );
