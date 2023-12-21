@@ -19,8 +19,8 @@ export class AppController {
   @Get('cryptoapisverifydomain')
   verifyDomain() {
     return process.env.CUSTOM_ENV == 'production'
-      ? 'cryptoapis-cb-3c5ed9409121d6814c3c7383372faefb3ed72ccc4775a42c56c49e92949fc616'
-      : 'cryptoapis-cb-c104a80e5982695efb1b26ed8f30e0dc764ec4878f2b58d8f4c4609e8a4c665c';
+      ? 'cryptoapis-cb-7c30eb71cc36000f77bb05f3bdcb0a84e8f6331df86f6b149b332f28556cd370'
+      : 'cryptoapis-cb-1828d17252c5ee682658f1a69e39d22a97a877479f7fb74898f80e0b8ebe4149';
   }
 
   @Get('test')
