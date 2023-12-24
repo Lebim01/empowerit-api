@@ -16,11 +16,24 @@ import axios from 'axios';
 import { firestore } from 'firebase-admin';
 import { ResponseConvert } from './types/conlayer';
 
+const accounts = {
+  victor: {
+    apiKey: 'fb00b4aa1965ff6bc36b5fba67447a3c927f2f6a',
+    walletIdProd: '64cbde4178ffd80007affa0f',
+    walletIdTest: '64c6dd54aa48640007b8e26f',
+  },
+  saul: {
+    apiKey: 'd43720cee164a22fdfb9f2ec70bbec8fc0efcbd2',
+    walletIdProd: '658213a1b50a7c0007a7a30b',
+    walletIdTest: '658213c9b50a7c0007a7a30d',
+  },
+};
+
 const default_options = {
   hostname: 'rest.cryptoapis.io',
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': '036b3c89bba2994ab578abf9eb529dd0f775309d',
+    'X-API-Key': accounts.saul.apiKey,
   },
 };
 
@@ -28,7 +41,7 @@ const cryptoApis = axios.create({
   baseURL: 'https://rest.cryptoapis.io',
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': '036b3c89bba2994ab578abf9eb529dd0f775309d',
+    'X-API-Key': accounts.saul.apiKey,
   },
 });
 
@@ -68,8 +81,8 @@ const cryptoapisRequest = async <Response>(
 export class CryptoapisService {
   walletId =
     process.env.CUSTOM_ENV == 'production'
-      ? '658213a1b50a7c0007a7a30b'
-      : '658213c9b50a7c0007a7a30d';
+      ? accounts.saul.walletIdProd
+      : accounts.saul.walletIdTest;
   blockchain = 'bitcoin';
   network = process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
   hostapi =
@@ -572,11 +585,15 @@ export class CryptoapisService {
     return await cryptoapisRequest<ResponseListOfEvents>(options);
   }
 
-  async withdraw(address: string, amount: string) {
+  async withdraw(
+    address: string,
+    amount: string,
+    blockchain: 'bitcoin' | 'litecoin',
+  ) {
     const options = {
       ...default_options,
       method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${this.blockchain}/${this.network}/transaction-requests`,
+      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/transaction-requests`,
     };
     return await cryptoapisRequest(options, {
       context: '',

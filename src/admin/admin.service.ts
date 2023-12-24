@@ -426,7 +426,7 @@ export class AdminService {
     tag?: string,
   ) {
     if (blockchain == 'bitcoin' || blockchain == 'litecoin') {
-      return this.cryptoapisService.withdraw(address, amount_usd);
+      return this.cryptoapisService.withdraw(address, amount_usd, blockchain);
     }
   }
 
