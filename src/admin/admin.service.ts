@@ -172,11 +172,15 @@ export class AdminService {
     }
 
     if (['bitcoin', 'litecoin'].includes(blockchain)) {
+      const wallet =
+        blockchain == 'bitcoin' ? 'wallet_bitcoin' : 'wallet_litecoin';
+      const requests = payroll_data.map((doc) => ({
+        address: doc[wallet],
+        amount: `${doc.crypto_amount}`,
+      }));
+      const requests_empty = requests.filter((r) => r.address);
       await this.cryptoapisService.sendRequestTransaction(
-        payroll_data.map((doc) => ({
-          address: doc.wallet_bitcoin,
-          amount: `${doc.crypto_amount}`,
-        })),
+        requests_empty,
         blockchain as 'bitcoin' | 'litecoin',
       );
     } else if (blockchain == 'xrp') {
