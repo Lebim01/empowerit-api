@@ -376,7 +376,7 @@ export class AdminService {
         }),
       );
 
-      const requests_empty = requests.filter((r) => r.address);
+      const requests_empty = requests.filter((r) => r.address && r.amount > 0);
       const res = await this.cryptoapisService.sendRequestTransaction(
         requests_empty,
         blockchain as 'bitcoin' | 'litecoin',
