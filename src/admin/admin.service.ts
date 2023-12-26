@@ -367,7 +367,7 @@ export class AdminService {
                   Number(doc.get('total')),
                 );
           await doc.ref.update({
-            [`total_${wallet}`]: amount,
+            [`total_${wallet}`]: amount || 0,
           });
           return {
             address: user.get(wallet),
