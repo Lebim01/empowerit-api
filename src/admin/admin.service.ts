@@ -371,7 +371,7 @@ export class AdminService {
           });
           return {
             address: user.get(wallet),
-            amount: amount.toString(),
+            amount: amount?.toString() || 0,
           };
         }),
       );
