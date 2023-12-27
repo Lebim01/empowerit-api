@@ -70,7 +70,7 @@ export class AdminService {
           left_points: docData.left_points,
           right_points: docData.right_points,
           wallet_bitcoin: docData.wallet_bitcoin,
-          wallet_litecoin: docData.wallet_bitcoin,
+          wallet_litecoin: docData.wallet_litecoin || '',
           profits: docData.profits || 0,
           rank: docData.rank,
           profits_this_month: docData.profits_this_month || 0,
