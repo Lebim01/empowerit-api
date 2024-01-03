@@ -159,7 +159,7 @@ export class SubscriptionsService {
       );
       address = newAddress;
 
-      if (currency == 'BTC') {
+      if (currency == 'BTC' || currency == 'LTC') {
         const resConfirmation =
           await this.cryptoapisService.createFirstConfirmationTransaction(
             id_user,
