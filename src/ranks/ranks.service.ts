@@ -8,6 +8,8 @@ import {
   where,
   addDoc,
   updateDoc,
+  orderBy,
+  limit,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
@@ -127,6 +129,20 @@ export class RanksService {
     const left_week = [];
     const right_week = [];
     const dates = await this.getWeeks(is_report);
+    const rankHistory = [];
+
+    const searchRankHistory = query(
+      collection(db, `users/${user.id}/rank_history`),
+      orderBy('date', 'desc'),
+      limit(4),
+    );
+
+    const getRankHistory = await getDocs(searchRankHistory);
+
+    for (const doc of getRankHistory.docs) {
+      /* Acumular el contador depentiendo del valor del atributo position del usuario esponsoreado */
+      rankHistory.push(doc.data());
+    }
 
     for (const [start, end] of dates) {
       let left = 0;
@@ -180,6 +196,7 @@ export class RanksService {
       sanguinea,
       derrame,
       firms,
+      rankHistory,
     };
   }
 
