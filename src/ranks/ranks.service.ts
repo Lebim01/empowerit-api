@@ -116,8 +116,8 @@ export class RanksService {
       rankData.user,
       rankData.left_week,
       rankData.right_week,
-      rankData.sanguinea,
-      rankData.derrame,
+      rankData.interna,
+      rankData.externa,
     );
 
     return rankData;
@@ -129,7 +129,6 @@ export class RanksService {
     const left_week = [];
     const right_week = [];
     const dates = await this.getWeeks(is_report);
-    const rankHistory = [];
 
     const searchRankHistory = query(
       collection(db, `users/${user.id}/rank_history`),
@@ -137,12 +136,7 @@ export class RanksService {
       limit(4),
     );
 
-    const getRankHistory = await getDocs(searchRankHistory);
-
-    for (const doc of getRankHistory.docs) {
-      /* Acumular el contador depentiendo del valor del atributo position del usuario esponsoreado */
-      rankHistory.push(doc.data());
-    }
+    const rankHistory = await getDocs(searchRankHistory).then(r => r.docs.map(d => d.data()));
 
     for (const [start, end] of dates) {
       let left = 0;
@@ -168,18 +162,18 @@ export class RanksService {
       right_week.push(right);
     }
 
-    const sanguinea = user.get('position') == 'left' ? right_week : left_week;
-    const derrame = user.get('position') == 'left' ? left_week : right_week;
-    const firms = await this.getDirectFirms(user.id, is_report);
+    const interna = user.get('position') == 'left' ? right_week : left_week;
+    const externa = user.get('position') == 'left' ? left_week : right_week;
+    const firmas_directas = await this.getDirectFirms(user.id, is_report);
     /* Obtener el payroll de los ultimos 28 dias */
     const totalUSD = await this.getPayrollUser(user.id, is_report);
     /* Crear subcoleccion para el historial de rangos */
     const rank = await this.getRank(
       totalUSD.totalUSD,
       user.data(),
-      sanguinea,
-      derrame,
-      firms,
+      interna,
+      externa,
+      firmas_directas,
     );
 
     return {
@@ -193,9 +187,9 @@ export class RanksService {
       user: user.id,
       left_week,
       right_week,
-      sanguinea,
-      derrame,
-      firms,
+      interna,
+      externa,
+      firmas_directas,
       rankHistory,
     };
   }
@@ -261,14 +255,14 @@ export class RanksService {
     user: any,
     interna: number[],
     externa: number[],
-    firms: number[],
+    firmas_directas: number[],
   ) {
     let rank = '';
     let next_rank = '';
     let missing_usd = 0;
     let missing_scolarship = false;
 
-    const total_firms_last_4_weeks = firms.reduce((a, b) => a + b, 0);
+    const total_firms_last_4_weeks = interna.reduce((a, b) => a + b, 0) + externa.reduce((a, b) => a + b, 0);
     const has_firms_internal = (min_firms: number) =>
       interna.every((firm) => firm >= min_firms);
     const has_firms_external = (min_firms: number) =>
@@ -394,8 +388,8 @@ export class RanksService {
     _users: any,
     left: any,
     right: any,
-    sanguinea: any,
-    derrame: any,
+    interna: any,
+    externa: any,
   ) {
     const mainCollectionRef = collection(db, 'users');
     const mainDocRef = doc(mainCollectionRef, _users);
@@ -407,8 +401,8 @@ export class RanksService {
         total: totalUSD,
         left,
         right,
-        sanguinea,
-        derrame,
+        interna,
+        externa,
       });
     } catch (error) {
       console.error('Error al agregar documento:', error);
