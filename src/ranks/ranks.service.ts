@@ -133,10 +133,13 @@ export class RanksService {
     const searchRankHistory = query(
       collection(db, `users/${user.id}/rank_history`),
       orderBy('date', 'desc'),
-      limit(4),
     );
 
-    const rankHistory = await getDocs(searchRankHistory).then(r => r.docs.map(d => d.data()));
+    const rankHistory = await getDocs(searchRankHistory).then((r) =>
+      r.docs.map((d) => {
+        return { date: d.data().date, total: d.data().total };
+      }),
+    );
 
     for (const [start, end] of dates) {
       let left = 0;
@@ -262,7 +265,8 @@ export class RanksService {
     let missing_usd = 0;
     let missing_scolarship = false;
 
-    const total_firms_last_4_weeks = interna.reduce((a, b) => a + b, 0) + externa.reduce((a, b) => a + b, 0);
+    const total_firms_last_4_weeks =
+      interna.reduce((a, b) => a + b, 0) + externa.reduce((a, b) => a + b, 0);
     const has_firms_internal = (min_firms: number) =>
       interna.every((firm) => firm >= min_firms);
     const has_firms_external = (min_firms: number) =>
