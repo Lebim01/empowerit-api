@@ -412,29 +412,6 @@ export class SubscriptionsService {
     await this.assingMembership(id_user, 'ibo');
   }
 
-  async onPaymentSupremeMembership(id_user: string) {
-    await this.assingMembership(id_user, 'supreme');
-    await this.bondService.execSupremeBond(id_user);
-  }
-
-  async onPaymentStarterMembership(id_user: string) {
-    await this.assingMembership(id_user, 'starter');
-    await this.bondService.execStarterBond(id_user);
-
-    const customIBODays = 56;
-    await this.assingMembership(id_user, 'ibo', customIBODays);
-  }
-
-  async onPaymentCryptoEliteMembership(id_user: string) {
-    await this.assingMembership(id_user, 'crypto_elite');
-    await this.bondService.bondHighTicket(id_user, 'crypto_elite');
-  }
-
-  async onPaymentTopriceXpertMembership(id_user: string) {
-    await this.assingMembership(id_user, 'toprice_xpert');
-    await this.bondService.bondHighTicket(id_user, 'toprice_xpert');
-  }
-
   async onPaymentProMembership(
     id_user: string,
     amount_crypto: number,
@@ -533,7 +510,7 @@ export class SubscriptionsService {
 
     if (!isNew) {
       try {
-        await this.bondService.execUserResidualBond(sponsorRef.id);
+        //await this.bondService.execUserResidualBond(sponsorRef.id);
       } catch (err) {
         Sentry.configureScope((scope) => {
           scope.setExtra('sponsorRef', sponsorRef.id);
@@ -546,7 +523,7 @@ export class SubscriptionsService {
     /**
      * aumentar puntos de bono directo 2 niveles
      */
-    if (isNew && sponsorHasScholapship) {
+    if (isNew) {
       try {
         await this.bondService.execUserDirectBond(id_user);
       } catch (err) {

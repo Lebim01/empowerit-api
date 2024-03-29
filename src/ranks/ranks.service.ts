@@ -9,7 +9,6 @@ import {
   addDoc,
   updateDoc,
   orderBy,
-  limit,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
