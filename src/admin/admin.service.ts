@@ -46,9 +46,6 @@ export class AdminService {
           direct_second_level: docData.bond_direct_second_level || 0,
           residual: docData.bond_residual_level_1 || 0,
           residual_second_level: docData.bond_residual_level_2 || 0,
-          scholarship: docData.bond_scholarship_level_1 || 0,
-          scholarship_second_level: docData.bond_scholarship_level_2 || 0,
-          scholarship_third_level: docData.bond_scholarship_level_3 || 0,
           supreme: docData.bond_supreme_level_1 || 0,
           supreme_second_level: docData.bond_supreme_level_2 || 0,
           supreme_third_level: docData.bond_supreme_level_3 || 0,
@@ -84,9 +81,6 @@ export class AdminService {
           doc.direct_second_level +
           doc.residual +
           doc.residual_second_level +
-          doc.scholarship +
-          doc.scholarship_second_level +
-          doc.scholarship_third_level +
           doc.supreme +
           doc.supreme_second_level +
           doc.supreme_third_level +
@@ -156,9 +150,6 @@ export class AdminService {
         bond_direct_second_level: 0,
         bond_residual_level_1: 0,
         bond_residual_level_2: 0,
-        bond_scholarship_level_1: 0,
-        bond_scholarship_level_2: 0,
-        bond_scholarship_level_3: 0,
         bond_supreme_level_1: 0,
         bond_supreme_level_2: 0,
         bond_supreme_level_3: 0,
@@ -447,9 +438,6 @@ export class AdminService {
           bond_direct_second_level: doc.get('direct_second_level'),
           bond_residual_level_1: doc.get('residual'),
           bond_residual_level_2: doc.get('residual_second_level'),
-          bond_scholarship_level_1: doc.get('scholarship'),
-          bond_scholarship_level_2: doc.get('scholarship_second_level'),
-          bond_scholarship_level_3: doc.get('scholarship_third_level'),
           bond_supreme_level_1: doc.get('supreme'),
           bond_supreme_level_2: doc.get('supreme_second_level'),
           bond_supreme_level_3: doc.get('supreme_third_level'),
@@ -472,15 +460,6 @@ export class AdminService {
           ),
           bond_residual_level_2: firestore.FieldValue.increment(
             bonds.bond_residual_level_2,
-          ),
-          bond_scholarship_level_1: firestore.FieldValue.increment(
-            bonds.bond_scholarship_level_1,
-          ),
-          bond_scholarship_level_2: firestore.FieldValue.increment(
-            bonds.bond_scholarship_level_2,
-          ),
-          bond_scholarship_level_3: firestore.FieldValue.increment(
-            bonds.bond_scholarship_level_3,
           ),
           bond_supreme_level_1: firestore.FieldValue.increment(
             bonds.bond_supreme_level_1,

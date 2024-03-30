@@ -3,10 +3,22 @@ import { increment } from 'firebase/firestore';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from 'src/users/users.service';
 import { firestore } from 'firebase-admin';
+import { Ranks } from 'src/ranks/ranks.service';
 
-const quick_start_percent = {
+enum Bonds {
+  PRESENTER = 'bond_presenter',
+  QUICK_START = 'bond_quick_start',
+  MENTOR = 'bond_mentor',
+  CAR = 'bond_car',
+  DIRECT_SALE = 'bond_direct_sale',
+}
+
+/**
+ * Porcentaje de ganancia bono inicio rapido
+ */
+const quick_start_percent: Record<Ranks, number> = {
   initial_builder: 20,
-  start_builder: 20,
+  star_builder: 20,
   advanced_builder: 20,
   master_1000: 20,
   master_1500: 20,
@@ -17,11 +29,15 @@ const quick_start_percent = {
   top_diamond: 25,
   top_1: 25,
   top_legend: 30,
+  none: 0,
 };
 
-const menthor_percent = {
+/**
+ * Porcentaje de ganancia bono mentor
+ */
+const menthor_percent: Record<Ranks, number> = {
   initial_builder: 10,
-  start_builder: 10,
+  star_builder: 10,
   advanced_builder: 10,
   master_1000: 15,
   master_1500: 15,
@@ -32,19 +48,18 @@ const menthor_percent = {
   top_diamond: 30,
   top_1: 30,
   top_legend: 30,
+  none: 0,
 };
 
 const BOND_CAR = 250;
 
-const messages = {
+const messages: Record<Bonds, string> = {
   bond_quick_start: 'Bono de inicio rápido',
   bond_mentor: 'Bono Mentor',
   bond_car: 'Bono Auto',
   bond_direct_sale: 'Bono venta directa',
   bond_presenter: 'Bono presentador',
 };
-type Messages = typeof messages;
-type Types = keyof Messages;
 
 @Injectable()
 export class BondsService {
@@ -69,18 +84,18 @@ export class BondsService {
 
       if (isProActive) {
         await sponsorRef.update({
-          bond_quick_start: increment(amount * percent),
+          [Bonds.QUICK_START]: increment(amount * percent),
         });
         await this.addProfitDetail(
           sponsorRef.id,
-          'bond_quick_start',
+          Bonds.QUICK_START,
           amount,
           user.id,
         );
       } else {
         await this.addLostProfit(
           sponsorRef.id,
-          'bond_quick_start',
+          Bonds.QUICK_START,
           amount,
           user.id,
         );
@@ -104,12 +119,12 @@ export class BondsService {
       .collection('users')
       .doc(sponsorId)
       .update({
-        bond_mentor: firestore.FieldValue.increment(mentor_total),
+        [Bonds.MENTOR]: firestore.FieldValue.increment(mentor_total),
       });
 
     await this.addProfitDetail(
       sponsorId,
-      'bond_mentor',
+      Bonds.MENTOR,
       mentor_total,
       directUserId,
     );
@@ -120,10 +135,10 @@ export class BondsService {
       .collection('users')
       .doc(userId)
       .update({
-        bond_car: firestore.FieldValue.increment(BOND_CAR),
+        [Bonds.CAR]: firestore.FieldValue.increment(BOND_CAR),
       });
 
-    await this.addProfitDetail(userId, 'bond_mentor', BOND_CAR);
+    await this.addProfitDetail(userId, Bonds.CAR, BOND_CAR);
   }
 
   async execBondPresenter(
@@ -139,12 +154,12 @@ export class BondsService {
       .collection('users')
       .doc(presenter1)
       .update({
-        bond_presenter: firestore.FieldValue.increment(total),
+        [Bonds.PRESENTER]: firestore.FieldValue.increment(total),
       });
 
     await this.addProfitDetail(
       presenter1,
-      'bond_presenter',
+      Bonds.PRESENTER,
       total,
       registerUserId,
     );
@@ -154,12 +169,12 @@ export class BondsService {
         .collection('users')
         .doc(presenter2)
         .update({
-          bond_presenter: firestore.FieldValue.increment(total),
+          [Bonds.PRESENTER]: firestore.FieldValue.increment(total),
         });
 
       await this.addProfitDetail(
         presenter2,
-        'bond_presenter',
+        Bonds.PRESENTER,
         total,
         registerUserId,
       );
@@ -168,7 +183,7 @@ export class BondsService {
 
   async addProfitDetail(
     id_user: string,
-    type: Types,
+    type: Bonds,
     amount: number,
     registerUserId?: string,
   ) {
@@ -195,7 +210,7 @@ export class BondsService {
 
   async addLostProfit(
     id_user: string,
-    type: Types,
+    type: Bonds,
     amount: number,
     registerUserId: string,
   ) {

@@ -17,7 +17,7 @@ export class RanksController {
   @Post('getRank/:idUser')
   async getRank(@Param('idUser') idUser: string) {
     const is_report = true;
-    return await this.ranksService.getRankUser(idUser, is_report);
+    return await this.ranksService.getRankUser(idUser);
   }
 
   @Post('getRankKey/:key')
@@ -32,10 +32,5 @@ export class RanksController {
     @Query('type') type: 'json' | 'csv' = 'json',
   ) {
     return await this.ranksService.newRanks(year, week, type);
-  }
-
-  @Get('weeks')
-  async weeks() {
-    return this.ranksService.getWeeks(false);
   }
 }

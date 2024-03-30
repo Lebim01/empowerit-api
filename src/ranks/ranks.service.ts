@@ -1,24 +1,61 @@
 import { Injectable } from '@nestjs/common';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  addDoc,
-  updateDoc,
-  orderBy,
-} from 'firebase/firestore';
-import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
-import dayjs from 'dayjs';
-import weekOfYear from 'dayjs/plugin/weekOfYear';
+import dayjs, { Dayjs } from 'dayjs';
 import { ranks_object } from './ranks_object';
 import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 
-dayjs.extend(weekOfYear);
+export enum Ranks {
+  NONE = 'none',
+  INITIAL_BUILD = 'initial_builder',
+  STAR_BUILD = 'star_builder',
+  ADVANCED_BUILDER = 'advanced_builder',
+  MASTER_1000 = 'master_1000',
+  MASTER_1500 = 'master_1500',
+  MASTER_2500 = 'master_2500',
+  REGIONAL_DIRECTOR = 'regional_director',
+  NATIONAL_DIRECTOR = 'national_director',
+  INTERNATIONAL_DIRECTOR = 'international_director',
+  TOP_DIAMOND = 'top_diamond',
+  TOP_1 = 'top_1',
+  TOP_LEGEND = 'top_legend',
+}
+
+const ranksPoints: Record<Ranks, number> = {
+  [Ranks.TOP_LEGEND]: 2_300_000,
+  [Ranks.TOP_1]: 600_000,
+  [Ranks.TOP_DIAMOND]: 180_000,
+  [Ranks.INTERNATIONAL_DIRECTOR]: 72_000,
+  [Ranks.NATIONAL_DIRECTOR]: 35_000,
+  [Ranks.REGIONAL_DIRECTOR]: 25_000,
+  [Ranks.MASTER_2500]: 15_000,
+  [Ranks.MASTER_1500]: 12_000,
+  [Ranks.MASTER_1000]: 8_000,
+  [Ranks.ADVANCED_BUILDER]: 6_000,
+  [Ranks.STAR_BUILD]: 1_500,
+  [Ranks.INITIAL_BUILD]: 500,
+  [Ranks.NONE]: 0,
+};
+
+const ranksOrder = [
+  Ranks.INITIAL_BUILD,
+  Ranks.STAR_BUILD,
+  Ranks.ADVANCED_BUILDER,
+  Ranks.MASTER_1000,
+  Ranks.MASTER_1500,
+  Ranks.MASTER_2500,
+  Ranks.REGIONAL_DIRECTOR,
+  Ranks.NATIONAL_DIRECTOR,
+  Ranks.INTERNATIONAL_DIRECTOR,
+  Ranks.TOP_DIAMOND,
+  Ranks.TOP_1,
+  Ranks.TOP_LEGEND,
+];
+
+type UserRank = {
+  rank?: Ranks;
+  order: number;
+};
 
 @Injectable()
 export class RanksService {
@@ -26,7 +63,7 @@ export class RanksService {
 
   async updateRank() {
     /* Obtener todos los usuraios */
-    const users = await getDocs(collection(db, 'users'));
+    const users = await admin.collection('users').get();
 
     await Promise.all(
       users.docs.map(async (user) => {
@@ -53,360 +90,228 @@ export class RanksService {
     return 'OK';
   }
 
-  async updateUserRank(id_user: string) {
-    const userRef = doc(db, `users/${id_user}`);
-    const user = await getDoc(userRef);
-    const rankData = await this.getRankUser(id_user, false);
-    const weeks = await this.getWeeks(false);
+  async registerHistoryUserRank(
+    year: number,
+    month: number,
+    userId: string,
+    rank: UserRank,
+  ) {
+    const user = await admin.collection('users').doc(userId).get();
+    const past_max_rank: UserRank = user.get('max_rank')
+      ? ranks_object[user.get('max_rank')]
+      : {
+          order: -1,
+        };
+    /**
+     * Is true when max_rank is lower than new rank
+     */
+    const is_new_max_rank = past_max_rank.order < rank.order;
 
-    const past_max_rank = ranks_object[user.get('max_rank')] || {
-      order: -1,
-    };
-    const current_max_rank = ranks_object[rankData.rank_key];
-    const is_new_max_rank = past_max_rank.order < current_max_rank.order;
-
-    await updateDoc(userRef, {
-      rank: rankData.rank_key,
-      max_rank: is_new_max_rank ? rankData.rank_key : past_max_rank,
+    await admin.collection('ranks').doc(`${year}-${month}`).set({
+      created_at: new Date(),
     });
-
-    const today = dayjs().utcOffset(-6);
     await admin
       .collection('ranks')
-      .doc(`${today.year()}-${today.week()}`)
-      .set({
-        week_1: [weeks[3][0].toDate(), weeks[3][1].toDate()],
-        week_2: [weeks[2][0].toDate(), weeks[2][1].toDate()],
-        week_3: [weeks[1][0].toDate(), weeks[1][1].toDate()],
-        week_4: [weeks[0][0].toDate(), weeks[0][1].toDate()],
-      });
-    await admin
-      .collection('ranks')
-      .doc(`${today.year()}-${today.week()}`)
+      .doc(`${year}-${month}`)
       .collection('users')
-      .doc(id_user)
+      .doc(userId)
       .set({
         past_max_rank: past_max_rank,
-        current_rank: current_max_rank,
-        new_max_rank: is_new_max_rank ? past_max_rank : current_max_rank,
+        current_rank: rank,
+        new_max_rank: is_new_max_rank ? past_max_rank : rank,
         new_rank: is_new_max_rank,
       });
 
     if (is_new_max_rank) {
       await admin
         .collection('users')
-        .doc(id_user)
+        .doc(userId)
         .collection('rank-promotion')
         .add({
           created_at: new Date(),
-          rank: rankData.rank_key || 'vanguard',
+          rank: rank.rank || Ranks.INITIAL_BUILD,
         });
       await admin.collection('rank-promotion').add({
-        id_user,
+        id_user: userId,
         name: user.get('name') || '',
         created_at: new Date(),
-        rank: rankData.rank_key || 'vanguard',
+        rank: rank.rank || Ranks.INITIAL_BUILD,
       });
     }
+  }
+
+  async updateUserRank(id_user: string) {
+    const rankData = await this.getRankUser(id_user);
+
+    const start = dayjs().add(-1, 'day').utcOffset(-6).startOf('month');
+    const end = dayjs().add(-1, 'day').utcOffset(-6).endOf('month');
+
+    const points = await this.getPoints(id_user, start, end);
+
+    await this.registerHistoryUserRank(
+      start.year(),
+      start.month(),
+      id_user,
+      rankData,
+    );
 
     await this.insertRank(
-      rankData.rank_key,
-      rankData.totalUSD.totalUSD,
-      rankData.user,
-      rankData.left_week,
-      rankData.right_week,
-      rankData.interna,
-      rankData.externa,
+      id_user,
+      rankData.rank,
+      start.year(),
+      start.month(),
+      points.left,
+      points.right,
     );
 
     return rankData;
   }
 
-  async getRankUser(userId: string, is_report = false) {
-    /* Declarar la coleccion y las condiciones para obtener los usuarios que fueron sponsoreados por el usaurio en turno */
-    const user = await getDoc(doc(db, 'users', userId));
-    const left_week = [];
-    const right_week = [];
-    const dates = await this.getWeeks(is_report);
+  async getRankUser(userId: string): Promise<UserRank> {
+    const start = dayjs().add(-1, 'day').utcOffset(-6).startOf('month');
+    const end = dayjs().add(-1, 'day').utcOffset(-6).endOf('month');
 
-    const searchRankHistory = query(
-      collection(db, `users/${user.id}/rank_history`),
-      orderBy('date', 'desc'),
-    );
+    /* Obtener la suma de puntos del ultimo mes */
+    const points = await this.getPoints(userId, start, end);
 
-    const rankHistory = await getDocs(searchRankHistory).then((r) =>
-      r.docs.map((d) => {
-        return { date: d.data().date, total: d.data().total };
-      }),
-    );
-
-    for (const [start, end] of dates) {
-      let left = 0;
-      let right = 0;
-      const filteredQuery = query(
-        collection(db, `users/${user.id}/sanguine_users`),
-        where('created_at', '>=', start.toDate()),
-        where('created_at', '<=', end.toDate()),
-      );
-
-      /* Obtener el total de usuarios que pertenecen al usuario en turno del */
-      const sanguineUsers = await getDocs(filteredQuery);
-      /* Recorrer los usuarios sponsoreados por el usuario en turno */
-      for (const doc of sanguineUsers.docs) {
-        /* Acumular el contador depentiendo del valor del atributo position del usuario esponsoreado */
-        if (doc.get('position') === 'left') {
-          left++;
-        } else {
-          right++;
-        }
-      }
-      left_week.push(left);
-      right_week.push(right);
-    }
-
-    const interna = user.get('position') == 'left' ? right_week : left_week;
-    const externa = user.get('position') == 'left' ? left_week : right_week;
-    const firmas_directas = await this.getDirectFirms(user.id, is_report);
-    /* Obtener el payroll de los ultimos 28 dias */
-    const totalUSD = await this.getPayrollUser(user.id, is_report);
     /* Crear subcoleccion para el historial de rangos */
-    const rank = await this.getRank(
-      totalUSD.totalUSD,
-      user.data(),
-      interna,
-      externa,
-      firmas_directas,
-    );
+    const smaller_leg = points.right > points.left ? 'left' : 'right';
+    const points_smaller_leg = points[smaller_leg];
+    const rank = await this.getRank(points_smaller_leg);
 
     return {
-      rank_key: rank.rank,
-      rank_next_key: rank.next_rank,
-      rank: ranks_object[rank.rank],
-      rank_missing: ranks_object[rank.rank],
-      next_rank: ranks_object[rank.next_rank],
-      totalUSD,
-      user_id: user.id,
-      user: user.id,
-      left_week,
-      right_week,
-      interna,
-      externa,
-      firmas_directas,
-      rankHistory,
+      order: rank.order,
+      rank: rank.rank,
     };
   }
 
-  async getDirectFirms(id, is_report = false) {
-    /* Obtener firmas  directas*/
-    const firm_week = [];
-    const dates = await this.getWeeks(is_report);
+  async getPoints(
+    userId: string,
+    start: Dayjs,
+    end: Dayjs,
+  ): Promise<{ left: number; right: number }> {
+    const points = await admin
+      .collection('users')
+      .doc(userId)
+      .collection('points')
+      .where('created_at', '>=', start.toDate())
+      .where('created_at', '<=', end.toDate())
+      .get()
+      .then((r) => r.docs.map((d) => d.data()));
 
-    for (const [start, end] of dates) {
-      let firm = 0;
-      const filteredQuery = query(
-        collection(db, `users`),
-        where('created_at', '>=', start.toDate()),
-        where('created_at', '<=', end.toDate()),
-        where('sponsor_id', '==', id),
-      );
+    const sumSidePoints =
+      (side: 'left' | 'right') =>
+      (a: number, b: { side: 'left' | 'right'; points: number }): number => {
+        return a + (b.side == side ? b.points : 0);
+      };
 
-      /* Obtener el total de usuarios que pertenecen al usuario en turno del */
-      const firmsUsers = await getDocs(filteredQuery);
-      /* Recorrer los usuarios sponsoreados por el usuario en turno */
-      for (const doc of firmsUsers.docs) {
-        /* Acumular el contador depentiendo del valor del atributo position del usuario esponsoreado */
-        if (doc) firm++;
-      }
-      firm_week.push(firm);
-    }
-    return firm_week;
+    const left_points = points.reduce(sumSidePoints('left'), 0);
+    const right_points = points.reduce(sumSidePoints('right'), 0);
+
+    return {
+      left: left_points,
+      right: right_points,
+    };
   }
 
-  async getPayrollUser(id, is_report = false) {
-    const subCollectionRefpayroll = collection(db, 'users', id, 'payroll');
-    const total_week = [];
-    let totalUSD = 0;
-    const dates = await this.getWeeks(is_report);
+  async getRank(points_smaller_leg: number): Promise<{
+    rank: Ranks;
+    missing_points: number;
+    points_smaller_leg: number;
+    next_rank: Ranks;
+    order: number;
+  }> {
+    let rank: Ranks = Ranks.NONE;
+    let next_rank: Ranks = Ranks.NONE;
+    let missing_points = 0;
 
-    for (const [start, end] of dates) {
-      let totalUSD_week = 0;
-
-      const filteredQueryPayroll = query(
-        subCollectionRefpayroll,
-        where('created_at', '>=', start.toDate()),
-        where('created_at', '<=', end.toDate()),
-      );
-
-      // Obtén los documentos de la subcolección
-      try {
-        const querySnapshot = await getDocs(filteredQueryPayroll);
-        for (const doc of querySnapshot.docs) {
-          totalUSD += doc.data().total || 0;
-          totalUSD_week += doc.data().total || 0;
-        }
-        total_week.push(totalUSD_week);
-      } catch (error) {
-        console.error('Error al obtener documentos:', error);
-      }
-    }
-    return { totalUSD, total_week };
-  }
-
-  async getRank(
-    totalUSD: number,
-    user: any,
-    interna: number[],
-    externa: number[],
-    firmas_directas: number[],
-  ) {
-    let rank = '';
-    let next_rank = '';
-    let missing_usd = 0;
-    let missing_scolarship = false;
-
-    const total_firms_last_4_weeks =
-      interna.reduce((a, b) => a + b, 0) + externa.reduce((a, b) => a + b, 0);
-    const has_firms_internal = (min_firms: number) =>
-      interna.every((firm) => firm >= min_firms);
-    const has_firms_external = (min_firms: number) =>
-      externa.every((firm) => firm >= min_firms);
-
-    if (
-      totalUSD >= 50_000 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 10 &&
-      has_firms_external(80) &&
-      has_firms_internal(120)
-    ) {
-      rank = 'top_legend';
+    if (points_smaller_leg >= ranksPoints[Ranks.TOP_LEGEND]) {
+      rank = Ranks.TOP_LEGEND;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.TOP_1]) {
+      rank = Ranks.TOP_1;
+      missing_points = ranksPoints[Ranks.TOP_LEGEND] - points_smaller_leg;
+      next_rank = Ranks.TOP_LEGEND;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.TOP_DIAMOND]) {
+      rank = Ranks.TOP_DIAMOND;
+      next_rank = Ranks.TOP_1;
+      missing_points = 20000 - points_smaller_leg;
     } else if (
-      totalUSD >= 20_000 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 9 &&
-      has_firms_external(40) &&
-      has_firms_internal(60)
+      points_smaller_leg >= ranksPoints[Ranks.INTERNATIONAL_DIRECTOR]
     ) {
-      rank = 'top_1';
-      missing_usd = 50000 - totalUSD;
-      next_rank = 'top_leyend';
-    } else if (
-      totalUSD >= 10_000 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 8 &&
-      has_firms_external(20) &&
-      has_firms_internal(30)
-    ) {
-      rank = 'top_king_10';
-      missing_usd = 20000 - totalUSD;
-      next_rank = 'top_1';
-    } else if (
-      totalUSD >= 5_000 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 7 &&
-      has_firms_external(8) &&
-      has_firms_internal(12)
-    ) {
-      rank = 'top_diamond_5';
-      missing_usd = 10000 - totalUSD;
-      next_rank = 'top_king_10';
-    } else if (
-      totalUSD >= 2_500 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 6 &&
-      has_firms_external(4) &&
-      has_firms_internal(6)
-    ) {
-      rank = 'top_royal_25';
-      missing_usd = 5000 - totalUSD;
-      next_rank = 'top_diamond_5';
-    } else if (
-      totalUSD >= 1_500 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 5 &&
-      has_firms_external(3) &&
-      has_firms_internal(5)
-    ) {
-      rank = 'master_15';
-      missing_usd = 2500 - totalUSD;
-      next_rank = 'top_royal_25';
-    } else if (
-      totalUSD >= 1_000 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 4 &&
-      has_firms_external(2) &&
-      has_firms_internal(3)
-    ) {
-      rank = 'master_1';
-      missing_usd = 1500 - totalUSD;
-      next_rank = 'master_15';
-    } else if (
-      totalUSD >= 600 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 3 &&
-      has_firms_external(2) &&
-      has_firms_internal(1)
-    ) {
-      rank = 'runner_6';
-      missing_usd = 10000 - totalUSD;
-      next_rank = 'master_1';
-    } else if (
-      totalUSD >= 300 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 2 &&
-      has_firms_internal(1) &&
-      has_firms_external(1)
-    ) {
-      rank = 'runner_3';
-      missing_usd = 600 - totalUSD;
-      next_rank = 'runner_6';
-    } else if (
-      totalUSD >= 100 &&
-      user.has_scholarship &&
-      total_firms_last_4_weeks >= 1
-    ) {
-      rank = 'runner_1';
-      missing_usd = 300 - totalUSD;
-      next_rank = 'runner_3';
-    } else if (user.has_scholarship) {
-      rank = 'scholarship';
-      missing_usd = 100 - totalUSD;
-      next_rank = 'runner_1';
+      rank = Ranks.INTERNATIONAL_DIRECTOR;
+      missing_points = ranksPoints[Ranks.TOP_DIAMOND] - points_smaller_leg;
+      next_rank = Ranks.TOP_DIAMOND;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.NATIONAL_DIRECTOR]) {
+      rank = Ranks.NATIONAL_DIRECTOR;
+      missing_points =
+        ranksPoints[Ranks.INTERNATIONAL_DIRECTOR] - points_smaller_leg;
+      next_rank = Ranks.INTERNATIONAL_DIRECTOR;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.REGIONAL_DIRECTOR]) {
+      rank = Ranks.REGIONAL_DIRECTOR;
+      missing_points =
+        ranksPoints[Ranks.NATIONAL_DIRECTOR] - points_smaller_leg;
+      next_rank = Ranks.NATIONAL_DIRECTOR;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.MASTER_2500]) {
+      rank = Ranks.MASTER_2500;
+      missing_points =
+        ranksPoints[Ranks.REGIONAL_DIRECTOR] - points_smaller_leg;
+      next_rank = Ranks.REGIONAL_DIRECTOR;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.MASTER_1500]) {
+      rank = Ranks.MASTER_1500;
+      missing_points = ranksPoints[Ranks.MASTER_2500] - points_smaller_leg;
+      next_rank = Ranks.MASTER_2500;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.MASTER_1000]) {
+      rank = Ranks.MASTER_1000;
+      missing_points = ranksPoints[Ranks.MASTER_2500] - points_smaller_leg;
+      next_rank = Ranks.MASTER_2500;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.ADVANCED_BUILDER]) {
+      rank = Ranks.ADVANCED_BUILDER;
+      missing_points = ranksPoints[Ranks.MASTER_1000] - points_smaller_leg;
+      next_rank = Ranks.MASTER_1000;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.STAR_BUILD]) {
+      rank = Ranks.STAR_BUILD;
+      missing_points = ranksPoints[Ranks.ADVANCED_BUILDER] - points_smaller_leg;
+      next_rank = Ranks.ADVANCED_BUILDER;
+    } else if (points_smaller_leg >= ranksPoints[Ranks.INITIAL_BUILD]) {
+      rank = Ranks.INITIAL_BUILD;
+      missing_points = ranksPoints[Ranks.STAR_BUILD] - points_smaller_leg;
+      next_rank = Ranks.STAR_BUILD;
     } else {
-      rank = 'vanguard';
-      next_rank = 'scholarship';
-      missing_scolarship = true;
+      rank = Ranks.NONE;
+      missing_points = ranksPoints[Ranks.INITIAL_BUILD] - points_smaller_leg;
+      next_rank = Ranks.INITIAL_BUILD;
     }
+
+    const order = ranksOrder.findIndex((r) => r == rank);
 
     return {
       rank,
-      missing_usd,
+      missing_points,
+      points_smaller_leg,
       next_rank,
-      missing_scolarship,
+      order: order ?? -1,
     };
   }
 
   async insertRank(
+    userId: string,
     rank: string,
-    totalUSD: number,
-    _users: any,
-    left: any,
-    right: any,
-    interna: any,
-    externa: any,
+    year: number,
+    month: number,
+    left_points: number,
+    right_points: number,
   ) {
-    const mainCollectionRef = collection(db, 'users');
-    const mainDocRef = doc(mainCollectionRef, _users);
-    const subCollectionRef = collection(mainDocRef, 'rank_history');
     try {
-      await addDoc(subCollectionRef, {
-        rank,
-        date: dayjs().toDate(),
-        total: totalUSD,
-        left,
-        right,
-        interna,
-        externa,
-      });
+      await admin
+        .collection('users')
+        .doc(userId)
+        .collection('rank_history')
+        .doc(`${year}-${month}`)
+        .set({
+          rank,
+          left_points,
+          right_points,
+        });
     } catch (error) {
       console.error('Error al agregar documento:', error);
     }
@@ -414,42 +319,6 @@ export class RanksService {
 
   async getRankKey(key: string) {
     return ranks_object[key];
-  }
-
-  async getWeeks(is_report = false) {
-    const today = dayjs();
-    const sunday_this_week = today
-      .utcOffset(-6)
-      .subtract(1, 'day')
-      .startOf('week')
-      .hour(23)
-      .minute(59);
-    const sunday_2_weeks = sunday_this_week.subtract(1, 'week');
-    const sunday_3_weeks = sunday_this_week.subtract(2, 'week');
-    const sunday_4_weeks = sunday_this_week.subtract(3, 'week');
-    const sunday_5_weeks = sunday_this_week.subtract(4, 'week');
-    const sunday_6_weeks = sunday_this_week.subtract(5, 'week');
-
-    const dates = [
-      [sunday_4_weeks, sunday_4_weeks.add(7, 'days')],
-      [sunday_3_weeks, sunday_3_weeks.add(7, 'days')],
-      [sunday_2_weeks, sunday_2_weeks.add(7, 'days')],
-      [sunday_this_week, sunday_this_week.add(7, 'days')],
-    ];
-
-    if (is_report) {
-      dates.unshift([sunday_5_weeks, sunday_5_weeks.add(7, 'days')]);
-      dates.unshift([sunday_6_weeks, sunday_6_weeks.add(7, 'days')]);
-    }
-
-    console.log(
-      dates.map(([start, end]) => ({
-        start: start.format('YYYY-MM-DD HH:mm:ss'),
-        end: end.format('YYYY-MM-DD HH:mm:ss'),
-      })),
-    );
-
-    return dates;
   }
 
   async newRanks(

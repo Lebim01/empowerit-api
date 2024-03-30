@@ -15,6 +15,30 @@ import { UsersService } from '../users/users.service';
 import { ADMIN_USERS } from '../constants';
 import { firestore } from 'firebase-admin';
 
+enum Packs {
+  // producto
+  ALIVE_PACK = 'alive_pack',
+  FREEDOM_PACK = 'freedom_pack',
+  // digital
+  PRO_MEMBERSHIP = 'pro_membership',
+  SUPREME_MEMBERSHIP = 'supreme_membership',
+  // hibrido
+  ELITE_PACK = 'elite_pack',
+  VIP_PACK = 'vip_pack',
+}
+
+/**
+ * Puntos que ganas al inscribir un paquete
+ */
+const pack_points: Record<Packs, number> = {
+  alive_pack: 65,
+  freedom_pack: 240,
+  pro_membership: 50,
+  supreme_membership: 100,
+  elite_pack: 115,
+  vip_pack: 340,
+};
+
 @Injectable()
 export class BinaryService {
   constructor(private readonly userService: UsersService) {}

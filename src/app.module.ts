@@ -5,7 +5,6 @@ import { CryptoapisModule } from './cryptoapis/cryptoapis.module';
 import { BondsModule } from './bonds/bonds.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConfigModule } from '@nestjs/config';
-import { ScholarshipModule } from './scholarship/scholarship.module';
 import { ScriptsModule } from './scripts/scripts.module';
 import { BinaryService } from './binary/binary.service';
 import { UsersService } from './users/users.service';
@@ -33,7 +32,6 @@ import { Neo4jModule } from './neo4j/neo4j.module';
     CryptoapisModule,
     BondsModule,
     SubscriptionsModule,
-    ScholarshipModule,
     ConfigModule.forRoot({
       envFilePath:
         process.env.NODE_ENV === 'production'

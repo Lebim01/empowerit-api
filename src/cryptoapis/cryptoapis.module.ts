@@ -5,7 +5,6 @@ import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 import { UsersService } from 'src/users/users.service';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
-import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { GoogletaskService } from 'src/googletask/googletask.service';
 
 @Module({
@@ -15,7 +14,6 @@ import { GoogletaskService } from 'src/googletask/googletask.service';
     UsersService,
     BinaryService,
     BondsService,
-    ScholarshipService,
     GoogletaskService,
   ],
   controllers: [CryptoapisController],

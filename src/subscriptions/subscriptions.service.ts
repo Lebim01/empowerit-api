@@ -15,7 +15,6 @@ import { BondsService } from 'src/bonds/bonds.service';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
 import * as Sentry from '@sentry/node';
-import { ScholarshipService } from 'src/scholarship/scholarship.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 import { firestore } from 'firebase-admin';
 import { PayloadAssignBinaryPosition } from './types';
@@ -33,7 +32,6 @@ export class SubscriptionsService {
   constructor(
     private readonly binaryService: BinaryService,
     private readonly bondService: BondsService,
-    private readonly scholarshipService: ScholarshipService,
     private readonly cryptoapisService: CryptoapisService,
     private readonly googleTaskService: GoogletaskService,
   ) {}
@@ -492,22 +490,6 @@ export class SubscriptionsService {
       });
     }
 
-    /**
-     * Si el sponsor no esta becado le cuenta para la beca y no reparte los bonos
-     */
-    if (!sponsorHasScholapship) {
-      /*
-       * Si el sponsor es starter no se puede becar
-       */
-      if (!sponsor_is_starter) {
-        await this.scholarshipService.addDirectPeople(sponsorRef.id, id_user);
-        /**
-         * Si el sponsor no esta becado no reparte bonos
-         */
-        return;
-      }
-    }
-
     if (!isNew) {
       try {
         //await this.bondService.execUserResidualBond(sponsorRef.id);
@@ -669,13 +651,10 @@ export class SubscriptionsService {
       const batch = writeBatch(db);
 
       for (const doc of result.docs) {
-        const has_scholarship = doc.get('has_scholarship') ?? false;
         const has_pending_activation = doc.get(
           'subscription.pro.pending_activation',
         );
-        if (has_scholarship) {
-          await this.scholarshipService.useSchorlarship(doc.id);
-        } else if (has_pending_activation) {
+        if (has_pending_activation) {
           try {
             const amount_crypto = Number(
               doc.get('subscription.pro.pending_activation.amount_crypto'),
