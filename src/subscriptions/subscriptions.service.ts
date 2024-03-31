@@ -21,6 +21,15 @@ import { PayloadAssignBinaryPosition } from './types';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 import { GoogletaskService } from 'src/googletask/googletask.service';
 
+export const MEMBERSHIP_PRICES_MONTHLY = {
+  supreme: 199,
+  pro: 99,
+};
+export const MEMBERSHIP_PRICES_YEARLY = {
+  supreme: 1999,
+  pro: 999,
+};
+
 const isExpired = (expires_at: { seconds: number }) => {
   const date = dayjs(expires_at.seconds * 1000);
   const is_active = date.isValid() && date.isAfter(dayjs());
@@ -40,101 +49,7 @@ export class SubscriptionsService {
     id_user: string,
     type: Memberships,
     currency: Coins,
-  ) {
-    // Obtener datos del usuario
-    const userRef = admin.collection('users').doc(id_user);
-    const userData = await userRef.get().then((r) => r.data());
-    let address = '';
-    let referenceId = '';
-
-    // Si no existe registro de la informacion de pago...
-    if (
-      userData.payment_link &&
-      userData.payment_link[type] &&
-      userData.payment_link[type].currency == currency
-    ) {
-      address = userData.subscription[type].payment_link.address;
-      referenceId = userData.subscription[type].payment_link.referenceId;
-    } else {
-      // Obtener un nuevo wallet para el pago
-      const newAddress = await this.cryptoapisService.createNewWalletAddress(
-        currency,
-      );
-      address = newAddress;
-
-      console.log('address:', newAddress);
-
-      // Crear primera confirmación de la transaccion
-
-      if (currency == 'BTC') {
-        const resConfirmation =
-          await this.cryptoapisService.createFirstConfirmationTransaction(
-            id_user,
-            newAddress,
-            type,
-            currency,
-          );
-        referenceId = resConfirmation.data.item.referenceId;
-      } else {
-        const resConfirmation =
-          await this.cryptoapisService.createCallbackConfirmation(
-            id_user,
-            newAddress,
-            type,
-            currency,
-          );
-        referenceId = resConfirmation.data.item.referenceId;
-      }
-    }
-
-    const amount_type = {
-      supreme: 100,
-      pro: 177,
-      ibo: 30,
-      starter: 50,
-      crypto_elite: 800,
-      toprice_xpert: 800,
-    };
-
-    let amount = 0;
-    if (currency == 'LTC') {
-      amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
-    } else {
-      amount = await this.cryptoapisService.getBTCExchange(amount_type[type]);
-    }
-
-    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
-
-    // Estructurar el campo payment_link
-    const payment_link = {
-      referenceId,
-      address,
-      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=${qr_name}:${address}?amount=${amount}`,
-      status: 'pending',
-      created_at: new Date(),
-      amount,
-      currency,
-      expires_at: dayjs().add(15, 'minutes').toDate(),
-    };
-
-    // Guardar payment_link
-    await userRef.collection('address-history').add({ ...payment_link, type });
-    await userRef.update({
-      [`subscription.${type}.payment_link`]: payment_link,
-    });
-
-    return {
-      address: address,
-      amount: payment_link.amount,
-      currency: payment_link.currency,
-      qr: payment_link.qr,
-    };
-  }
-
-  async createPaymentAddressPack(
-    id_user: string,
-    type: 'pro+supreme',
-    currency: Coins,
+    period: 'monthly' | 'yearly' = 'monthly',
   ) {
     // Obtener datos del usuario
     const userRef = admin.collection('users').doc(id_user);
@@ -157,18 +72,13 @@ export class SubscriptionsService {
       );
       address = newAddress;
 
-      if (currency == 'BTC' || currency == 'LTC') {
+      console.log('address:', newAddress);
+
+      // Crear primera confirmación de la transaccion
+
+      if (currency == 'LTC') {
         const resConfirmation =
           await this.cryptoapisService.createFirstConfirmationTransaction(
-            id_user,
-            newAddress,
-            type,
-            currency,
-          );
-        referenceId = resConfirmation.data.item.referenceId;
-      } else {
-        const resConfirmation =
-          await this.cryptoapisService.createCallbackConfirmation(
             id_user,
             newAddress,
             type,
@@ -178,20 +88,15 @@ export class SubscriptionsService {
       }
     }
 
-    const amount_type = {
-      'pro+supreme': 277,
-    };
+    const amount_type =
+      period == 'monthly'
+        ? MEMBERSHIP_PRICES_MONTHLY
+        : MEMBERSHIP_PRICES_YEARLY;
 
-    let amountbtc;
+    let amount = 0;
 
     if (currency == 'LTC') {
-      amountbtc = await this.cryptoapisService.getLTCExchange(
-        amount_type[type],
-      );
-    } else {
-      amountbtc = await this.cryptoapisService.getBTCExchange(
-        amount_type[type],
-      );
+      amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
     }
 
     const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
@@ -200,10 +105,10 @@ export class SubscriptionsService {
     const payment_link = {
       referenceId,
       address,
-      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=${qr_name}:${address}?amount=${amountbtc}`,
+      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=${qr_name}:${address}?amount=${amount}`,
       status: 'pending',
       created_at: new Date(),
-      amount: amountbtc,
+      amount,
       currency,
       expires_at: dayjs().add(15, 'minutes').toDate(),
     };
@@ -211,7 +116,9 @@ export class SubscriptionsService {
     // Guardar payment_link
     await userRef.collection('address-history').add({ ...payment_link, type });
     await userRef.update({
-      [`payment_link.${type}`]: payment_link,
+      payment_link: {
+        [type]: payment_link,
+      },
     });
 
     return {
@@ -221,23 +128,10 @@ export class SubscriptionsService {
       qr: payment_link.qr,
     };
   }
-
   async isActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
     const expires_at = user.get('subscription.pro.expires_at');
 
-    const is_admin =
-      Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
-    return is_admin
-      ? true
-      : expires_at
-      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-      : false;
-  }
-
-  async isStarterActiveUser(id_user: string) {
-    const user = await admin.collection('users').doc(id_user).get();
-    const expires_at = user.get('subscription.starter.expires_at');
     const is_admin =
       Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
     return is_admin
@@ -256,79 +150,19 @@ export class SubscriptionsService {
       days,
     );
 
-    // Generar objeto con cambios a registrar
-    let changes = {};
-    let cycle: any = null;
-    switch (type) {
-      case 'pro': {
-        changes = {
-          count_direct_people_this_cycle: 0,
-          count_scholarship_people: 0,
-          'subscription.pro.payment_link': null,
-          'subscription.pro.start_at': startAt,
-          'subscription.pro.expires_at': expiresAt,
-          'subscription.pro.status': 'paid',
-          is_new: false,
-        };
-        cycle = `pro-cycles`;
-        break;
-      }
-      case 'supreme': {
-        changes = {
-          'subscription.supreme.payment_link': null,
-          'subscription.supreme.start_at': startAt,
-          'subscription.supreme.expires_at': expiresAt,
-          'subscription.supreme.status': 'paid',
-        };
-        cycle = `supreme-cycles`;
-        break;
-      }
-      case 'crypto_elite': {
-        changes = {
-          'subscription.crypto_elite.payment_link': null,
-          'subscription.crypto_elite.start_at': startAt,
-          'subscription.crypto_elite.expires_at': expiresAt,
-          'subscription.crypto_elite.status': 'paid',
-        };
-        cycle = `crypto_elite-cycles`;
-        break;
-      }
-      case 'toprice_xpert': {
-        changes = {
-          'subscription.toprice_xpert.payment_link': null,
-          'subscription.toprice_xpert.start_at': startAt,
-          'subscription.toprice_xpert.expires_at': expiresAt,
-          'subscription.toprice_xpert.status': 'paid',
-        };
-        cycle = `toprice_xpert-cycles`;
-        break;
-      }
-      case 'ibo': {
-        changes = {
-          'subscription.ibo.payment_link': null,
-          'subscription.ibo.start_at': startAt,
-          'subscription.ibo.expires_at': expiresAt,
-          'subscription.ibo.status': 'paid',
-        };
-        cycle = `ibo-cycles`;
-        break;
-      }
-      case 'starter': {
-        changes = {
-          'subscription.starter.payment_link': null,
-          'subscription.starter.start_at': startAt,
-          'subscription.starter.expires_at': expiresAt,
-          'subscription.starter.status': 'paid',
-        };
-        cycle = `starter-cycles`;
-        break;
-      }
-    }
-
     // Registrar cambios
-    await admin.collection('users').doc(id_user).update(changes);
+    await admin.collection('users').doc(id_user).update({
+      count_direct_people_this_cycle: 0,
+      count_scholarship_people: 0,
+      membership: type,
+      membership_status: 'paid',
+      membership_expires_at: expiresAt,
+      payment_link: {},
+      is_new: false,
+    });
 
-    await admin.collection('users').doc(id_user).collection(cycle).add({
+    await admin.collection('users').doc(id_user).collection('cycles').add({
+      type,
       start_at: startAt,
       expires_at: expiresAt,
     });
@@ -367,25 +201,9 @@ export class SubscriptionsService {
 
     if (!customDays) {
       switch (type) {
-        case 'pro': {
-          const isNew = await this.isNewMember(id_user);
-          days = isNew ? 56 : 28;
+        default:
+          days = 30;
           break;
-        }
-        case 'crypto_elite':
-        case 'toprice_xpert':
-        case 'supreme': {
-          days = 168; // 6 meses
-          break;
-        }
-        case 'ibo': {
-          days = 112;
-          break;
-        }
-        case 'starter': {
-          days = 28;
-          break;
-        }
       }
     } else {
       days = customDays;
@@ -410,11 +228,7 @@ export class SubscriptionsService {
     await this.assingMembership(id_user, 'ibo');
   }
 
-  async onPaymentProMembership(
-    id_user: string,
-    amount_crypto: number,
-    currency: Coins,
-  ) {
+  async onPaymentProMembership(id_user: string) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
     const isNew = await this.isNewMember(id_user);
@@ -423,21 +237,15 @@ export class SubscriptionsService {
      * Reconsumo pagado antes de tiempo
      * Agregar transaccion pendiente y repartir bonos despues
      */
-    if (!isNew && !isExpired(data.get('subscription.pro.expires_at'))) {
+    if (!isExpired(data.get('membership_expires_at'))) {
       await userDocRef.update({
-        'subscription.pro.pending_activation': {
+        pending_activation: {
           created_at: new Date(),
-          amount: 277,
-          amount_crypto,
-          currency,
+          membership: 'pro',
         },
       });
       return;
     }
-
-    const sponsor_is_starter = await this.isStarterActiveUser(
-      data.get('sponsor_id'),
-    );
 
     await this.addQueueBinaryPosition({
       id_user,
@@ -478,7 +286,6 @@ export class SubscriptionsService {
       .collection('users')
       .doc(data.get('sponsor_id'))
       .get();
-    const sponsorHasScholapship = sponsorRef.get('has_scholarship') === true;
 
     /**
      * aumentar contador de gente directa
@@ -488,18 +295,6 @@ export class SubscriptionsService {
         count_direct_people: firestore.FieldValue.increment(1),
         count_direct_people_this_month: firestore.FieldValue.increment(1),
       });
-    }
-
-    if (!isNew) {
-      try {
-        //await this.bondService.execUserResidualBond(sponsorRef.id);
-      } catch (err) {
-        Sentry.configureScope((scope) => {
-          scope.setExtra('sponsorRef', sponsorRef.id);
-          scope.setExtra('message', 'no se repartio el bono residual');
-          Sentry.captureException(err);
-        });
-      }
     }
 
     /**
@@ -592,11 +387,11 @@ export class SubscriptionsService {
   }
 
   // Actualizar el status a 'expired' de las subscripciones a partir de una fecha.
-  async statusToExpired(type: Memberships) {
+  async statusToExpired() {
     const _query = query(
       collection(db, 'users'),
-      where(`subscription.${type}.status`, '==', 'paid'),
-      where(`subscription.${type}.expires_at`, '<=', new Date()),
+      where(`membership_status`, '==', 'paid'),
+      where(`memberhsip_expires_at`, '<=', new Date()),
     );
 
     try {
@@ -615,152 +410,34 @@ export class SubscriptionsService {
       [...users_id].forEach((id) => {
         const sfRef = doc(db, 'users', id.toString());
         batch.update(sfRef, {
-          [`subscription.${type}.status`]: 'expired',
+          [`membership_status`]: 'expired',
         });
       });
 
       // Ejecutar lote
       await batch.commit();
-      console.log(
-        result.size,
-        "Subscripciones actualizadas a 'expired'.",
-        type,
-      );
+      console.log(result.size, "Subscripciones actualizadas a 'expired'.");
       return true;
     } catch (e) {
       console.warn(e);
       return false;
-    }
-  }
-
-  // Actualizar el status a 'expired' de las subscripciones a partir de una fecha.
-  async statusToExpiredPro() {
-    const _query = query(
-      collection(db, 'users'),
-      where(`subscription.pro.status`, '==', 'paid'),
-      where(`subscription.pro.expires_at`, '<=', new Date()),
-    );
-
-    try {
-      // Consultar todos los 'users'
-      // que entren en las condiciones anteriores.
-      const result = await getDocs(_query);
-
-      // Crear un lote de escritura
-      // Actualizara el estado de los 'users' consultados
-      const batch = writeBatch(db);
-
-      for (const doc of result.docs) {
-        const has_pending_activation = doc.get(
-          'subscription.pro.pending_activation',
-        );
-        if (has_pending_activation) {
-          try {
-            const amount_crypto = Number(
-              doc.get('subscription.pro.pending_activation.amount_crypto'),
-            );
-            const currency = doc.get(
-              'subscription.pro.pending_activation.currency',
-            );
-            await this.onPaymentProMembership(doc.id, amount_crypto, currency);
-            batch.update(doc.ref, {
-              'subscription.pro.pending_activation': null,
-            });
-          } catch (err) {
-            Sentry.configureScope((scope) => {
-              scope.setExtras({
-                userId: doc.id,
-                message: 'No se pudo activar',
-              });
-              Sentry.captureException(err);
-            });
-          }
-        } else {
-          batch.update(doc.ref, {
-            'subscription.pro.status': 'expired',
-          });
-        }
-      }
-
-      // Ejecutar lote
-      await batch.commit();
-      console.log(
-        result.size,
-        "Subscripciones actualizadas a 'expired'.",
-        'PRO',
-      );
-      return true;
-    } catch (e) {
-      console.warn(e);
-      return false;
-    }
-  }
-
-  async fix() {
-    const res = await admin
-      .collection('users')
-      .where('subscription.pro.expires_at', '>=', new Date())
-      .where('subscription.pro.status', '==', 'expired')
-      .get();
-    for (const _doc of res.docs) {
-      await _doc.ref.update({
-        [`subscription.pro.status`]: 'paid',
-      });
-    }
-  }
-
-  async starterActivatePro(id_user: string) {
-    const user = await admin.collection('users').doc(id_user).get();
-    const isStarter = await this.isStarterActiveUser(id_user);
-    const profits = Number(user.get('profits'));
-
-    if (isStarter && profits > 177) {
-      const btc_amount = await this.cryptoapisService.getBTCExchange(177);
-      await user.ref.update({
-        profits: 0,
-        'subscription.starter.status': null,
-        'subscription.starter.expires_at': null,
-        'subscription.starter.start_at': null,
-      });
-      await this.bondService.resetUserProfits(id_user);
-      await this.onPaymentProMembership(id_user, btc_amount, 'BTC');
     }
   }
 
   async assignBinaryPosition(payload: PayloadAssignBinaryPosition) {
     const user = await admin.collection('users').doc(payload.id_user).get();
-    const sponsor_is_starter = await this.isStarterActiveUser(
-      payload.sponsor_id,
-    );
 
     /**
      * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
     const hasBinaryPosition = !!user.get('parent_binary_user_id');
     if (!hasBinaryPosition) {
-      let finish_position = user.get('position');
+      const finish_position = user.get('position');
 
       /**
        * Las dos primeras personas de cada ciclo van al lado del derrame
        */
       const sponsorRef = admin.collection('users').doc(user.get('sponsor_id'));
-      const sponsor = await sponsorRef.get();
-      const sponsor_side = sponsor.get('position') ?? 'right';
-      const forceDerrame =
-        Number(sponsor.get('count_direct_people_this_cycle')) < 2 ||
-        sponsor_is_starter;
-
-      if (forceDerrame) {
-        /**
-         * Nos quiso hackear, y forzamos el lado correcto
-         */
-        if (user.get('position') != sponsor_side) {
-          finish_position = sponsor_side;
-          await user.ref.update({
-            position: sponsor_side,
-          });
-        }
-      }
 
       const binaryPosition = await this.binaryService.calculatePositionOfBinary(
         user.get('sponsor_id'),

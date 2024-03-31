@@ -21,10 +21,7 @@ export class SubscriptionsController {
 
   @Post('statusToExpired/:type')
   statusToExpired(@Param('type') type) {
-    if (type == 'pro') {
-      return this.subscriptionService.statusToExpiredPro();
-    }
-    return this.subscriptionService.statusToExpired(type);
+    return this.subscriptionService.statusToExpired();
   }
 
   @Post('createPaymentAddress/pro')
@@ -33,6 +30,7 @@ export class SubscriptionsController {
       body.userId,
       'pro',
       body.coin,
+      body.period,
     );
   }
 
@@ -42,60 +40,8 @@ export class SubscriptionsController {
       body.userId,
       'supreme',
       body.coin,
+      body.period,
     );
-  }
-
-  @Post('createPaymentAddress/ibo')
-  async createPaymentAddressIbo(@Body() body) {
-    return this.subscriptionService.createPaymentAddress(
-      body.userId,
-      'ibo',
-      body.coin,
-    );
-  }
-
-  @Post('createPaymentAddress/toprice_xpert')
-  async createPaymentAddressTopriceXpert(@Body() body) {
-    return this.subscriptionService.createPaymentAddress(
-      body.userId,
-      'toprice_xpert',
-      body.coin,
-    );
-  }
-
-  @Post('createPaymentAddress/crypto_elite')
-  async createPaymentAddressCryptoElite(@Body() body) {
-    return this.subscriptionService.createPaymentAddress(
-      body.userId,
-      'crypto_elite',
-      body.coin,
-    );
-  }
-
-  @Post('createPaymentAddress/starter')
-  async createPaymentAddressStarter(@Body() body) {
-    return this.subscriptionService.createPaymentAddress(
-      body.userId,
-      'starter',
-      body.coin,
-    );
-  }
-
-  @Post('createPaymentAddressPack')
-  async createPaymentAddressPack(@Body() body) {
-    if (body.type == 'pro+supreme') {
-      return this.subscriptionService.createPaymentAddressPack(
-        body.userId,
-        body.type,
-        body.coin,
-      );
-    }
-    return new HttpException('Tipo invalido', 404);
-  }
-
-  @Post('starterActivatePro')
-  async starterActivatePro(@Body() body) {
-    return this.subscriptionService.starterActivatePro(body.user_id);
   }
 
   @Post('assignBinaryPosition')
