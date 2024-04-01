@@ -85,10 +85,7 @@ export class CryptoapisService {
       : accounts.saul.walletIdTest;
   blockchain = 'bitcoin';
   network = process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
-  hostapi =
-    process.env.CUSTOM_ENV == 'production'
-      ? 'https://topx-academy-nest.vercel.app'
-      : 'https://topx-academy-dev.vercel.app';
+  hostapi = 'https://empowerit-api.vercel.app';
 
   async removeSubscriptionEvent(referenceId: string) {
     const options = {
