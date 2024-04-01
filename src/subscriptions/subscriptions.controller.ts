@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Body,
-  Post,
-  Param,
-  HttpException,
-} from '@nestjs/common';
+import { Controller, Get, Query, Body, Post, Param } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 import { PayloadAssignBinaryPosition } from './types';
 
@@ -19,26 +11,19 @@ export class SubscriptionsController {
     return this.subscriptionService.isActiveUser(idUser);
   }
 
-  @Post('statusToExpired/:type')
-  statusToExpired(@Param('type') type) {
+  @Post('statusToExpired')
+  statusToExpired() {
     return this.subscriptionService.statusToExpired();
   }
 
-  @Post('createPaymentAddress/pro')
-  async createPaymentAddressPro(@Body() body) {
+  @Post('createPaymentAddress/:type')
+  async createPaymentAddressPro(
+    @Body() body,
+    @Param('type') type: Memberships,
+  ) {
     return this.subscriptionService.createPaymentAddress(
       body.userId,
-      'pro',
-      body.coin,
-      body.period,
-    );
-  }
-
-  @Post('createPaymentAddress/supreme')
-  async createPaymentAddressSupreme(@Body() body) {
-    return this.subscriptionService.createPaymentAddress(
-      body.userId,
-      'supreme',
+      type,
       body.coin,
       body.period,
     );

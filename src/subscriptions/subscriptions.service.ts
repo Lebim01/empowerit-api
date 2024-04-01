@@ -130,7 +130,7 @@ export class SubscriptionsService {
   }
   async isActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
-    const expires_at = user.get('subscription.pro.expires_at');
+    const expires_at = user.get('membership_expires_at');
 
     const is_admin =
       Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
@@ -143,7 +143,7 @@ export class SubscriptionsService {
 
   async assingMembership(id_user: string, type: Memberships, days?: number) {
     // Obtener fechas
-    const startAt: Date = await this.calculateStartDate(id_user, type);
+    const startAt: Date = await this.calculateStartDate(id_user);
     const expiresAt: Date = await this.calculateExpirationDate(
       id_user,
       type,
@@ -172,10 +172,11 @@ export class SubscriptionsService {
    * Obtener fecha de inicio.
    * Fecha en la que iniciara la membresia del 'type' enviado.
    */
-  async calculateStartDate(id_user: string, type: Memberships): Promise<Date> {
+  async calculateStartDate(id_user: string): Promise<Date> {
     // Obtener la información del usuario
     const userDoc = await admin.doc(`users/${id_user}`).get();
-    const { status, expires_at } = userDoc.data().subscription[type];
+    const expires_at = userDoc.get('membership_expires_at');
+    const status = userDoc.get('membership_status');
 
     // Obtener fecha de inicio
     let date: dayjs.Dayjs;
@@ -210,7 +211,7 @@ export class SubscriptionsService {
     }
 
     // Obtener la fecha de expiración
-    const date: Date = dayjs(await this.calculateStartDate(id_user, type))
+    const date: Date = dayjs(await this.calculateStartDate(id_user))
       .add(days, 'days')
       .toDate();
 
@@ -224,11 +225,7 @@ export class SubscriptionsService {
     return isNew;
   }
 
-  async onPaymentIBOMembership(id_user: string) {
-    await this.assingMembership(id_user, 'ibo');
-  }
-
-  async onPaymentProMembership(id_user: string) {
+  async onPaymentMembership(id_user: string, type: Memberships) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
     const isNew = await this.isNewMember(id_user);
@@ -241,7 +238,7 @@ export class SubscriptionsService {
       await userDocRef.update({
         pending_activation: {
           created_at: new Date(),
-          membership: 'pro',
+          membership: type,
         },
       });
       return;
@@ -256,7 +253,7 @@ export class SubscriptionsService {
     /**
      * Se activa la membresia
      */
-    await this.assingMembership(id_user, 'pro');
+    await this.assingMembership(id_user, type);
 
     if (isNew) {
       await userDocRef.update({

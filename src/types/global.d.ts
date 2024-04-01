@@ -1,9 +1,12 @@
-type Memberships = 'pro' | 'supreme' | 'ibo' | 'starter' | HightTicket;
+type Memberships =
+  | 'pro'
+  | 'supreme'
+  | 'alive-pack'
+  | 'freedom-pack'
+  | 'business-pack'
+  | 'elite-pack'
+  | 'vip-pack';
 
-type HightTicket = 'crypto_elite' | 'toprice_xpert';
+type Coins = 'BTC' | 'LTC';
 
-type Packs = 'pro+supreme';
-
-type Coins = 'BTC' | 'LTC' | 'XRP';
-
-type Blockchains = 'bitcoin' | 'litecoin' | 'xrp';
+type Blockchains = 'bitcoin' | 'litecoin';

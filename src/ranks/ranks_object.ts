@@ -1,44 +1,61 @@
+import { Ranks } from './ranks.service';
+
 export const ranks_object = {
-  vanguard: { display: 'Vanguard', binary: 0, key: 'vanguard', order: 1 },
-  scholarship: {
-    display: 'Scholarship',
-    binary: 0,
-    key: 'scholarship',
+  [Ranks.NONE]: { display: 'Ninguno', key: Ranks.NONE, order: -1 },
+  [Ranks.INITIAL_BUILD]: {
+    display: 'Initial Builder',
+    key: [Ranks.INITIAL_BUILD],
+    order: 1,
+  },
+  [Ranks.STAR_BUILD]: {
+    display: 'Star Builder',
+    key: Ranks.STAR_BUILD,
     order: 2,
   },
-  runner_1: { display: 'Runner 100', binary: 0.05, key: 'runner_1', order: 3 },
-  runner_3: { display: 'Runner 300', binary: 0.06, key: 'runner_3', order: 4 },
-  runner_6: { display: 'Runner 600', binary: 0.07, key: 'runner_6', order: 5 },
-  master_1: { display: 'Master 1000', binary: 0.08, key: 'master_1', order: 6 },
-  master_15: {
-    display: 'Mater 1500',
-    binary: 0.09,
-    key: 'master_15',
+  [Ranks.ADVANCED_BUILDER]: {
+    display: 'Advanced Builder',
+    key: Ranks.ADVANCED_BUILDER,
+    order: 3,
+  },
+  [Ranks.MASTER_1000]: {
+    display: 'Master 1000',
+    key: Ranks.MASTER_1000,
+    order: 4,
+  },
+  [Ranks.MASTER_1500]: {
+    display: 'Master 1500',
+    key: Ranks.MASTER_1500,
+    order: 5,
+  },
+  [Ranks.MASTER_2500]: {
+    display: 'Master 2500',
+    key: Ranks.MASTER_2500,
+    order: 6,
+  },
+  [Ranks.REGIONAL_DIRECTOR]: {
+    display: 'Regional Director',
+    key: Ranks.REGIONAL_DIRECTOR,
     order: 7,
   },
-  top_royal_25: {
-    display: 'Top Royal 2500',
-    binary: 0.1,
-    key: 'top_royal_25',
+  [Ranks.NATIONAL_DIRECTOR]: {
+    display: 'National Director',
+    key: Ranks.NATIONAL_DIRECTOR,
     order: 8,
   },
-  top_diamond_5: {
-    display: 'Top Diamond 5000',
-    binary: 0.11,
-    key: 'top_diamond_5',
+  [Ranks.INTERNATIONAL_DIRECTOR]: {
+    display: 'International Director',
+    key: Ranks.INTERNATIONAL_DIRECTOR,
     order: 9,
   },
-  top_king_10: {
-    display: 'Top King 10000',
-    binary: 0.12,
-    key: 'top_king_10',
+  [Ranks.TOP_DIAMOND]: {
+    display: 'Top Diamond',
+    key: Ranks.TOP_DIAMOND,
     order: 10,
   },
-  top_1: { display: 'Top 1%', binary: 0.13, key: 'top_1', order: 11 },
-  top_legend: {
+  [Ranks.TOP_1]: { display: 'Top 1%', key: Ranks.TOP_1, order: 11 },
+  [Ranks.TOP_LEGEND]: {
     display: 'Top Legend',
-    binary: 0.14,
-    key: 'top_legend',
+    key: Ranks.TOP_LEGEND,
     order: 12,
   },
 };

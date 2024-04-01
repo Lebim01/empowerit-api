@@ -23,63 +23,9 @@ export class UsersService {
     return isNew;
   }
 
-  async isSupremeActive(id_user: string) {
-    const user = await getDoc(doc(db, 'users/' + id_user));
-    const expires_at = user.get('subscription.supreme.expires_at');
-
-    return expires_at
-      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-      : false;
-  }
-
-  async isIBOActive(id_user: string) {
-    const user = await getDoc(doc(db, 'users/' + id_user));
-    const expires_at = user.get('subscription.ibo.expires_at');
-
-    return expires_at
-      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-      : false;
-  }
-
-  async isHighTicketActive(id_user: string) {
-    const elite = await this.isCryptoEliteActive(id_user);
-    const price = await this.isTopriceXpertActive(id_user);
-    return elite || price;
-  }
-
-  async isCryptoEliteActive(id_user: string) {
-    const user = await getDoc(doc(db, 'users/' + id_user));
-    const expires_at = user.get('subscription.crypto_elite.expires_at');
-
-    return expires_at
-      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-      : false;
-  }
-
-  async isTopriceXpertActive(id_user: string) {
-    const user = await getDoc(doc(db, 'users/' + id_user));
-    const expires_at = user.get('subscription.toprice_xpert.expires_at');
-
-    return expires_at
-      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-      : false;
-  }
-
   async isProActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
-    const expires_at = user.get('subscription.pro.expires_at');
-    const is_admin =
-      Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
-    return is_admin
-      ? true
-      : expires_at
-      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-      : false;
-  }
-
-  async isStarterActiveUser(id_user: string) {
-    const user = await admin.collection('users').doc(id_user).get();
-    const expires_at = user.get('subscription.starter.expires_at');
+    const expires_at = user.get('membership_expires_at');
     const is_admin =
       Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
     return is_admin
@@ -92,25 +38,6 @@ export class UsersService {
   async getUserByPaymentAddress(
     address: string,
     type: Memberships,
-  ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
-    try {
-      const snap = await admin
-        .collection('users')
-        .where(`subscription.${type}.payment_link.address`, '==', address)
-        .get();
-
-      if (snap.empty) return null;
-
-      return snap.docs[0];
-    } catch (err) {
-      Sentry.captureException(err);
-      return null;
-    }
-  }
-
-  async getUserByPaymentAddressPack(
-    address: string,
-    type: Packs,
   ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
     try {
       const snap = await admin

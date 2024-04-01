@@ -128,13 +128,11 @@ export class CryptoapisService {
   }
 
   getBlockchainFromCurrency(currency: Coins) {
-    if (currency == 'XRP') return 'xrp';
     if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
 
   getQRNameFromCurrency(currency: Coins) {
-    if (currency == 'XRP') return 'xrp';
     if (currency == 'LTC') return 'litecoin';
     return 'bitcoin';
   }
@@ -142,7 +140,7 @@ export class CryptoapisService {
   async createFirstConfirmationTransaction(
     userId: string,
     address: string,
-    type: Memberships | Packs,
+    type: Memberships,
     currency: Coins,
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
@@ -153,7 +151,6 @@ export class CryptoapisService {
         path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
         qs: { context: userId },
       };
-      const is_pack = type == 'pro+supreme';
       const payload = {
         context: userId,
         data: {
@@ -161,9 +158,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl:
-              `${this.hostapi}/cryptoapis/callbackCoins/${type}` +
-              (is_pack ? '/packs' : ''),
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackCoins/${type}`,
           },
         },
       };
@@ -194,7 +189,7 @@ export class CryptoapisService {
   async createCallbackConfirmation(
     id_user: string,
     address: string,
-    type: Memberships | Packs,
+    type: Memberships,
     currency: Coins,
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
@@ -501,44 +496,6 @@ export class CryptoapisService {
   generateQrUrl = (address: string, amount: string): string =>
     `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amount}`;
 
-  async verifyTransactions() {
-    const ibo_addresses = await db
-      .collection('users')
-      .where('subscription.ibo.payment_link.status', '==', 'pending')
-      .get()
-      .then((r) => r.docs.map((b) => b.get('subscription.ibo.payment_link')));
-    const pro_addresses = await db
-      .collection('users')
-      .where('subscription.pro.payment_link.status', '==', 'pending')
-      .get()
-      .then((r) => r.docs.map((b) => b.get('subscription.pro.payment_link')));
-    const supreme_addresses = await db
-      .collection('users')
-      .where('subscription.supreme.payment_link.status', '==', 'pending')
-      .get()
-      .then((r) =>
-        r.docs.map((b) => b.get('subscription.supreme.payment_link')),
-      );
-    const addresses = [ibo_addresses, pro_addresses, supreme_addresses].flat();
-
-    for (const payment_link of addresses) {
-      try {
-        const address_info = await this.getAddressInfo(payment_link.address);
-
-        if (Number(address_info.data.item.confirmedBalance.amount) > 0) {
-          payment_link.total_received =
-            address_info.data.item.confirmedBalance.amount;
-        } else {
-          payment_link.total_received = '0';
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    return addresses;
-  }
-
   async getAddressInfo(address: string): Promise<ResponseBalanceAddress> {
     const options = {
       ...default_options,
@@ -561,11 +518,7 @@ export class CryptoapisService {
         : '';
       const user = await db
         .collection('users')
-        .where(
-          `subscription.${membership_type}.payment_link.address`,
-          '==',
-          event.address,
-        )
+        .where(`payment_link.${membership_type}.address`, '==', event.address)
         .get();
 
       if (user.empty) {
@@ -623,24 +576,13 @@ export class CryptoapisService {
     return res.data.result;
   }
 
-  async saveRequestHistory(type: Packs, body: any, headers: any) {
-    await db.collection('cryptoapis-requests').add({
-      created_at: new Date(),
-      url: `cryptoapis/callbackPayment/${type}/packs`,
-      body,
-      headers,
-    });
-  }
-
   async transactionIsCompletePaid(type: Memberships, id_user: string) {
     const userDoc = await db.collection('users').doc(id_user).get();
     // Verificar si el pago se completo
-    const required_amount = Number(
-      userDoc.get(`subscription.${type}.payment_link.amount`),
-    );
+    const required_amount = Number(userDoc.get(`payment_link.${type}.amount`));
     const tolerance = required_amount * 0.003;
-    const address = userDoc.get(`subscription.${type}.payment_link.address`);
-    const currency = userDoc.get(`subscription.${type}.payment_link.currency`);
+    const address = userDoc.get(`payment_link.${type}.address`);
+    const currency = userDoc.get(`payment_link.${type}.currency`);
     const pendingAmount: number = await this.calculatePendingAmount(
       userDoc.id,
       address,
