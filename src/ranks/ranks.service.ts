@@ -37,7 +37,7 @@ const ranksPoints: Record<Ranks, number> = {
   [Ranks.NONE]: 0,
 };
 
-const ranksOrder = [
+export const ranksOrder = [
   Ranks.INITIAL_BUILD,
   Ranks.STAR_BUILD,
   Ranks.ADVANCED_BUILDER,
