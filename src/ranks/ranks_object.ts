@@ -45,70 +45,73 @@ export const ranksOrder = [
   Ranks.TOP_LEGEND,
 ];
 
-export const ranks_object: Record<Ranks, any> = {
+export const ranks_object: Record<
+  Ranks,
+  { display: string; key: Ranks; order: number }
+> = {
   [Ranks.NONE]: {
     display: 'Ninguno',
     key: Ranks.NONE,
-    order: ranksOrder[Ranks.NONE],
+    order: -1,
   },
   [Ranks.INITIAL_BUILD]: {
     display: 'Initial Builder',
-    key: [Ranks.INITIAL_BUILD],
-    order: ranksOrder[Ranks.INITIAL_BUILD],
+    key: Ranks.INITIAL_BUILD,
+    order: 0,
   },
   [Ranks.STAR_BUILD]: {
     display: 'Star Builder',
     key: Ranks.STAR_BUILD,
-    order: ranksOrder[Ranks.STAR_BUILD],
+    order: 1,
   },
   [Ranks.ADVANCED_BUILDER]: {
     display: 'Advanced Builder',
     key: Ranks.ADVANCED_BUILDER,
-    order: ranksOrder[Ranks.ADVANCED_BUILDER],
+    order: 2,
   },
   [Ranks.MASTER_1000]: {
     display: 'Master 1000',
     key: Ranks.MASTER_1000,
-    order: ranksOrder[Ranks.MASTER_1000],
+    order: 3,
   },
   [Ranks.MASTER_1500]: {
     display: 'Master 1500',
     key: Ranks.MASTER_1500,
-    order: ranksOrder[Ranks.MASTER_1500],
+    order: 4,
   },
   [Ranks.MASTER_2500]: {
     display: 'Master 2500',
     key: Ranks.MASTER_2500,
-    order: ranksOrder[Ranks.MASTER_2500],
+    order: 5,
   },
   [Ranks.REGIONAL_DIRECTOR]: {
     display: 'Regional Director',
     key: Ranks.REGIONAL_DIRECTOR,
-    order: ranksOrder[Ranks.REGIONAL_DIRECTOR],
+    order: 6,
   },
   [Ranks.NATIONAL_DIRECTOR]: {
     display: 'National Director',
     key: Ranks.NATIONAL_DIRECTOR,
-    order: ranksOrder[Ranks.NATIONAL_DIRECTOR],
+    order: 7,
   },
   [Ranks.INTERNATIONAL_DIRECTOR]: {
     display: 'International Director',
     key: Ranks.INTERNATIONAL_DIRECTOR,
-    order: ranksOrder[Ranks.INTERNATIONAL_DIRECTOR],
+    order: 8,
   },
   [Ranks.TOP_DIAMOND]: {
     display: 'Top Diamond',
     key: Ranks.TOP_DIAMOND,
-    order: ranksOrder[Ranks.TOP_DIAMOND],
+    order: 9,
   },
   [Ranks.TOP_1]: {
     display: 'Top 1%',
     key: Ranks.TOP_1,
-    order: ranksOrder[Ranks.TOP_1],
+    order: 10,
   },
   [Ranks.TOP_LEGEND]: {
     display: 'Top Legend',
     key: Ranks.TOP_LEGEND,
-    order: ranksOrder[Ranks.TOP_LEGEND],
+    order: 11,
   },
 };

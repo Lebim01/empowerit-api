@@ -1,4 +1,1 @@
-export const ADMIN_USERS = [
-  'JpdntP2OQzNSBi3IylyMfSEqqSD2',
-  '7iRezG7E6vRq7OQywQN3WawSa872',
-];
+export const ADMIN_USERS = ['8ribFRrOf2PKYV65237eSwjGD6A2'];

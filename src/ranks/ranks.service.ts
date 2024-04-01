@@ -16,7 +16,10 @@ export class RanksService {
 
   async updateRank() {
     /* Obtener todos los usuraios */
-    const users = await admin.collection('users').get();
+    const users = await admin
+      .collection('users')
+      .orderBy('created_at', 'desc')
+      .get();
 
     await Promise.all(
       users.docs.map(async (user) => {
@@ -185,7 +188,7 @@ export class RanksService {
     } else if (points_smaller_leg >= ranksPoints[Ranks.TOP_DIAMOND]) {
       rank = Ranks.TOP_DIAMOND;
       next_rank = Ranks.TOP_1;
-      missing_points = 20000 - points_smaller_leg;
+      missing_points = ranksPoints[Ranks.TOP_1] - points_smaller_leg;
     } else if (
       points_smaller_leg >= ranksPoints[Ranks.INTERNATIONAL_DIRECTOR]
     ) {
@@ -269,7 +272,9 @@ export class RanksService {
   }
 
   async getRankKey(key: string) {
-    return ranks_object[key];
+    const current = ranks_object[key];
+    const next_rank = ranks_object[ranksOrder[current.order + 1]];
+    return { ...current, next_rank };
   }
 
   async newRanks(

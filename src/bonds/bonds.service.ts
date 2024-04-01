@@ -79,7 +79,7 @@ export class BondsService {
 
     // primer nivel
     if (sponsor) {
-      const isProActive = await this.userService.isProActiveUser(sponsor_id);
+      const isProActive = await this.userService.isActiveUser(sponsor_id);
       const amount = 50;
 
       if (isProActive) {

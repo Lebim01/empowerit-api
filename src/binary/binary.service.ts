@@ -8,6 +8,7 @@ import {
   or,
   where,
   orderBy,
+  increment,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
@@ -109,6 +110,7 @@ export class BinaryService {
       .doc(registerUserId)
       .get();
     let currentUser = registerUserId;
+    const points = pack_points[registerUser.get('membership')];
 
     do {
       const users = await getDocs(
@@ -129,9 +131,9 @@ export class BinaryService {
         currentUser = user.id;
 
         // solo se suman puntos si el usuario esta activo
-        const isProActive = await this.userService.isProActiveUser(user.id);
+        const isActive = await this.userService.isActiveUser(user.id);
 
-        if (isProActive) {
+        if (isActive) {
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
             position == 'left' ? 'left-points' : 'right-points';
@@ -141,7 +143,7 @@ export class BinaryService {
           );
 
           batch.set(subCollectionRef, {
-            points: 100,
+            points,
             user_id: registerUserId,
             name: registerUser.get('name'),
           });
@@ -156,6 +158,7 @@ export class BinaryService {
   }
 
   async matchBinaryPoints(userId: string) {
+    const user = await admin.collection('users').doc(userId).get();
     const leftPointsRef = collection(db, `users/${userId}/left-points`);
     const rightPointsRef = collection(db, `users/${userId}/right-points`);
 
@@ -168,21 +171,37 @@ export class BinaryService {
     const rightPointsDocs = rightDocs.docs;
 
     const batch = writeBatch(db);
+    const points_to_pay =
+      user.get('left_points') > user.get('right_points')
+        ? user.get('right_points')
+        : user.get('left_points');
 
-    while (
-      (leftPointsDocs.length > 0 || ADMIN_USERS.includes(userId)) &&
-      rightPointsDocs.length > 0
-    ) {
-      // Tomamos y eliminamos el documento más antiguo de cada lado
-      // Los admin no tienen puntos del lado izquierdo
-
-      if (leftPointsDocs.length > 0) {
-        const oldestLeftDoc = leftPointsDocs.shift();
-        batch.delete(oldestLeftDoc.ref);
+    let remaining_left_points = points_to_pay;
+    while (remaining_left_points > 0) {
+      const oldestDoc = leftPointsDocs.shift();
+      if (remaining_left_points >= oldestDoc.get('points')) {
+        remaining_left_points -= oldestDoc.get('points');
+        batch.delete(oldestDoc.ref);
+      } else {
+        batch.update(oldestDoc.ref, {
+          points: increment(remaining_left_points * -1),
+        });
+        remaining_left_points = 0;
       }
+    }
 
-      const oldestRightDoc = rightPointsDocs.shift();
-      batch.delete(oldestRightDoc.ref);
+    let remaining_right_points = points_to_pay;
+    while (remaining_right_points > 0) {
+      const oldestDoc = rightPointsDocs.shift();
+      if (remaining_right_points >= oldestDoc.get('points')) {
+        remaining_right_points -= oldestDoc.get('points');
+        batch.delete(oldestDoc.ref);
+      } else {
+        batch.update(oldestDoc.ref, {
+          points: increment(remaining_right_points * -1),
+        });
+        remaining_right_points = 0;
+      }
     }
 
     // Ejecutar la operación batch

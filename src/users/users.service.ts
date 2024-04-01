@@ -23,7 +23,7 @@ export class UsersService {
     return isNew;
   }
 
-  async isProActiveUser(id_user: string) {
+  async isActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
     const expires_at = user.get('membership_expires_at');
     const is_admin =
