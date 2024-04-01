@@ -34,7 +34,6 @@ export class AdminController {
       body.address,
       body.amount,
       body.blockchain,
-      body.tag,
     );
   }
 

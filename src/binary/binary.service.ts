@@ -130,9 +130,8 @@ export class BinaryService {
 
         // solo se suman puntos si el usuario esta activo
         const isProActive = await this.userService.isProActiveUser(user.id);
-        const isIBOActive = await this.userService.isIBOActive(user.id);
 
-        if (isProActive && isIBOActive) {
+        if (isProActive) {
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
             position == 'left' ? 'left-points' : 'right-points';

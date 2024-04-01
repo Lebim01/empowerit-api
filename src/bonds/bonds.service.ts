@@ -3,7 +3,7 @@ import { increment } from 'firebase/firestore';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from 'src/users/users.service';
 import { firestore } from 'firebase-admin';
-import { Ranks } from 'src/ranks/ranks.service';
+import { Ranks } from 'src/ranks/ranks_object';
 
 enum Bonds {
   PRESENTER = 'bond_presenter',

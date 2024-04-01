@@ -1,56 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { db as admin } from '../firebase/admin';
 import dayjs, { Dayjs } from 'dayjs';
-import { ranks_object } from './ranks_object';
+import { Ranks, ranksOrder, ranksPoints, ranks_object } from './ranks_object';
 import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
-
-export enum Ranks {
-  NONE = 'none',
-  INITIAL_BUILD = 'initial_builder',
-  STAR_BUILD = 'star_builder',
-  ADVANCED_BUILDER = 'advanced_builder',
-  MASTER_1000 = 'master_1000',
-  MASTER_1500 = 'master_1500',
-  MASTER_2500 = 'master_2500',
-  REGIONAL_DIRECTOR = 'regional_director',
-  NATIONAL_DIRECTOR = 'national_director',
-  INTERNATIONAL_DIRECTOR = 'international_director',
-  TOP_DIAMOND = 'top_diamond',
-  TOP_1 = 'top_1',
-  TOP_LEGEND = 'top_legend',
-}
-
-const ranksPoints: Record<Ranks, number> = {
-  [Ranks.TOP_LEGEND]: 2_300_000,
-  [Ranks.TOP_1]: 600_000,
-  [Ranks.TOP_DIAMOND]: 180_000,
-  [Ranks.INTERNATIONAL_DIRECTOR]: 72_000,
-  [Ranks.NATIONAL_DIRECTOR]: 35_000,
-  [Ranks.REGIONAL_DIRECTOR]: 25_000,
-  [Ranks.MASTER_2500]: 15_000,
-  [Ranks.MASTER_1500]: 12_000,
-  [Ranks.MASTER_1000]: 8_000,
-  [Ranks.ADVANCED_BUILDER]: 6_000,
-  [Ranks.STAR_BUILD]: 1_500,
-  [Ranks.INITIAL_BUILD]: 500,
-  [Ranks.NONE]: 0,
-};
-
-export const ranksOrder = [
-  Ranks.INITIAL_BUILD,
-  Ranks.STAR_BUILD,
-  Ranks.ADVANCED_BUILDER,
-  Ranks.MASTER_1000,
-  Ranks.MASTER_1500,
-  Ranks.MASTER_2500,
-  Ranks.REGIONAL_DIRECTOR,
-  Ranks.NATIONAL_DIRECTOR,
-  Ranks.INTERNATIONAL_DIRECTOR,
-  Ranks.TOP_DIAMOND,
-  Ranks.TOP_1,
-  Ranks.TOP_LEGEND,
-];
 
 type UserRank = {
   rank?: Ranks;
@@ -99,9 +52,7 @@ export class RanksService {
     const user = await admin.collection('users').doc(userId).get();
     const past_max_rank: UserRank = user.get('max_rank')
       ? ranks_object[user.get('max_rank')]
-      : {
-          order: -1,
-        };
+      : ranks_object.none;
     /**
      * Is true when max_rank is lower than new rank
      */

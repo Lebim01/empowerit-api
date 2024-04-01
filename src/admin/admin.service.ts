@@ -174,18 +174,6 @@ export class AdminService {
         requests_empty,
         blockchain as 'bitcoin' | 'litecoin',
       );
-    } else if (blockchain == 'xrp') {
-      const wallets = await Promise.all(
-        payroll_data.map(async (doc) => {
-          const xAddress = await this.getXAddressUser(doc.id);
-          return {
-            xAddress,
-            amount: doc.crypto_amount,
-            id_user: doc.id,
-          };
-        }),
-      );
-      await this.payrollWithXRP(ref.id, wallets);
     }
 
     return payroll_data;
@@ -374,24 +362,6 @@ export class AdminService {
       );
 
       return res;
-    } else if (blockchain == 'xrp') {
-      const wallets = await Promise.all(
-        payroll_data.docs.map(async (doc) => {
-          const id_user = doc.get('id');
-          const total_xrp = await this.cryptoapisService.getXRPExchange(
-            doc.get('total'),
-          );
-          const xAddress = await this.getXAddressUser(id_user);
-          return {
-            id_user: id_user,
-            xAddress,
-            amount: total_xrp,
-          };
-        }),
-      );
-      await this.payrollWithXRP(id, wallets);
-
-      return wallets;
     }
   }
 
@@ -418,7 +388,6 @@ export class AdminService {
     address: string,
     amount_usd: string,
     blockchain: 'bitcoin' | 'litecoin',
-    tag?: string,
   ) {
     if (blockchain == 'bitcoin' || blockchain == 'litecoin') {
       return this.cryptoapisService.withdraw(address, amount_usd, blockchain);
