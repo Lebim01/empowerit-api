@@ -21,9 +21,14 @@ import { PayloadAssignBinaryPosition } from './types';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 import { GoogletaskService } from 'src/googletask/googletask.service';
 
-export const MEMBERSHIP_PRICES_MONTHLY = {
+export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   supreme: 199,
   pro: 99,
+  'alive-pack': 129,
+  'freedom-pack': 479,
+  'business-pack': 1289,
+  'elite-pack': 228,
+  'vip-pack': 678,
 };
 export const MEMBERSHIP_PRICES_YEARLY = {
   supreme: 1999,
@@ -141,13 +146,17 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingMembership(id_user: string, type: Memberships, days?: number) {
+  async assingMembership(
+    id_user: string,
+    type: Memberships,
+    period: 'monthly' | 'yearly',
+  ) {
     // Obtener fechas
     const startAt: Date = await this.calculateStartDate(id_user);
     const expiresAt: Date = await this.calculateExpirationDate(
       id_user,
       type,
-      days,
+      period,
     );
 
     // Registrar cambios
@@ -196,18 +205,22 @@ export class SubscriptionsService {
   async calculateExpirationDate(
     id_user: string,
     type: Memberships,
-    customDays?: number,
+    period: 'monthly' | 'yearly',
   ): Promise<Date> {
     let days = 0;
 
-    if (!customDays) {
-      switch (type) {
-        default:
-          days = 30;
-          break;
-      }
-    } else {
-      days = customDays;
+    switch (type) {
+      case 'pro':
+      case 'supreme':
+        if (period == 'yearly') days = 365;
+        else days = 30;
+        break;
+      case 'business-pack':
+        days = 90;
+        break;
+      default:
+        days = 30;
+        break;
     }
 
     // Obtener la fecha de expiración
@@ -229,6 +242,8 @@ export class SubscriptionsService {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
     const isNew = await this.isNewMember(id_user);
+
+    const membership_period = data.get('membership_period');
 
     /**
      * Reconsumo pagado antes de tiempo
@@ -253,7 +268,7 @@ export class SubscriptionsService {
     /**
      * Se activa la membresia
      */
-    await this.assingMembership(id_user, type);
+    await this.assingMembership(id_user, type, membership_period);
 
     if (isNew) {
       await userDocRef.update({
@@ -299,7 +314,12 @@ export class SubscriptionsService {
      */
     if (isNew) {
       try {
-        await this.bondService.execUserDirectBond(id_user);
+        const prices =
+          membership_period == 'monthly'
+            ? MEMBERSHIP_PRICES_MONTHLY
+            : MEMBERSHIP_PRICES_YEARLY;
+        const membership_price = prices[type];
+        await this.bondService.execUserDirectBond(id_user, membership_price);
       } catch (err) {
         Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);

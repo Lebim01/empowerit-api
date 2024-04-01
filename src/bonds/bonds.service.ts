@@ -68,7 +68,7 @@ export class BondsService {
   /**
    * solo se reparte este bono a los usuarios activos
    */
-  async execUserDirectBond(registerUserId: string) {
+  async execUserDirectBond(registerUserId: string, membership_price: number) {
     const user = await admin.collection('users').doc(registerUserId).get();
 
     const sponsor_id = user.get('sponsor_id');
@@ -80,11 +80,12 @@ export class BondsService {
     // primer nivel
     if (sponsor) {
       const isProActive = await this.userService.isActiveUser(sponsor_id);
-      const amount = 50;
+
+      const amount = membership_price * percent;
 
       if (isProActive) {
         await sponsorRef.update({
-          [Bonds.QUICK_START]: increment(amount * percent),
+          [Bonds.QUICK_START]: increment(amount),
         });
         await this.addProfitDetail(
           sponsorRef.id,

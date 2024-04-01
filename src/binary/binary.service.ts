@@ -13,31 +13,24 @@ import {
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from '../users/users.service';
-import { ADMIN_USERS } from '../constants';
 import { firestore } from 'firebase-admin';
-
-enum Packs {
-  // producto
-  ALIVE_PACK = 'alive_pack',
-  FREEDOM_PACK = 'freedom_pack',
-  // digital
-  PRO_MEMBERSHIP = 'pro_membership',
-  SUPREME_MEMBERSHIP = 'supreme_membership',
-  // hibrido
-  ELITE_PACK = 'elite_pack',
-  VIP_PACK = 'vip_pack',
-}
 
 /**
  * Puntos que ganas al inscribir un paquete
  */
-const pack_points: Record<Packs, number> = {
-  alive_pack: 65,
-  freedom_pack: 240,
-  pro_membership: 50,
-  supreme_membership: 100,
-  elite_pack: 115,
-  vip_pack: 340,
+const pack_points: Record<Memberships, number> = {
+  'alive-pack': 65,
+  'freedom-pack': 240,
+  pro: 50,
+  supreme: 100,
+  'elite-pack': 115,
+  'vip-pack': 340,
+  'business-pack': 650,
+};
+
+const pack_points_yearly: Record<'pro' | 'supreme', number> = {
+  pro: 500,
+  supreme: 1000,
 };
 
 @Injectable()
@@ -110,7 +103,11 @@ export class BinaryService {
       .doc(registerUserId)
       .get();
     let currentUser = registerUserId;
-    const points = pack_points[registerUser.get('membership')];
+    const membership_period = registerUser.get('membership_period');
+    const points =
+      membership_period == 'monthly'
+        ? pack_points[registerUser.get('membership')]
+        : pack_points_yearly[registerUser.get('membership')];
 
     do {
       const users = await getDocs(
