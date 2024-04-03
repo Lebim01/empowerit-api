@@ -333,6 +333,32 @@ export class SubscriptionsService {
         });
       }
     }
+
+    /**
+     * enviar paquete de productos
+     */
+    const packs: PhisicMembership[] = [
+      'alive-pack',
+      'freedom-pack',
+      'business-pack',
+    ];
+    if (packs.includes(type as any)) {
+      const required_fields =
+        data.get('address') &&
+        data.get('zip') &&
+        data.get('city.value') &&
+        data.get('country.value') &&
+        data.get('state.value') &&
+        data.get('whatsapp');
+      if (required_fields) {
+        await this.createShopifyPack(id_user, type as PhisicMembership);
+      } else {
+        await userDocRef.collection('pending-ships').add({
+          created_at: new Date(),
+          pack: type,
+        });
+      }
+    }
   }
 
   async addQueueBinaryPosition(body: PayloadAssignBinaryPosition) {
@@ -557,11 +583,44 @@ export class SubscriptionsService {
     }
 
     if (pack == 'alive-pack') {
-      return this.shopifyService.sendOrder(shopify_id, alivePack);
+      return this.shopifyService.createDraftOrder({
+        phone: user.get('phone'),
+        email: user.get('email'),
+        purchasingEntity: {
+          customerId: shopify_id,
+        },
+        lineItems: alivePack.map((item) => ({
+          quantity: item.quantity,
+          variantId: item.id,
+        })),
+        useCustomerDefaultAddress: true,
+      });
     } else if (pack == 'freedom-pack') {
-      return this.shopifyService.sendOrder(shopify_id, freedomPack);
+      return this.shopifyService.createDraftOrder({
+        phone: user.get('phone'),
+        email: user.get('email'),
+        purchasingEntity: {
+          customerId: shopify_id,
+        },
+        lineItems: freedomPack.map((item) => ({
+          quantity: item.quantity,
+          variantId: item.id,
+        })),
+        useCustomerDefaultAddress: true,
+      });
     } else if (pack == 'business-pack') {
-      return this.shopifyService.sendOrder(shopify_id, businessPack);
+      return this.shopifyService.createDraftOrder({
+        phone: user.get('phone'),
+        email: user.get('email'),
+        purchasingEntity: {
+          customerId: shopify_id,
+        },
+        lineItems: businessPack.map((item) => ({
+          quantity: item.quantity,
+          variantId: item.id,
+        })),
+        useCustomerDefaultAddress: true,
+      });
     }
   }
 }

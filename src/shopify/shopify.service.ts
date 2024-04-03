@@ -1,25 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { CustomerInput } from './customers_schema';
 import { GraphQLClient, createGraphQLClient } from '@shopify/graphql-client';
+import {
+  DraftOrderInput,
+  ListItem,
+  ResponseCreate,
+  ResponseCreateDraf,
+} from './types';
 
 const store_name = '79ca82-85';
-
-type ListItem = {
-  id: string;
-  quantity: number;
-};
-
-type ResponseCreate = {
-  customerCreate: {
-    customer: {
-      id: string;
-    };
-    userErrors: {
-      field: string[];
-      message: string;
-    }[];
-  };
-};
 
 @Injectable()
 export class ShopifyService {
@@ -34,10 +23,6 @@ export class ShopifyService {
       },
       retries: 1,
     });
-  }
-
-  sendOrder(id_customer_shopify: string, products: ListItem[]) {
-    //
   }
 
   async createCustomer(customer: CustomerInput) {
@@ -74,5 +59,45 @@ export class ShopifyService {
     }
 
     return data.customerCreate.customer;
+  }
+
+  async createDraftOrder(draf: DraftOrderInput) {
+    if (draf.lineItems.some((r) => !r.variantId.startsWith('gid://shopify/')))
+      throw new Error('Invalid Variant Shopify Global ID');
+
+    const query = `
+      mutation draftOrderCreate($input: DraftOrderInput!) {
+        draftOrderCreate(input: $input) {
+          draftOrder {
+            id
+            invoiceUrl
+            status
+            totalPrice
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+    const { data, errors, extensions } =
+      await this.client.request<ResponseCreateDraf>(query, {
+        variables: {
+          input: draf,
+        },
+      });
+
+    console.log(errors, data?.draftOrderCreate?.userErrors);
+
+    if (errors?.message) {
+      console.log(
+        errors.graphQLErrors[0].message,
+        errors.graphQLErrors[0].extensions,
+      );
+      throw new Error(errors.message);
+    }
+
+    return data.draftOrderCreate.draftOrder;
   }
 }
