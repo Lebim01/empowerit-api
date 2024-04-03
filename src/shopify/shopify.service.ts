@@ -98,6 +98,32 @@ export class ShopifyService {
       throw new Error(errors.message);
     }
 
-    return data.draftOrderCreate.draftOrder;
+    const draftOrder = data.draftOrderCreate.draftOrder;
+
+    await this.convertDraftToOrder(draftOrder.id);
+
+    return draftOrder;
+  }
+
+  async convertDraftToOrder(id: string) {
+    const query = `
+      mutation draftOrderComplete($id: ID!) {
+        draftOrderComplete(id: $id) {
+          draftOrder {
+            # DraftOrder fields
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+    const { data, errors, extensions } = await this.client.request(query, {
+      variables: {
+        input: id,
+      },
+    });
   }
 }
