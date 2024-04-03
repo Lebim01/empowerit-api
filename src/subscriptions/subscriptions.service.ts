@@ -20,6 +20,8 @@ import { firestore } from 'firebase-admin';
 import { PayloadAssignBinaryPosition } from './types';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 import { GoogletaskService } from 'src/googletask/googletask.service';
+import { ShopifyService } from 'src/shopify/shopify.service';
+import { alivePack, businessPack, freedomPack } from './products_packs';
 
 export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   supreme: 199,
@@ -30,6 +32,7 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   'elite-pack': 228,
   'vip-pack': 678,
 };
+
 export const MEMBERSHIP_PRICES_YEARLY = {
   supreme: 1999,
   pro: 999,
@@ -48,6 +51,7 @@ export class SubscriptionsService {
     private readonly bondService: BondsService,
     private readonly cryptoapisService: CryptoapisService,
     private readonly googleTaskService: GoogletaskService,
+    private readonly shopifyService: ShopifyService,
   ) {}
 
   async createPaymentAddress(
@@ -61,9 +65,6 @@ export class SubscriptionsService {
     const userData = await userRef.get().then((r) => r.data());
     let address = '';
     let referenceId = '';
-
-    console.log(id_user);
-    console.log(userData);
 
     // Si no existe registro de la informacion de pago...
     if (
@@ -93,6 +94,7 @@ export class SubscriptionsService {
             currency,
           );
         referenceId = resConfirmation.data.item.referenceId;
+      } else if (currency == 'MXN') {
       }
     }
 
@@ -519,6 +521,47 @@ export class SubscriptionsService {
         scope.setExtra('message', 'no se repartio el bono binario');
         Sentry.captureException(err);
       });
+    }
+  }
+
+  async createShopifyPack(idUser: string, pack: PhisicMembership) {
+    const user = await admin.collection('users').doc(idUser).get();
+    let shopify_id = user.get('shopify_id');
+
+    if (!shopify_id) {
+      const customer = await this.shopifyService.createCustomer({
+        email: user.get('email'),
+        firstName: user.get('name'),
+        addresses: [
+          {
+            address1: user.get('address'),
+            address2: '',
+            city: user.get('city.value'),
+            company: 'Empowerit TOP',
+            country: user.get('country.label'),
+            countryCode: user.get('country.value'),
+            firstName: user.get('name'),
+            lastName: '',
+            phone: user.get('whatsapp'),
+            province: user.get('state.label'),
+            provinceCode: user.get('state.value'),
+            zip: user.get('zip'),
+            id: 0,
+          },
+        ],
+      });
+      shopify_id = customer.id;
+      await user.ref.update({
+        shopify_id,
+      });
+    }
+
+    if (pack == 'alive-pack') {
+      return this.shopifyService.sendOrder(shopify_id, alivePack);
+    } else if (pack == 'freedom-pack') {
+      return this.shopifyService.sendOrder(shopify_id, freedomPack);
+    } else if (pack == 'business-pack') {
+      return this.shopifyService.sendOrder(shopify_id, businessPack);
     }
   }
 }

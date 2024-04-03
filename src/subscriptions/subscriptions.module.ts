@@ -6,6 +6,7 @@ import { BondsService } from 'src/bonds/bonds.service';
 import { UsersService } from 'src/users/users.service';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 import { GoogletaskService } from 'src/googletask/googletask.service';
+import { ShopifyService } from 'src/shopify/shopify.service';
 
 @Module({
   providers: [
@@ -15,6 +16,7 @@ import { GoogletaskService } from 'src/googletask/googletask.service';
     UsersService,
     CryptoapisService,
     GoogletaskService,
+    ShopifyService,
   ],
   controllers: [SubscriptionsController],
   imports: [],

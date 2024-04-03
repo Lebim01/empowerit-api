@@ -1,12 +1,12 @@
+type PhisicMembership = 'alive-pack' | 'freedom-pack' | 'business-pack';
+
 type Memberships =
   | 'pro'
   | 'supreme'
-  | 'alive-pack'
-  | 'freedom-pack'
-  | 'business-pack'
   | 'elite-pack'
-  | 'vip-pack';
+  | 'vip-pack'
+  | PhisicMembership;
 
-type Coins = 'BTC' | 'LTC';
+type Coins = 'BTC' | 'LTC' | 'MXN';
 
 type Blockchains = 'bitcoin' | 'litecoin';

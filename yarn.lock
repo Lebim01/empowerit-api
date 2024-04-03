@@ -2017,6 +2017,11 @@
     "@sentry/types" "7.64.0"
     tslib "^2.4.1 || ^1.9.3"
 
+"@shopify/graphql-client@^0.10.3":
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/@shopify/graphql-client/-/graphql-client-0.10.3.tgz#9f58dd00e7a25ec629a6e285dad5d1253b3db52a"
+  integrity sha512-w9noa5wbuyQegOdmqR5Yfj0GQJKmwuDiqIzDETgZhTMcmV45CNxVRxCWx6BQt3MpLzgk0A8G9iaoppfHXzkhfA==
+
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz"

@@ -23,6 +23,7 @@ import { GoogletaskService } from './googletask/googletask.service';
 import { CloudflareModule } from './cloudflare/cloudflare.module';
 import { AcademyModule } from './academy/academy.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
+import { ShopifyModule } from './shopify/shopify.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { Neo4jModule } from './neo4j/neo4j.module';
     GoogletaskModule,
     CloudflareModule,
     AcademyModule,
+    ShopifyModule,
   ],
   controllers: [AppController],
   providers: [
