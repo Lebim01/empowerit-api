@@ -270,22 +270,12 @@ export class SubscriptionsService {
     }
 
     if (isNew) {
-      const percent = (data.get('presenter_2') ? 1 : 2) / 100;
-      const presenter_bonus = pack_price * percent;
-      if (data.get('presenter_1')) {
-        await this.bondService.execBondPresenter(
-          presenter_bonus,
-          id_user,
-          data.get('presenter_1'),
-        );
-      }
-      if (data.get('presenter_2')) {
-        await this.bondService.execBondPresenter(
-          presenter_bonus,
-          id_user,
-          data.get('presenter_2'),
-        );
-      }
+      await this.bondService.execBondPresenter(
+        pack_price,
+        id_user,
+        data.get('presenter_1'),
+        data.get('presenter_2'),
+      );
     }
 
     await this.addQueueBinaryPosition({
