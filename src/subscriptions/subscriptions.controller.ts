@@ -71,6 +71,7 @@ export class SubscriptionsController {
       .set({
         email: body.email,
         name: body.name || '',
+        sponsor: body.sponsor || '',
         sponsor_id: body.sponsor_id,
         membership: body.membership,
         membership_status: 'paid',
