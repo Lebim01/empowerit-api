@@ -24,6 +24,7 @@ import { CloudflareModule } from './cloudflare/cloudflare.module';
 import { AcademyModule } from './academy/academy.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
 import { ShopifyModule } from './shopify/shopify.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ShopifyModule } from './shopify/shopify.module';
     CloudflareModule,
     AcademyModule,
     ShopifyModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [

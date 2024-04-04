@@ -37,16 +37,6 @@ export class AdminController {
     );
   }
 
-  // @Post('/lacktopay/:payroll')
-  // lacktopay(@Param('payroll') payrollID: string) {
-  //   return this.adminService.fixPayLack(payrollID);
-  // }
-
-  @Post('/transfer')
-  transfer(@Body() body) {
-    return this.adminService.transfer(body);
-  }
-
   @Get('/users')
   getUsersJson() {
     return this.adminService.usersJson();

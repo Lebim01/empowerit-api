@@ -472,7 +472,10 @@ export class SubscriptionsService {
     }
   }
 
-  async assignBinaryPosition(payload: PayloadAssignBinaryPosition) {
+  async assignBinaryPosition(
+    payload: PayloadAssignBinaryPosition,
+    volumen = true,
+  ) {
     const user = await admin.collection('users').doc(payload.id_user).get();
 
     /**
@@ -539,14 +542,16 @@ export class SubscriptionsService {
     /**
      * aumenta los puntos del binario hacia arriba
      */
-    try {
-      await this.binaryService.increaseBinaryPoints(user.id);
-    } catch (err) {
-      Sentry.configureScope((scope) => {
-        scope.setExtra('id_user', user.id);
-        scope.setExtra('message', 'no se repartio el bono binario');
-        Sentry.captureException(err);
-      });
+    if (volumen) {
+      try {
+        await this.binaryService.increaseBinaryPoints(user.id);
+      } catch (err) {
+        Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', user.id);
+          scope.setExtra('message', 'no se repartio el bono binario');
+          Sentry.captureException(err);
+        });
+      }
     }
   }
 

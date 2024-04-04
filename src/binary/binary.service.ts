@@ -81,11 +81,9 @@ export class BinaryService {
       if (user.exists) {
         currentUser = user.id;
 
-        batch.set(
-          user.ref,
-          { count_underline_people: firestore.FieldValue.increment(1) },
-          { merge: true },
-        );
+        batch.update(user.ref, {
+          count_underline_people: firestore.FieldValue.increment(1),
+        });
       } else {
         currentUser = null;
       }
