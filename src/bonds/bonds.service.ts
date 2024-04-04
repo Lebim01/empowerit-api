@@ -182,6 +182,20 @@ export class BondsService {
     }
   }
 
+  async execPresenterBonus(
+    registerUserId: string,
+    userId: string,
+    total: number,
+  ) {
+    await this.addProfitDetail(userId, Bonds.PRESENTER, total, registerUserId);
+    await admin
+      .collection('users')
+      .doc(userId)
+      .update({
+        bond_presenter: firestore.FieldValue.increment(total),
+      });
+  }
+
   async addProfitDetail(
     id_user: string,
     type: Bonds,

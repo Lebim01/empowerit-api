@@ -249,6 +249,11 @@ export class SubscriptionsService {
     const isNew = await this.isNewMember(id_user);
 
     const membership_period = data.get('membership_period');
+    const pack_price = (
+      membership_period == 'monthly'
+        ? MEMBERSHIP_PRICES_MONTHLY
+        : MEMBERSHIP_PRICES_YEARLY
+    )[type];
 
     /**
      * Reconsumo pagado antes de tiempo
@@ -262,6 +267,25 @@ export class SubscriptionsService {
         },
       });
       return;
+    }
+
+    if (isNew) {
+      const percent = (data.get('presenter_2') ? 1 : 2) / 100;
+      const presenter_bonus = pack_price * percent;
+      if (data.get('presenter_1')) {
+        await this.bondService.execBondPresenter(
+          presenter_bonus,
+          id_user,
+          data.get('presenter_1'),
+        );
+      }
+      if (data.get('presenter_2')) {
+        await this.bondService.execBondPresenter(
+          presenter_bonus,
+          id_user,
+          data.get('presenter_2'),
+        );
+      }
     }
 
     await this.addQueueBinaryPosition({
