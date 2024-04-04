@@ -6,6 +6,7 @@ import { BinaryService } from '../binary/binary.service';
 import dayjs from 'dayjs';
 import { firestore } from 'firebase-admin';
 import fs from 'fs';
+import { pack_binary } from 'src/binary/binary_packs';
 
 const ADMIN_BINARY_PERCENT = 15 / 100;
 const ADMIN_QUICK_START = 30 / 100;
@@ -28,43 +29,24 @@ export class AdminService {
     const docs = users.docs.map((r) => ({ id: r.id, ...r.data() }));
 
     const payroll_data = docs
-      .filter((docData: any) => {
-        // los STARTER no cobran
-        const is_starter =
-          docData.subscription?.starter?.status == 'paid' || false;
-        return !is_starter;
-      })
       .map((docData: any) => {
         const isAdmin = docData.type == 'top-lider';
         const binary_side =
           docData.left_points > docData.right_points ? 'right' : 'left';
-        const rank = ranks_object[docData.rank];
-        const binary_points =
-          rank.binary > 0 || isAdmin ? docData[`${binary_side}_points`] : 0;
+        const binary_points = docData[`${binary_side}_points`];
+        const binary_percent = isAdmin
+          ? ADMIN_BINARY_PERCENT
+          : pack_binary[docData.membership];
 
         return {
           id: docData.id,
           name: docData.name,
-          direct: docData.bond_direct || 0,
-          direct_second_level: docData.bond_direct_second_level || 0,
-          residual: docData.bond_residual_level_1 || 0,
-          residual_second_level: docData.bond_residual_level_2 || 0,
-          supreme: docData.bond_supreme_level_1 || 0,
-          supreme_second_level: docData.bond_supreme_level_2 || 0,
-          supreme_third_level: docData.bond_supreme_level_3 || 0,
-          bond_direct_starter_level_1: docData.bond_direct_starter_level_1 || 0,
-          bond_crypto_elite_level_1: docData.bond_crypto_elite_level_1 || 0,
-          bond_crypto_elite_level_2: docData.bond_crypto_elite_level_2 || 0,
-          bond_toprice_xpert_level_1: docData.bond_toprice_xpert_level_1 || 0,
-          bond_toprice_xpert_level_2: docData.bond_toprice_xpert_level_2 || 0,
-
-          binary:
-            Math.floor(
-              binary_points *
-                (isAdmin ? ADMIN_BINARY_PERCENT : rank.binary) *
-                100,
-            ) / 100,
-          binary_percent: isAdmin ? ADMIN_BINARY_PERCENT : rank.binary,
+          bond_direct_sale: docData.bond_direct_sale || 0,
+          bond_mentor: docData.bond_mentor || 0,
+          bond_presenter: docData.bond_presenter || 0,
+          bond_car: docData.bond_car || 0,
+          bond_binary: Math.floor(binary_points * binary_percent) / 100,
+          binary_percent,
           binary_side,
           binary_points,
           left_points: docData.left_points,
@@ -79,19 +61,10 @@ export class AdminService {
       .map((doc) => ({
         ...doc,
         subtotal:
-          doc.direct +
-          doc.binary +
-          doc.direct_second_level +
-          doc.residual +
-          doc.residual_second_level +
-          doc.supreme +
-          doc.supreme_second_level +
-          doc.supreme_third_level +
-          doc.bond_direct_starter_level_1 +
-          doc.bond_crypto_elite_level_1 +
-          doc.bond_crypto_elite_level_2 +
-          doc.bond_toprice_xpert_level_1 +
-          doc.bond_toprice_xpert_level_2,
+          doc.bond_direct_sale +
+          doc.bond_mentor +
+          doc.bond_presenter +
+          doc.bond_binary,
       }))
       .map((doc) => ({
         ...doc,

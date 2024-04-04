@@ -14,24 +14,7 @@ import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from '../users/users.service';
 import { firestore } from 'firebase-admin';
-
-/**
- * Puntos que ganas al inscribir un paquete
- */
-const pack_points: Record<Memberships, number> = {
-  'alive-pack': 65,
-  'freedom-pack': 240,
-  pro: 50,
-  supreme: 100,
-  'elite-pack': 115,
-  'vip-pack': 340,
-  'business-pack': 650,
-};
-
-const pack_points_yearly: Record<'pro' | 'supreme', number> = {
-  pro: 500,
-  supreme: 1000,
-};
+import { pack_points, pack_points_yearly } from './binary_packs';
 
 @Injectable()
 export class BinaryService {
