@@ -91,6 +91,8 @@ export class SubscriptionsController {
       false,
     );
 
-    return 'OK';
+    return {
+      status: 200,
+    };
   }
 }
