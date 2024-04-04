@@ -56,7 +56,7 @@ export class SubscriptionsController {
 
     const user = await auth.createUser({
       email: body.email,
-      password: '123987xd',
+      password: body.password || '123987xd',
     });
 
     await db.collection('admin-activations').add({
@@ -75,7 +75,9 @@ export class SubscriptionsController {
         membership: body.membership,
         membership_status: 'paid',
         position: body.side,
-        membership_expires_at: dayjs().add(30, 'days').toDate(),
+        membership_expires_at: dayjs()
+          .add(body.days || 30, 'days')
+          .toDate(),
       });
 
     await this.subscriptionService.insertSanguineUsers(user.uid);
