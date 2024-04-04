@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { db } from '../firebase/admin';
 import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
-import { ranks_object } from '../ranks/ranks_object';
 import { BinaryService } from '../binary/binary.service';
-import dayjs from 'dayjs';
-import { firestore } from 'firebase-admin';
 import fs from 'fs';
 import { pack_binary } from 'src/binary/binary_packs';
 
@@ -120,18 +117,9 @@ export class AdminService {
     for (const doc of payroll_data) {
       await db.doc('users/' + doc.id).update({
         profits: doc.profits + doc.total,
-        bond_direct: 0,
-        bond_direct_second_level: 0,
-        bond_residual_level_1: 0,
-        bond_residual_level_2: 0,
-        bond_supreme_level_1: 0,
-        bond_supreme_level_2: 0,
-        bond_supreme_level_3: 0,
-        bond_direct_starter_level_1: 0,
-        bond_crypto_elite_level_1: 0,
-        bond_crypto_elite_level_2: 0,
-        bond_toprice_xpert_level_1: 0,
-        bond_toprice_xpert_level_2: 0,
+        bond_direct_sale: 0,
+        bond_mentor: 0,
+        bond_presenter: 0,
         profits_this_month: doc.profits_this_month + doc.total,
       });
     }
@@ -224,73 +212,6 @@ export class AdminService {
   ) {
     if (blockchain == 'bitcoin' || blockchain == 'litecoin') {
       return this.cryptoapisService.withdraw(address, amount_usd, blockchain);
-    }
-  }
-
-  async regresardinero() {
-    const snap = await db
-      .collectionGroup('payroll')
-      .where('created_at', '>=', dayjs('2023-10-29 00:00:00').toDate())
-      .get();
-
-    for (const doc of snap.docs) {
-      if (doc.ref.path.includes('users')) {
-        const get_bonds = (doc) => ({
-          bond_direct: doc.get('direct'),
-          bond_direct_second_level: doc.get('direct_second_level'),
-          bond_residual_level_1: doc.get('residual'),
-          bond_residual_level_2: doc.get('residual_second_level'),
-          bond_supreme_level_1: doc.get('supreme'),
-          bond_supreme_level_2: doc.get('supreme_second_level'),
-          bond_supreme_level_3: doc.get('supreme_third_level'),
-          bond_direct_starter_level_1: doc.get('bond_direct_starter_level_1'),
-          bond_crypto_elite_level_1: doc.get('bond_crypto_elite_level_1'),
-          bond_crypto_elite_level_2: doc.get('bond_crypto_elite_level_2'),
-          bond_toprice_xpert_level_1: doc.get('bond_toprice_xpert_level_1'),
-          bond_toprice_xpert_level_2: doc.get('bond_toprice_xpert_level_2'),
-        });
-
-        const bonds = get_bonds(doc);
-
-        await doc.ref.parent.parent.update({
-          bond_direct: firestore.FieldValue.increment(bonds.bond_direct),
-          bond_direct_second_level: firestore.FieldValue.increment(
-            bonds.bond_direct_second_level,
-          ),
-          bond_residual_level_1: firestore.FieldValue.increment(
-            bonds.bond_residual_level_1,
-          ),
-          bond_residual_level_2: firestore.FieldValue.increment(
-            bonds.bond_residual_level_2,
-          ),
-          bond_supreme_level_1: firestore.FieldValue.increment(
-            bonds.bond_supreme_level_1,
-          ),
-          bond_supreme_level_2: firestore.FieldValue.increment(
-            bonds.bond_supreme_level_2,
-          ),
-          bond_supreme_level_3: firestore.FieldValue.increment(
-            bonds.bond_supreme_level_3,
-          ),
-          bond_direct_starter_level_1: firestore.FieldValue.increment(
-            bonds.bond_direct_starter_level_1,
-          ),
-          bond_crypto_elite_level_1: firestore.FieldValue.increment(
-            bonds.bond_crypto_elite_level_1,
-          ),
-          bond_crypto_elite_level_2: firestore.FieldValue.increment(
-            bonds.bond_crypto_elite_level_2,
-          ),
-          bond_toprice_xpert_level_1: firestore.FieldValue.increment(
-            bonds.bond_toprice_xpert_level_1,
-          ),
-          bond_toprice_xpert_level_2: firestore.FieldValue.increment(
-            bonds.bond_toprice_xpert_level_2,
-          ),
-        });
-
-        await doc.ref.delete();
-      }
     }
   }
 
