@@ -67,6 +67,10 @@ export class SubscriptionsService {
     let address = '';
     let referenceId = '';
 
+    await userRef.update({
+      membership_period: period,
+    });
+
     // Si no existe registro de la informacion de pago...
     if (
       userData.payment_link &&
@@ -335,9 +339,9 @@ export class SubscriptionsService {
     if (isNew) {
       try {
         const prices =
-          membership_period == 'monthly'
-            ? MEMBERSHIP_PRICES_MONTHLY
-            : MEMBERSHIP_PRICES_YEARLY;
+          membership_period == 'yearly'
+            ? MEMBERSHIP_PRICES_YEARLY
+            : MEMBERSHIP_PRICES_MONTHLY;
         const membership_price = prices[type];
         await this.bondService.execUserDirectBond(id_user, membership_price);
       } catch (err) {
