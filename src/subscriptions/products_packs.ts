@@ -138,3 +138,7 @@ export const businessPack: ListItem[] = [
     quantity: 9,
   },
 ];
+
+export const elitePack = alivePack;
+
+export const vipPack = freedomPack;

@@ -351,10 +351,12 @@ export class SubscriptionsService {
     /**
      * enviar paquete de productos
      */
-    const packs: PhisicMembership[] = [
+    const packs: string[] = [
       'alive-pack',
       'freedom-pack',
       'business-pack',
+      'elite-pack',
+      'vip-pack',
     ];
     if (packs.includes(type as any)) {
       /*const required_fields =
@@ -365,7 +367,7 @@ export class SubscriptionsService {
         data.get('state.value') &&
         data.get('whatsapp');
       if (required_fields) {
-        await this.createShopifyPack(id_user, type as PhisicMembership);
+        await this.createShopifyPack(id_user, type);
       } else {*/
       await userDocRef.collection('pending-ships').add({
         created_at: new Date(),
@@ -581,7 +583,10 @@ export class SubscriptionsService {
     }
   }
 
-  async createShopifyPack(idUser: string, pack: PhisicMembership) {
+  async createShopifyPack(
+    idUser: string,
+    pack: PhisicMembership | HibridMembership,
+  ) {
     const user = await admin.collection('users').doc(idUser).get();
     let shopify_id = user.get('shopify_id');
 
@@ -613,7 +618,7 @@ export class SubscriptionsService {
       });
     }
 
-    if (pack == 'alive-pack') {
+    if (pack == 'alive-pack' || pack == 'elite-pack') {
       return this.shopifyService.createDraftOrder({
         phone: user.get('phone'),
         email: user.get('email'),
@@ -626,7 +631,7 @@ export class SubscriptionsService {
         })),
         useCustomerDefaultAddress: true,
       });
-    } else if (pack == 'freedom-pack') {
+    } else if (pack == 'freedom-pack' || pack == 'vip-pack') {
       return this.shopifyService.createDraftOrder({
         phone: user.get('phone'),
         email: user.get('email'),
