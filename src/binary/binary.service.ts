@@ -85,9 +85,9 @@ export class BinaryService {
     let currentUser = registerUserId;
     const membership_period = registerUser.get('membership_period');
     const points =
-      membership_period == 'monthly'
-        ? pack_points[registerUser.get('membership')]
-        : pack_points_yearly[registerUser.get('membership')];
+      membership_period == 'yearly'
+        ? pack_points_yearly[registerUser.get('membership')]
+        : pack_points[registerUser.get('membership')];
 
     do {
       const users = await getDocs(
@@ -110,6 +110,8 @@ export class BinaryService {
         // solo se suman puntos si el usuario esta activo
         const isActive = await this.userService.isActiveUser(user.id);
 
+        console.log(user.id, 'isActive', isActive);
+
         if (isActive) {
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
@@ -131,7 +133,9 @@ export class BinaryService {
     } while (currentUser);
 
     // Commit the batch
-    await batch.commit();
+    const response = await batch.commit();
+
+    return response;
   }
 
   async matchBinaryPoints(userId: string) {

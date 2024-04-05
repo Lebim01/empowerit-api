@@ -576,6 +576,7 @@ export class SubscriptionsService {
       try {
         await this.binaryService.increaseBinaryPoints(user.id);
       } catch (err) {
+        console.error(err);
         /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', user.id);
           scope.setExtra('message', 'no se repartio el bono binario');

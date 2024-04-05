@@ -29,7 +29,7 @@ const quick_start_percent: Record<Ranks, number> = {
   top_diamond: 25,
   top_1: 25,
   top_legend: 30,
-  none: 0,
+  none: 20,
 };
 
 /**
@@ -82,11 +82,11 @@ export class BondsService {
     if (sponsor) {
       const isProActive = await this.userService.isActiveUser(sponsor_id);
 
-      const amount = membership_price * percent;
+      const amount = Math.round(membership_price * percent * 100) / 100;
 
       if (isProActive) {
         await sponsorRef.update({
-          [Bonds.QUICK_START]: increment(amount),
+          [Bonds.QUICK_START]: firestore.FieldValue.increment(amount),
         });
         await this.addProfitDetail(
           sponsorRef.id,
@@ -133,6 +133,9 @@ export class BondsService {
   }
 
   async execCarBond(userId: string) {
+    console.log('execCarBond', {
+      userId,
+    });
     await admin
       .collection('users')
       .doc(userId)
