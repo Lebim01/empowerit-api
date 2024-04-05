@@ -341,6 +341,7 @@ export class SubscriptionsService {
         const membership_price = prices[type];
         await this.bondService.execUserDirectBond(id_user, membership_price);
       } catch (err) {
+        console.error(err);
         /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);
           scope.setExtra('message', 'no se repartio el bono directo');
@@ -383,7 +384,7 @@ export class SubscriptionsService {
     const task: google.cloud.tasks.v2.ITask = {
       httpRequest: {
         httpMethod: 'POST' as Method,
-        url: `https://${process.env.VERCEL_URL}/subscriptions/assignBinaryPosition`,
+        url: `https://empowerit-api.vercel.app/subscriptions/assignBinaryPosition`,
         body: Buffer.from(JSON.stringify(body)),
         headers: {
           'Content-Type': 'application/json',

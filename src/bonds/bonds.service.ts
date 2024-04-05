@@ -69,6 +69,7 @@ export class BondsService {
    * solo se reparte este bono a los usuarios activos
    */
   async execUserDirectBond(registerUserId: string, membership_price: number) {
+    console.log('execUserDirectBond', { registerUserId }, { membership_price });
     const user = await admin.collection('users').doc(registerUserId).get();
 
     const sponsor_id = user.get('sponsor_id');
