@@ -33,11 +33,10 @@ export class BinaryService {
       const sponsorData = await admin
         .collection('users')
         .doc(next_user_id)
-        .get()
-        .then((r) => r.data());
+        .get();
 
-      if (sponsorData[`${position}_binary_user_id`]) {
-        next_user_id = sponsorData[`${position}_binary_user_id`];
+      if (sponsorData.get(`${position}_binary_user_id`)) {
+        next_user_id = sponsorData.get(`${position}_binary_user_id`);
       } else {
         parent_id = next_user_id;
       }

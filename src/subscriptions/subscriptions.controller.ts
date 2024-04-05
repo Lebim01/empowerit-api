@@ -5,6 +5,10 @@ import { auth, db } from 'src/firebase/admin';
 import { firestore } from 'firebase-admin';
 import dayjs from 'dayjs';
 
+const sleep = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 @Controller('subscriptions')
 export class SubscriptionsController {
   constructor(private readonly subscriptionService: SubscriptionsService) {}
@@ -64,6 +68,8 @@ export class SubscriptionsController {
       created_at: new Date(),
       membership: body.membership,
     });
+
+    await sleep(3000);
 
     await db
       .collection('users')

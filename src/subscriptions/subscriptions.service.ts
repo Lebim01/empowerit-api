@@ -504,14 +504,26 @@ export class SubscriptionsService {
        */
       const sponsorRef = admin.collection('users').doc(user.get('sponsor_id'));
 
-      const binaryPosition = await this.binaryService.calculatePositionOfBinary(
-        user.get('sponsor_id'),
-        finish_position,
-      );
+      let binaryPosition = {
+        parent_id: null,
+      };
+
+      while (!binaryPosition?.parent_id) {
+        binaryPosition = await this.binaryService.calculatePositionOfBinary(
+          user.get('sponsor_id'),
+          finish_position,
+        );
+      }
+
+      console.log(binaryPosition);
 
       /**
        * se setea el valor del usuario padre en el usuario que se registro
        */
+      if (!binaryPosition?.parent_id) {
+        throw new Error('Error al posicionar el binario');
+      }
+
       await user.ref.update({
         parent_binary_user_id: binaryPosition.parent_id,
       });

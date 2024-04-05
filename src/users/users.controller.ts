@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
+import admin from 'firebase-admin';
 
 @Controller('users')
 export class UsersController {
@@ -38,5 +39,10 @@ export class UsersController {
   @Post('changeEmail')
   changeEmail(@Body() payload) {
     return this.usersService.changeEmail(payload.from, payload.to);
+  }
+
+  @Get('getCustomToken')
+  getCustomToken(@Query('user') user: string) {
+    return admin.auth().createCustomToken(user);
   }
 }
