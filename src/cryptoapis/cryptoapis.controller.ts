@@ -157,25 +157,25 @@ export class CryptoapisController {
             [`payment_link.${type}.qr`]: qr,
           });
 
-          Sentry.captureException('Transaccion: Amount menor', {
+          /*Sentry.captureException('Transaccion: Amount menor', {
             extra: {
               reference: body.referenceId,
               address: body.data.item.address,
             },
-          });
+          });*/
           throw new HttpException(
             'El monto pagado es menor al requerido. ',
             HttpStatus.BAD_REQUEST,
           );
         }
       } else {
-        Sentry.captureException('Inscripción: usuario no encontrado', {
+        /*Sentry.captureException('Inscripción: usuario no encontrado', {
           extra: {
             reference: body.referenceId,
             address: body.data.item.address,
             payload: JSON.stringify(body),
           },
-        });
+        });*/
         throw new HttpException(
           'No se encontro el usuario',
           HttpStatus.BAD_REQUEST,
