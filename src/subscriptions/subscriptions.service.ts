@@ -340,11 +340,11 @@ export class SubscriptionsService {
         const membership_price = prices[type];
         await this.bondService.execUserDirectBond(id_user, membership_price);
       } catch (err) {
-        Sentry.configureScope((scope) => {
+        /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);
           scope.setExtra('message', 'no se repartio el bono directo');
           Sentry.captureException(err);
-        });
+        });*/
       }
     }
 
@@ -546,24 +546,24 @@ export class SubscriptionsService {
               : { right_binary_user_id: user.id },
           );
       } catch (err) {
-        Sentry.configureScope((scope) => {
+        /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', user.id);
           scope.setExtra('message', 'no se pudo setear al hijo');
           Sentry.captureException(err);
-        });
+        });*/
       }
 
       try {
         await this.binaryService.increaseUnderlinePeople(user.id);
       } catch (err) {
-        Sentry.configureScope((scope) => {
+        /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', user.id);
           scope.setExtra(
             'message',
             'no se pudo incrementar count_underline_people',
           );
           Sentry.captureException(err);
-        });
+        });*/
       }
     }
 
@@ -574,11 +574,11 @@ export class SubscriptionsService {
       try {
         await this.binaryService.increaseBinaryPoints(user.id);
       } catch (err) {
-        Sentry.configureScope((scope) => {
+        /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', user.id);
           scope.setExtra('message', 'no se repartio el bono binario');
           Sentry.captureException(err);
-        });
+        });*/
       }
     }
   }
