@@ -67,10 +67,6 @@ export class SubscriptionsService {
     let address = '';
     let referenceId = '';
 
-    await userRef.update({
-      membership_period: period,
-    });
-
     // Si no existe registro de la informacion de pago...
     if (
       userData.payment_link &&
@@ -126,6 +122,7 @@ export class SubscriptionsService {
       amount,
       currency,
       expires_at: dayjs().add(15, 'minutes').toDate(),
+      membership_period: period,
     };
 
     // Guardar payment_link
@@ -248,12 +245,15 @@ export class SubscriptionsService {
     return isNew;
   }
 
-  async onPaymentMembership(id_user: string, type: Memberships) {
+  async onPaymentMembership(
+    id_user: string,
+    type: Memberships,
+    membership_period: 'monthly' | 'yearly',
+  ) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
     const isNew = await this.isNewMember(id_user);
 
-    const membership_period = data.get('membership_period');
     const pack_price = (
       membership_period == 'monthly'
         ? MEMBERSHIP_PRICES_MONTHLY
@@ -269,6 +269,7 @@ export class SubscriptionsService {
         pending_activation: {
           created_at: new Date(),
           membership: type,
+          membership_period,
         },
       });
       return;

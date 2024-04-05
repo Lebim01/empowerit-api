@@ -121,7 +121,11 @@ export class CryptoapisController {
           );
 
         if (is_complete) {
-          await this.subscriptionService.onPaymentMembership(userDoc.id, type);
+          await this.subscriptionService.onPaymentMembership(
+            userDoc.id,
+            type,
+            userDoc.get('payment_link.membership_period'),
+          );
 
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
