@@ -357,7 +357,7 @@ export class SubscriptionsService {
       'business-pack',
     ];
     if (packs.includes(type as any)) {
-      const required_fields =
+      /*const required_fields =
         data.get('address') &&
         data.get('zip') &&
         data.get('city.value') &&
@@ -366,12 +366,12 @@ export class SubscriptionsService {
         data.get('whatsapp');
       if (required_fields) {
         await this.createShopifyPack(id_user, type as PhisicMembership);
-      } else {
-        await userDocRef.collection('pending-ships').add({
-          created_at: new Date(),
-          pack: type,
-        });
-      }
+      } else {*/
+      await userDocRef.collection('pending-ships').add({
+        created_at: new Date(),
+        pack: type,
+      });
+      //}
     }
   }
 
