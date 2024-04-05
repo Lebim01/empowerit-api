@@ -153,7 +153,7 @@ export class BondsService {
     presenter2?: string,
   ) {
     const percent = (presenter2 ? 1 : 2) / 100;
-    const total = amount * percent;
+    const total = Math.round(amount * percent * 100) / 100;
 
     await admin
       .collection('users')
