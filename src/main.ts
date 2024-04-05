@@ -8,12 +8,12 @@ import timezone from 'dayjs/plugin/timezone';
 import isoWeek from 'dayjs/plugin/isoWeek';
 
 async function bootstrap() {
-  Sentry.init({
+  /*Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.SENTRY_ENV,
     enabled: true,
     debug: true,
-  });
+  });*/
 
   dayjs.extend(utc);
   dayjs.extend(timezone);
@@ -28,7 +28,7 @@ async function bootstrap() {
   });
 
   const { httpAdapter } = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new SentryFilter(httpAdapter));
+  //app.useGlobalFilters(new SentryFilter(httpAdapter));
 
   await app.listen(8080);
 }

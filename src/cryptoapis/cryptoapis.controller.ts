@@ -248,7 +248,7 @@ export class CryptoapisController {
 
         return 'OK';
       } else {
-        Sentry.captureException(
+        /*Sentry.captureException(
           `Inscripción: Usuario con petición de ${type} no encontrado.`,
           {
             extra: {
@@ -257,20 +257,20 @@ export class CryptoapisController {
               payload: JSON.stringify(body),
             },
           },
-        );
+        );*/
         throw new HttpException(
           'Usuario no encontrado.',
           HttpStatus.BAD_REQUEST,
         );
       }
     } else {
-      Sentry.captureException('Inscripción: peticion invalida', {
+      /*Sentry.captureException('Inscripción: peticion invalida', {
         extra: {
           reference: body.referenceId,
           address: body.data.item.address,
           payload: JSON.stringify(body),
         },
-      });
+      });*/
       throw new HttpException('Peticion invalida', HttpStatus.BAD_REQUEST);
     }
   }

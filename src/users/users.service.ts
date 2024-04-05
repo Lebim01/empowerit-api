@@ -49,7 +49,7 @@ export class UsersService {
 
       return snap.docs[0];
     } catch (err) {
-      Sentry.captureException(err);
+      //Sentry.captureException(err);
       return null;
     }
   }

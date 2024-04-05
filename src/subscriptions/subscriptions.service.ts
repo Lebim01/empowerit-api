@@ -302,14 +302,14 @@ export class SubscriptionsService {
       try {
         await this.insertSanguineUsers(id_user);
       } catch (err) {
-        Sentry.configureScope((scope) => {
+        /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);
           scope.setExtra(
             'message',
             'no se pudo insertar los usuarios sanguineos',
           );
           Sentry.captureException(err);
-        });
+        });*/
       }
     }
 
