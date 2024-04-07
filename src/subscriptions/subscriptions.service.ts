@@ -22,6 +22,7 @@ import { google } from '@google-cloud/tasks/build/protos/protos';
 import { GoogletaskService } from 'src/googletask/googletask.service';
 import { ShopifyService } from 'src/shopify/shopify.service';
 import { alivePack, businessPack, freedomPack } from './products_packs';
+import { pack_points, pack_points_yearly } from 'src/binary/binary_packs';
 
 export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   supreme: 199,
@@ -100,9 +101,7 @@ export class SubscriptionsService {
     }
 
     const amount_type =
-      period == 'monthly'
-        ? MEMBERSHIP_PRICES_MONTHLY
-        : MEMBERSHIP_PRICES_YEARLY;
+      period == 'yearly' ? MEMBERSHIP_PRICES_YEARLY : MEMBERSHIP_PRICES_MONTHLY;
 
     let amount = 0;
 
@@ -579,7 +578,12 @@ export class SubscriptionsService {
      */
     if (volumen) {
       try {
-        await this.binaryService.increaseBinaryPoints(user.id);
+        const membership_period = user.get('membership_period');
+        const points =
+          membership_period == 'yearly'
+            ? pack_points_yearly[user.get('membership')]
+            : pack_points[user.get('membership')];
+        await this.binaryService.increaseBinaryPoints(user.id, points);
       } catch (err) {
         console.error(err);
         /*Sentry.configureScope((scope) => {

@@ -149,7 +149,7 @@ export class RanksService {
     const points = await admin
       .collection('users')
       .doc(userId)
-      .collection('left-points')
+      .collection('points')
       .where('created_at', '>=', start.toDate())
       .where('created_at', '<=', end.toDate())
       .get()

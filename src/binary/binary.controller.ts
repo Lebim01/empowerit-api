@@ -14,12 +14,16 @@ export class BinaryController {
   }
 
   @Post('/pay')
-  async payBinary(@Body() body: { registerUserId: string }) {
+  async payBinary(@Body() body: { registerUserId: string; points: number }) {
     if (!body.registerUserId) throw new Error('registerUserId required');
-    return this.binaryService.increaseBinaryPoints(body.registerUserId);
+    if (!body.points) throw new Error('points required');
+    return this.binaryService.increaseBinaryPoints(
+      body.registerUserId,
+      body.points,
+    );
   }
 
-  @Post('/pay')
+  @Post('/fixPoints')
   async fixPoints() {
     const users = await db.collection('users').get();
 
@@ -28,13 +32,19 @@ export class BinaryController {
       const right_points = await u.ref.collection('right-points').get();
 
       for (const l of left_points.docs) {
-        l.ref.update({
-          points: 100,
+        await u.ref.collection('points').add({
+          side: 'left',
+          points: l.get('points'),
+          user_id: l.get('user_id'),
+          created_at: new Date(),
         });
       }
       for (const l of right_points.docs) {
-        l.ref.update({
-          points: 100,
+        await u.ref.collection('points').add({
+          side: 'right',
+          points: l.get('points'),
+          user_id: l.get('user_id'),
+          created_at: new Date(),
         });
       }
     }

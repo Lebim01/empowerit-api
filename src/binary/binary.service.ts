@@ -75,7 +75,7 @@ export class BinaryService {
     await batch.commit();
   }
 
-  async increaseBinaryPoints(registerUserId: string) {
+  async increaseBinaryPoints(registerUserId: string, points: number) {
     const batch = writeBatch(db);
 
     const registerUser = await admin
@@ -83,11 +83,6 @@ export class BinaryService {
       .doc(registerUserId)
       .get();
     let currentUser = registerUserId;
-    const membership_period = registerUser.get('membership_period');
-    const points =
-      membership_period == 'yearly'
-        ? pack_points_yearly[registerUser.get('membership')]
-        : pack_points[registerUser.get('membership')];
 
     do {
       const users = await getDocs(
