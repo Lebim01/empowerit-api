@@ -254,9 +254,9 @@ export class SubscriptionsService {
     const isNew = await this.isNewMember(id_user);
 
     const pack_price = (
-      membership_period == 'monthly'
-        ? MEMBERSHIP_PRICES_MONTHLY
-        : MEMBERSHIP_PRICES_YEARLY
+      membership_period == 'yearly'
+        ? MEMBERSHIP_PRICES_YEARLY
+        : MEMBERSHIP_PRICES_MONTHLY
     )[type];
 
     /**
