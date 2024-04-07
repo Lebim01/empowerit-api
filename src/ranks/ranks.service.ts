@@ -133,6 +133,8 @@ export class RanksService {
     const points_smaller_leg = points[smaller_leg];
     const rank = await this.getRank(points_smaller_leg);
 
+    console.log(rank);
+
     return {
       order: rank.order,
       rank: rank.rank,
@@ -147,7 +149,7 @@ export class RanksService {
     const points = await admin
       .collection('users')
       .doc(userId)
-      .collection('points')
+      .collection('left-points')
       .where('created_at', '>=', start.toDate())
       .where('created_at', '<=', end.toDate())
       .get()

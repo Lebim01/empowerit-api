@@ -61,6 +61,7 @@ export class UsersController {
           .where('left_binary_user_id', '==', u.id)
           .get();
         if (!parent_is_left.empty) {
+          console.log(u.id);
           await u.ref.update({
             parent_binary_user_id: parent_is_left.docs[0].id,
           });
@@ -72,6 +73,7 @@ export class UsersController {
           .where('right_binary_user_id', '==', u.id)
           .get();
         if (!parent_is_right.empty) {
+          console.log(u.id);
           await u.ref.update({
             parent_binary_user_id: parent_is_right.docs[0].id,
           });

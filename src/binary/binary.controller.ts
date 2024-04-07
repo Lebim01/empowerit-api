@@ -19,28 +19,24 @@ export class BinaryController {
     return this.binaryService.increaseBinaryPoints(body.registerUserId);
   }
 
-  @Post('/fixPoints')
+  @Post('/pay')
   async fixPoints() {
     const users = await db.collection('users').get();
 
     for (const u of users.docs) {
-      const left_points_docs = await u.ref.collection('left-points').get();
-      const right_points_docs = await u.ref.collection('right-points').get();
+      const left_points = await u.ref.collection('left-points').get();
+      const right_points = await u.ref.collection('right-points').get();
 
-      let left_points = 0;
-      let right_points = 0;
-
-      for (const l of left_points_docs.docs) {
-        left_points += l.get('points');
+      for (const l of left_points.docs) {
+        l.ref.update({
+          points: 100,
+        });
       }
-      for (const l of right_points_docs.docs) {
-        right_points += l.get('points');
+      for (const l of right_points.docs) {
+        l.ref.update({
+          points: 100,
+        });
       }
-
-      await u.ref.update({
-        left_points,
-        right_points,
-      });
     }
   }
 }

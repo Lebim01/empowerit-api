@@ -121,10 +121,21 @@ export class BinaryService {
             collection(db, `users/${user.id}/${positionCollection}`),
           );
 
+          const subCollectionPointsRef = doc(
+            collection(db, `users/${user.id}/points`),
+          );
+
           batch.set(subCollectionRef, {
             points,
             user_id: registerUserId,
             name: registerUser.get('name'),
+          });
+
+          batch.set(subCollectionPointsRef, {
+            points,
+            side: position,
+            user_id: registerUserId,
+            created_at: new Date(),
           });
         }
       } else {
