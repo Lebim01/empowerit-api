@@ -14,7 +14,6 @@ import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
-import * as Sentry from '@sentry/node';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 import { firestore } from 'firebase-admin';
 import { PayloadAssignBinaryPosition } from './types';
@@ -22,7 +21,7 @@ import { google } from '@google-cloud/tasks/build/protos/protos';
 import { GoogletaskService } from 'src/googletask/googletask.service';
 import { ShopifyService } from 'src/shopify/shopify.service';
 import { alivePack, businessPack, freedomPack } from './products_packs';
-import { pack_points, pack_points_yearly } from 'src/binary/binary_packs';
+import { pack_points, pack_points_yearly } from '../binary/binary_packs';
 
 export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   supreme: 199,
