@@ -121,7 +121,7 @@ export class RanksService {
     return rankData;
   }
 
-  async getRankUser(userId: string): Promise<UserRank> {
+  async getRankUser(userId: string): Promise<any> {
     const start = dayjs().add(-1, 'day').utcOffset(-6).startOf('month');
     const end = dayjs().add(-1, 'day').utcOffset(-6).endOf('month');
 
@@ -133,11 +133,11 @@ export class RanksService {
     const points_smaller_leg = points[smaller_leg];
     const rank = await this.getRank(points_smaller_leg);
 
-    console.log(rank);
-
     return {
       order: rank.order,
       rank: rank.rank,
+      left_points: points.left,
+      right_points: points.right,
     };
   }
 
