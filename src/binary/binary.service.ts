@@ -14,7 +14,6 @@ import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from '../users/users.service';
 import { firestore } from 'firebase-admin';
-import { pack_points, pack_points_yearly } from './binary_packs';
 
 @Injectable()
 export class BinaryService {
@@ -34,6 +33,8 @@ export class BinaryService {
         .collection('users')
         .doc(next_user_id)
         .get();
+
+      console.log(next_user_id);
 
       if (sponsorData.get(`${position}_binary_user_id`)) {
         next_user_id = sponsorData.get(`${position}_binary_user_id`);
@@ -130,6 +131,10 @@ export class BinaryService {
             points,
             side: position,
             user_id: registerUserId,
+            user_email: registerUser.get('email'),
+            user_name: registerUser.get('name'),
+            user_sponsor_id: registerUser.get('sponsor_id'),
+            user_sponsor: registerUser.get('sponsor'),
             created_at: new Date(),
           });
         }
@@ -193,5 +198,29 @@ export class BinaryService {
 
     // Ejecutar la operación batch
     await batch.commit();
+  }
+
+  async checkBinary() {
+    const users = await admin
+      .collection('users')
+      .where('presenter_1', '!=', null)
+      .get();
+
+    const notFound = [];
+
+    for (const u of users.docs) {
+      const dd = await admin
+        .collection('users')
+        .doc('9CXMbcJt2sNWG40zqWwQSxH8iki2')
+        .collection('points')
+        .where('user_id', '==', u.id)
+        .get();
+
+      if (dd.empty) {
+        notFound.push(u.id);
+      }
+    }
+
+    return notFound;
   }
 }

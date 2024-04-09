@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 
 import { BinaryService } from 'src/binary/binary.service';
 import { db } from 'src/firebase/admin';
@@ -48,5 +48,10 @@ export class BinaryController {
         });
       }
     }
+  }
+
+  @Get('checkBinary')
+  checkBinary() {
+    return this.binaryService.checkBinary();
   }
 }
