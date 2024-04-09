@@ -38,6 +38,7 @@ export class AdminService {
         return {
           id: docData.id,
           name: docData.name,
+          bond_quick_start: docData.bond_quick_start || 0,
           bond_direct_sale: docData.bond_direct_sale || 0,
           bond_mentor: docData.bond_mentor || 0,
           bond_presenter: docData.bond_presenter || 0,
@@ -58,6 +59,7 @@ export class AdminService {
       .map((doc) => ({
         ...doc,
         subtotal:
+          doc.bond_quick_start +
           doc.bond_direct_sale +
           doc.bond_mentor +
           doc.bond_presenter +

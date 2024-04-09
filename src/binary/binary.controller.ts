@@ -54,4 +54,22 @@ export class BinaryController {
   checkBinary() {
     return this.binaryService.checkBinary();
   }
+
+  @Post('set-points-user')
+  async setPointsUser() {
+    const docs = await db.collectionGroup('points').get();
+
+    for (const d of docs.docs) {
+      if (!d.get('user_name')) {
+        const u = await db.collection('users').doc(d.get('user_id')).get();
+        await d.ref.update({
+          user_name: u.get('name'),
+          user_email: u.get('email'),
+          user_sponsor: u.get('sponsor'),
+          user_sponsor_id: u.get('sponsor_id'),
+        });
+        console.log(u.id);
+      }
+    }
+  }
 }
