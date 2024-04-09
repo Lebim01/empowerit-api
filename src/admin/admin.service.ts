@@ -73,13 +73,7 @@ export class AdminService {
         ...doc,
         total: doc.subtotal - doc.fee,
       }))
-      //.filter((doc) => doc.total >= 40)
-      .filter((doc) => doc.total > 0)
-      .filter((doc) =>
-        blockchain == 'bitcoin'
-          ? Boolean(doc.wallet_bitcoin)
-          : Boolean(doc.wallet_litecoin),
-      );
+      .filter((doc) => doc.total > 0);
 
     const payroll_data_2 = await Promise.all(
       payroll_data.map(async (doc) => ({
@@ -99,13 +93,21 @@ export class AdminService {
   async payroll(blockchain: Blockchains) {
     const payroll_data = await this.getPayroll(blockchain);
 
+    const clean_payroll_data = payroll_data
+      .filter((doc) => doc.total >= 40)
+      .filter((doc) =>
+        blockchain == 'bitcoin'
+          ? Boolean(doc.wallet_bitcoin)
+          : Boolean(doc.wallet_litecoin),
+      );
+
     const ref = await db.collection('payroll').add({
-      total_usd: payroll_data.reduce((a, b) => a + b.total, 0),
-      total_btc: payroll_data.reduce((a, b) => a + b.crypto_amount, 0),
+      total_usd: clean_payroll_data.reduce((a, b) => a + b.total, 0),
+      total_btc: clean_payroll_data.reduce((a, b) => a + b.crypto_amount, 0),
       created_at: new Date(),
     });
     await Promise.all(
-      payroll_data.map(async (doc) => {
+      clean_payroll_data.map(async (doc) => {
         await ref.collection('details').add(doc);
         await db.collection(`users/${doc.id}/payroll`).add({
           ...doc,
@@ -117,7 +119,7 @@ export class AdminService {
       }),
     );
 
-    for (const doc of payroll_data) {
+    for (const doc of clean_payroll_data) {
       await db.doc('users/' + doc.id).update({
         profits: doc.profits + doc.total,
         bond_direct_sale: 0,
@@ -130,7 +132,7 @@ export class AdminService {
     if (['bitcoin', 'litecoin'].includes(blockchain)) {
       const wallet =
         blockchain == 'bitcoin' ? 'wallet_bitcoin' : 'wallet_litecoin';
-      const requests = payroll_data.map((doc) => ({
+      const requests = clean_payroll_data.map((doc) => ({
         address: doc[wallet],
         amount: `${doc.crypto_amount}`,
       }));
@@ -141,7 +143,7 @@ export class AdminService {
       );
     }
 
-    return payroll_data;
+    return clean_payroll_data;
   }
 
   /**
