@@ -49,7 +49,6 @@ export class AdminService {
           binary_points,
           left_points: docData.left_points,
           right_points: docData.right_points,
-          wallet_bitcoin: docData.wallet_bitcoin,
           wallet_litecoin: docData.wallet_litecoin || '',
           profits: docData.profits || 0,
           rank: docData.rank,
@@ -78,12 +77,7 @@ export class AdminService {
     const payroll_data_2 = await Promise.all(
       payroll_data.map(async (doc) => ({
         ...doc,
-        crypto_amount:
-          blockchain == 'bitcoin'
-            ? await this.cryptoapisService.getBTCExchange(doc.total)
-            : blockchain == 'litecoin'
-            ? await this.cryptoapisService.getLTCExchange(doc.total)
-            : 0,
+        crypto_amount: await this.cryptoapisService.getLTCExchange(doc.total),
       })),
     );
 
@@ -95,11 +89,7 @@ export class AdminService {
 
     const clean_payroll_data = payroll_data
       .filter((doc) => doc.total >= 40)
-      .filter((doc) =>
-        blockchain == 'bitcoin'
-          ? Boolean(doc.wallet_bitcoin)
-          : Boolean(doc.wallet_litecoin),
-      );
+      .filter((doc) => Boolean(doc.wallet_litecoin));
 
     const ref = await db.collection('payroll').add({
       total_usd: clean_payroll_data.reduce((a, b) => a + b.total, 0),
@@ -122,6 +112,7 @@ export class AdminService {
     for (const doc of clean_payroll_data) {
       await db.doc('users/' + doc.id).update({
         profits: doc.profits + doc.total,
+        bond_quick_start: 0,
         bond_direct_sale: 0,
         bond_mentor: 0,
         bond_presenter: 0,
