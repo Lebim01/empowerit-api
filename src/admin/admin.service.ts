@@ -43,7 +43,7 @@ export class AdminService {
           bond_mentor: docData.bond_mentor || 0,
           bond_presenter: docData.bond_presenter || 0,
           bond_car: docData.bond_car || 0,
-          bond_binary: Math.floor(binary_points * binary_percent) / 100,
+          bond_binary: Math.floor(binary_points * binary_percent * 100) / 100,
           binary_percent,
           binary_side,
           binary_points,
@@ -73,7 +73,7 @@ export class AdminService {
         ...doc,
         total: doc.subtotal - doc.fee,
       }))
-      .filter((doc) => doc.total >= 40)
+      //.filter((doc) => doc.total >= 40)
       .filter((doc) =>
         blockchain == 'bitcoin'
           ? Boolean(doc.wallet_bitcoin)
