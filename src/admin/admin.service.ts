@@ -74,6 +74,7 @@ export class AdminService {
         total: doc.subtotal - doc.fee,
       }))
       //.filter((doc) => doc.total >= 40)
+      .filter((doc) => doc.total > 0)
       .filter((doc) =>
         blockchain == 'bitcoin'
           ? Boolean(doc.wallet_bitcoin)
