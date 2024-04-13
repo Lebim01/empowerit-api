@@ -40,6 +40,7 @@ export class AdminService {
           name: docData.name,
           bond_quick_start: docData.bond_quick_start || 0,
           bond_direct_sale: docData.bond_direct_sale || 0,
+          bond_founder: docData.bond_founder || 0,
           bond_mentor: docData.bond_mentor || 0,
           bond_presenter: docData.bond_presenter || 0,
           bond_car: docData.bond_car || 0,
@@ -59,6 +60,7 @@ export class AdminService {
         ...doc,
         subtotal:
           doc.bond_quick_start +
+          doc.bond_founder +
           doc.bond_direct_sale +
           doc.bond_mentor +
           doc.bond_presenter +
@@ -77,7 +79,10 @@ export class AdminService {
     const payroll_data_2 = await Promise.all(
       payroll_data.map(async (doc) => ({
         ...doc,
-        crypto_amount: await this.cryptoapisService.getLTCExchange(doc.total),
+        crypto_amount:
+          blockchain == 'litecoin'
+            ? await this.cryptoapisService.getLTCExchange(doc.total)
+            : 0,
       })),
     );
 
@@ -113,6 +118,7 @@ export class AdminService {
       await db.doc('users/' + doc.id).update({
         profits: doc.profits + doc.total,
         bond_quick_start: 0,
+        bond_founder: 0,
         bond_direct_sale: 0,
         bond_mentor: 0,
         bond_presenter: 0,
@@ -237,5 +243,13 @@ export class AdminService {
     const res = await db.collection('users').get();
     const users = res.docs.map((r) => ({ id: r.id, ...r.data() }));
     fs.writeFileSync('users.json', JSON.stringify(users));
+  }
+
+  async removePayroll() {
+    const res = await db.collectionGroup('payroll').get();
+
+    for (const doc of res.docs) {
+      await doc.ref.delete();
+    }
   }
 }

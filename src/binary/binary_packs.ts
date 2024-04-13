@@ -6,9 +6,9 @@ export const pack_points: Record<Memberships, number> = {
   'freedom-pack': 240,
   pro: 50,
   supreme: 100,
-  'elite-pack': 115,
-  'vip-pack': 340,
   'business-pack': 650,
+  'vip-pack': 115,
+  'elite-pack': 340,
 };
 
 export const pack_points_yearly: Record<'pro' | 'supreme', number> = {
@@ -22,6 +22,6 @@ export const pack_binary: Record<Memberships, number> = {
   'business-pack': 15 / 100,
   pro: 10 / 100,
   supreme: 15 / 100,
-  'elite-pack': 15 / 100,
   'vip-pack': 15 / 100,
+  'elite-pack': 15 / 100,
 };

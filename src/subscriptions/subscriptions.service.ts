@@ -29,8 +29,8 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   'alive-pack': 129,
   'freedom-pack': 479,
   'business-pack': 1289,
-  'elite-pack': 228,
-  'vip-pack': 678,
+  'vip-pack': 228,
+  'elite-pack': 678,
 };
 
 export const MEMBERSHIP_PRICES_YEARLY = {
