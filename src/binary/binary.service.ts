@@ -143,10 +143,16 @@ export class BinaryService {
       }
     } while (currentUser);
 
-    // Commit the batch
-    const response = await batch.commit();
-
-    return response;
+    try {
+      // Commit the batch
+      const response = await batch.commit();
+      return response;
+    } catch (err) {
+      await admin.collection('failed-binary-points').add({
+        registerUserId,
+      });
+      throw err;
+    }
   }
 
   async matchBinaryPoints(userId: string) {
