@@ -27,18 +27,20 @@ export class ShopifyService {
 
   async createCustomer(customer: CustomerInput) {
     const customerQuery = `
-    mutation customerCreate($input: CustomerInput!) {
-      customerCreate(input: $input) {
-        customer {
-          id
-        }
-        userErrors {
-          field
-          message
+      mutation customerCreate($input: CustomerInput!) {
+        customerCreate(input: $input) {
+          customer {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
         }
       }
-    }
-  `;
+    `;
+
+    console.log(customer);
 
     const { data, errors, extensions } =
       await this.client.request<ResponseCreate>(customerQuery, {
@@ -48,7 +50,7 @@ export class ShopifyService {
       });
 
     if (errors) {
-      console.log(errors.message);
+      console.log(errors);
       throw new Error('No se pudo crear el cliente');
     } else if (
       data.customerCreate.userErrors &&
@@ -122,8 +124,10 @@ export class ShopifyService {
     `;
     const { data, errors, extensions } = await this.client.request(query, {
       variables: {
-        input: id,
+        id,
       },
     });
+
+    console.log(data, errors);
   }
 }

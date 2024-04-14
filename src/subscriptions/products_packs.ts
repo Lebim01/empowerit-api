@@ -1,16 +1,16 @@
 export const productsIDS = {
-  digest: '9427848626449',
-  your_energy: '9432042504465',
-  uritea: '9432090476817',
-  wake_up_coffe: '9432026972433',
-  body_clean: '9412028563729',
-  gluco: '9427859144977',
-  inmun: '9427861373201',
-  piurakama: '9427907150097',
-  premium_protein: '9427884474641',
-  relaxing: '9432017928465',
-  repair: '9432008294673',
-  vitamin: '9432002494737',
+  digest: '48640691732753',
+  your_energy: '48648947073297',
+  uritea: '48649254699281',
+  wake_up_coffe: '48648843395345',
+  body_clean: '48596930068753',
+  gluco: '48640706445585',
+  inmun: '48640709525777',
+  piurakama: '48640774340881',
+  premium_protein: '48640740458769',
+  relaxing: '48648793358609',
+  repair: '48648736309521',
+  vitamin: '48648702263569',
 };
 
 type ListItem = {

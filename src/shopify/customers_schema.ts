@@ -16,6 +16,15 @@ export interface CustomerInput {
   taxExemptions?: any[];
 }
 
+export interface CustomerCreateInput {
+  acceptsMarketing: boolean;
+  email: string;
+  firstName: string;
+  lastName?: string;
+  password: string;
+  phone?: string;
+}
+
 export interface MailingAddressInput {
   address1: string;
   address2: string;
@@ -24,7 +33,7 @@ export interface MailingAddressInput {
   country: string;
   countryCode: string;
   firstName: string;
-  id: number;
+  id?: number;
   lastName: string;
   phone: string;
   province: string;

@@ -169,6 +169,7 @@ export class SubscriptionsService {
       count_direct_people_this_cycle: 0,
       count_scholarship_people: 0,
       membership: type,
+      membership_started_at: new Date(),
       membership_status: 'paid',
       membership_expires_at: expiresAt,
       payment_link: {},
@@ -364,7 +365,7 @@ export class SubscriptionsService {
       'vip-pack',
     ];
     if (packs.includes(type as any)) {
-      /*const required_fields =
+      const required_fields =
         data.get('address') &&
         data.get('zip') &&
         data.get('city.value') &&
@@ -372,14 +373,17 @@ export class SubscriptionsService {
         data.get('state.value') &&
         data.get('whatsapp');
       if (required_fields) {
-        await this.createShopifyPack(id_user, type);
-      } else {*/
-      await userDocRef.collection('pending-ships').add({
-        created_at: new Date(),
-        pack: type,
-        sent: false,
-      });
-      //}
+        await this.createShopifyPack(
+          id_user,
+          type as HibridMembership | PhisicMembership,
+        );
+      } else {
+        await userDocRef.collection('pending-ships').add({
+          created_at: new Date(),
+          pack: type,
+          sent: false,
+        });
+      }
     }
   }
 
@@ -608,6 +612,7 @@ export class SubscriptionsService {
       const customer = await this.shopifyService.createCustomer({
         email: user.get('email'),
         firstName: user.get('name'),
+        lastName: '',
         addresses: [
           {
             address1: user.get('address'),
@@ -618,11 +623,10 @@ export class SubscriptionsService {
             countryCode: user.get('country.value'),
             firstName: user.get('name'),
             lastName: '',
-            phone: user.get('whatsapp'),
+            phone: user.get('whatsapp').toString(),
             province: user.get('state.label'),
             provinceCode: user.get('state.value'),
-            zip: user.get('zip'),
-            id: 0,
+            zip: user.get('zip').toString(),
           },
         ],
       });
@@ -641,7 +645,7 @@ export class SubscriptionsService {
         },
         lineItems: alivePack.map((item) => ({
           quantity: item.quantity,
-          variantId: item.id,
+          variantId: 'gid://shopify/ProductVariant/' + item.id,
         })),
         useCustomerDefaultAddress: true,
       });

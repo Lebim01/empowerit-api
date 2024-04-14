@@ -102,4 +102,9 @@ export class SubscriptionsController {
       status: 200,
     };
   }
+
+  @Post('sendPack')
+  sendPack(@Body() body) {
+    return this.subscriptionService.createShopifyPack(body.user_id, body.pack);
+  }
 }

@@ -37,6 +37,10 @@ export type ResponseCreate = {
       field: string[];
       message: string;
     }[];
+    customerUserErrors: {
+      field: string[];
+      message: string;
+    }[];
   };
 };
 
