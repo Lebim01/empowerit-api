@@ -124,7 +124,7 @@ export class BinaryService {
           batch.set(subCollectionRef, {
             points,
             user_id: registerUserId,
-            name: registerUser.get('name'),
+            name: registerUser.get('name') || '',
           });
 
           batch.set(subCollectionPointsRef, {
@@ -132,9 +132,9 @@ export class BinaryService {
             side: position,
             user_id: registerUserId,
             user_email: registerUser.get('email'),
-            user_name: registerUser.get('name'),
+            user_name: registerUser.get('name') || '',
             user_sponsor_id: registerUser.get('sponsor_id'),
-            user_sponsor: registerUser.get('sponsor'),
+            user_sponsor: registerUser.get('sponsor') || '',
             created_at: new Date(),
           });
         }

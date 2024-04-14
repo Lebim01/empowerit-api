@@ -551,6 +551,7 @@ export class SubscriptionsService {
               : { right_binary_user_id: user.id },
           );
       } catch (err) {
+        console.error(err);
         /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', user.id);
           scope.setExtra('message', 'no se pudo setear al hijo');
@@ -561,6 +562,7 @@ export class SubscriptionsService {
       try {
         await this.binaryService.increaseUnderlinePeople(user.id);
       } catch (err) {
+        console.error(err);
         /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', user.id);
           scope.setExtra(
