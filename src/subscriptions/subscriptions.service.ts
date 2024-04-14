@@ -377,6 +377,7 @@ export class SubscriptionsService {
       await userDocRef.collection('pending-ships').add({
         created_at: new Date(),
         pack: type,
+        sent: false,
       });
       //}
     }
