@@ -79,6 +79,8 @@ export class BinaryService {
   async increaseBinaryPoints(registerUserId: string, points: number) {
     const batch = writeBatch(db);
 
+    console.log('Repartir', points, 'puntos');
+
     const registerUser = await admin
       .collection('users')
       .doc(registerUserId)
@@ -210,6 +212,7 @@ export class BinaryService {
     const users = await admin
       .collection('users')
       .where('presenter_1', '!=', null)
+      .where('membership_status', '==', 'paid')
       .get();
 
     const notFound = [];
