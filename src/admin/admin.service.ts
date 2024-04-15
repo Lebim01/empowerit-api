@@ -4,6 +4,7 @@ import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { BinaryService } from '../binary/binary.service';
 import fs from 'fs';
 import { pack_binary } from 'src/binary/binary_packs';
+import { menthor_percent } from 'src/bonds/bonds';
 
 const ADMIN_BINARY_PERCENT = 15 / 100;
 const ADMIN_QUICK_START = 30 / 100;
@@ -25,7 +26,7 @@ export class AdminService {
     const users = await db.collection('users').get();
     const docs = users.docs.map((r) => ({ id: r.id, ...r.data() }));
 
-    const payroll_data = docs
+    let payroll_data = docs
       .map((docData: any) => {
         const isAdmin = docData.type == 'top-lider';
         const binary_side =
@@ -41,7 +42,7 @@ export class AdminService {
           bond_quick_start: docData.bond_quick_start || 0,
           bond_direct_sale: docData.bond_direct_sale || 0,
           bond_founder: docData.bond_founder || 0,
-          bond_mentor: docData.bond_mentor || 0,
+          bond_mentor: 0,
           bond_presenter: docData.bond_presenter || 0,
           bond_car: docData.bond_car || 0,
           bond_binary: Math.floor(binary_points * binary_percent * 100) / 100,
@@ -52,10 +53,23 @@ export class AdminService {
           right_points: docData.right_points,
           wallet_litecoin: docData.wallet_litecoin || '',
           profits: docData.profits || 0,
-          rank: docData.rank,
+          rank: docData.rank || 'none',
+          sponsor_id: docData.sponsor_id,
           profits_this_month: docData.profits_this_month || 0,
         };
       })
+      .map((doc, index, arr) => ({
+        ...doc,
+        bond_mentor_percent: menthor_percent[doc.rank] / 100,
+        bond_mentor: arr.reduce(
+          (a, b) =>
+            a +
+            (b.sponsor_id == doc.id
+              ? b.bond_binary * (menthor_percent[doc.rank] / 100)
+              : 0),
+          0,
+        ),
+      }))
       .map((doc) => ({
         ...doc,
         subtotal:
@@ -74,7 +88,44 @@ export class AdminService {
         ...doc,
         total: doc.subtotal - doc.fee,
       }))
-      .filter((doc) => doc.total > 0);
+      .filter((doc) => doc.total > 0)
+      // sort desc
+      .sort((a, b) => b.total - a.total);
+
+    /**
+     * Restar bono mentor de las personas que no cobran (<40usd)
+     */
+    payroll_data = payroll_data
+      .map((doc, index, arr) => ({
+        ...doc,
+        bond_mentor:
+          doc.bond_mentor -
+          arr
+            .filter((r) => r.total < 40)
+            .filter((r) => r.sponsor_id == doc.id)
+            .reduce(
+              (a, b) => a + b.bond_binary * (menthor_percent[doc.rank] / 100),
+              0,
+            ),
+      }))
+      .map((doc) => ({
+        ...doc,
+        subtotal:
+          doc.bond_quick_start +
+          doc.bond_founder +
+          doc.bond_direct_sale +
+          doc.bond_mentor +
+          doc.bond_presenter +
+          doc.bond_binary,
+      }))
+      .map((doc) => ({
+        ...doc,
+        fee: Math.ceil(doc.subtotal * 0.05 * 100) / 100,
+      }))
+      .map((doc) => ({
+        ...doc,
+        total: doc.subtotal - doc.fee,
+      }));
 
     const payroll_data_2 = await Promise.all(
       payroll_data.map(async (doc) => ({

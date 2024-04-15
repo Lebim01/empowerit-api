@@ -1,65 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { increment } from 'firebase/firestore';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from 'src/users/users.service';
 import { firestore } from 'firebase-admin';
-import { Ranks } from 'src/ranks/ranks_object';
-
-enum Bonds {
-  PRESENTER = 'bond_presenter',
-  QUICK_START = 'bond_quick_start',
-  MENTOR = 'bond_mentor',
-  CAR = 'bond_car',
-  DIRECT_SALE = 'bond_direct_sale',
-}
-
-/**
- * Porcentaje de ganancia bono inicio rapido
- */
-const quick_start_percent: Record<Ranks, number> = {
-  initial_builder: 20,
-  star_builder: 20,
-  advanced_builder: 20,
-  master_1000: 20,
-  master_1500: 20,
-  master_2500: 20,
-  regional_director: 20,
-  national_director: 20,
-  international_director: 20,
-  top_diamond: 25,
-  top_1: 25,
-  top_legend: 30,
-  none: 20,
-};
-
-/**
- * Porcentaje de ganancia bono mentor
- */
-const menthor_percent: Record<Ranks, number> = {
-  initial_builder: 10,
-  star_builder: 10,
-  advanced_builder: 10,
-  master_1000: 15,
-  master_1500: 15,
-  master_2500: 15,
-  regional_director: 20,
-  national_director: 20,
-  international_director: 20,
-  top_diamond: 30,
-  top_1: 30,
-  top_legend: 30,
-  none: 0,
-};
-
-const BOND_CAR = 250;
-
-const messages: Record<Bonds, string> = {
-  bond_quick_start: 'Bono de inicio rápido',
-  bond_mentor: 'Bono Mentor',
-  bond_car: 'Bono Auto',
-  bond_direct_sale: 'Bono venta directa',
-  bond_presenter: 'Bono presentador',
-};
+import {
+  BOND_CAR,
+  Bonds,
+  menthor_percent,
+  messages,
+  quick_start_percent,
+} from './bonds';
 
 @Injectable()
 export class BondsService {
