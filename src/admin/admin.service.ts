@@ -13,6 +13,12 @@ const ADMIN_USERS = [
   'eN7hWGlS2mVC1O9YnXU3U5xEknz1',
   'sVarUBihvSZ7ahMUMgwaAbXcRs03',
   'vzzvaofd1GXAdgH890pGswl5A5x1',
+  '9CXMbcJt2sNWG40zqWwQSxH8iki2',
+];
+const INFINITE_POINTS = [
+  'eN7hWGlS2mVC1O9YnXU3U5xEknz1',
+  'sVarUBihvSZ7ahMUMgwaAbXcRs03',
+  '9CXMbcJt2sNWG40zqWwQSxH8iki2',
 ];
 
 @Injectable()
@@ -28,21 +34,30 @@ export class AdminService {
 
     let payroll_data = docs
       .map((docData: any) => {
-        const isAdmin = docData.type == 'top-lider';
-        const binary_side =
-          docData.left_points > docData.right_points ? 'right' : 'left';
+        const isAdmin = ADMIN_USERS.includes(docData.id);
+        const hasInfinitePoints = INFINITE_POINTS.includes(docData.id);
+
+        const binary_side = hasInfinitePoints
+          ? 'right'
+          : docData.left_points > docData.right_points
+          ? 'right'
+          : 'left';
         const binary_points = docData[`${binary_side}_points`];
         const binary_percent = isAdmin
           ? ADMIN_BINARY_PERCENT
           : pack_binary[docData.membership];
+        const mentor_percent = isAdmin
+          ? ADMIN_MENTOR_PERCENT
+          : menthor_percent[docData.rank] / 100;
 
-        return {
+        const res = {
           id: docData.id,
           name: docData.name,
           bond_quick_start: docData.bond_quick_start || 0,
           bond_direct_sale: docData.bond_direct_sale || 0,
           bond_founder: docData.bond_founder || 0,
           bond_mentor: 0,
+          bond_mentor_percent: mentor_percent,
           bond_presenter: docData.bond_presenter || 0,
           bond_car: docData.bond_car || 0,
           bond_binary: Math.floor(binary_points * binary_percent * 100) / 100,
@@ -54,18 +69,19 @@ export class AdminService {
           wallet_litecoin: docData.wallet_litecoin || '',
           profits: docData.profits || 0,
           rank: docData.rank || 'none',
-          sponsor_id: docData.sponsor_id,
+          sponsor_id: docData.sponsor_id || '',
           profits_this_month: docData.profits_this_month || 0,
         };
+
+        return res;
       })
       .map((doc, index, arr) => ({
         ...doc,
-        bond_mentor_percent: menthor_percent[doc.rank] / 100,
         bond_mentor: arr.reduce(
           (a, b) =>
             a +
             (b.sponsor_id == doc.id
-              ? b.bond_binary * (menthor_percent[doc.rank] / 100)
+              ? (b.bond_binary || 0) * doc.bond_mentor_percent
               : 0),
           0,
         ),
@@ -101,12 +117,9 @@ export class AdminService {
         bond_mentor:
           doc.bond_mentor -
           arr
-            .filter((r) => r.total < 40)
             .filter((r) => r.sponsor_id == doc.id)
-            .reduce(
-              (a, b) => a + b.bond_binary * (menthor_percent[doc.rank] / 100),
-              0,
-            ),
+            .filter((r) => r.total < 40)
+            .reduce((a, b) => a + b.bond_binary * doc.bond_mentor_percent, 0),
       }))
       .map((doc) => ({
         ...doc,
@@ -125,7 +138,9 @@ export class AdminService {
       .map((doc) => ({
         ...doc,
         total: doc.subtotal - doc.fee,
-      }));
+      }))
+      // sort desc
+      .sort((a, b) => b.total - a.total);
 
     const payroll_data_2 = await Promise.all(
       payroll_data.map(async (doc) => ({
@@ -166,15 +181,18 @@ export class AdminService {
     );
 
     for (const doc of clean_payroll_data) {
-      await db.doc('users/' + doc.id).update({
-        profits: doc.profits + doc.total,
-        bond_quick_start: 0,
-        bond_founder: 0,
-        bond_direct_sale: 0,
-        bond_mentor: 0,
-        bond_presenter: 0,
-        profits_this_month: doc.profits_this_month + doc.total,
-      });
+      await db
+        .collection('users')
+        .doc(doc.id)
+        .update({
+          profits: doc.profits + doc.total,
+          bond_quick_start: 0,
+          bond_founder: 0,
+          bond_direct_sale: 0,
+          bond_mentor: 0,
+          bond_presenter: 0,
+          profits_this_month: doc.profits_this_month + doc.total,
+        });
     }
 
     if (['bitcoin', 'litecoin'].includes(blockchain)) {
