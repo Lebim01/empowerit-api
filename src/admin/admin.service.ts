@@ -118,7 +118,7 @@ export class AdminService {
           doc.bond_mentor -
           arr
             .filter((r) => r.sponsor_id == doc.id)
-            .filter((r) => r.total < 40)
+            .filter((r) => r.total < 40 || !r.wallet_litecoin)
             .reduce((a, b) => a + b.bond_binary * doc.bond_mentor_percent, 0),
       }))
       .map((doc) => ({
