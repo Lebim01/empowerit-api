@@ -5,26 +5,14 @@ import { PayloadNewShip } from './webhooks';
 export class ShopifyController {
   @Post('newShip')
   newShip(@Body() body: PayloadNewShip) {
-    const {
-      billing_address,
-      customer,
-      discount_applications,
-      fulfillments,
-      line_items,
-      payment_terms,
-      refunds,
-      shipping_address,
-      shipping_lines,
-      total_shipping_price_set,
-      total_tax,
-      total_tax_set,
-      total_tip_received,
-      total_weight,
-      updated_at,
-      user_id,
-      ...rest
-    } = body;
-    console.log(rest);
+    const total_price = Number(body.total_price);
+    const dollars = Math.ceil(total_price / 20);
+    const binary_points = Math.round(dollars / 2);
+    console.log({
+      total_price,
+      dollars,
+      binary_points,
+    });
     return 'OK';
   }
 }
