@@ -103,6 +103,22 @@ export class SubscriptionsController {
     };
   }
 
+  @Post('activeWithVolumen')
+  async activeWithVolumen(@Body() body) {
+    if (!body.user_id) throw new Error('user_id required');
+    if (!body.membership) throw new Error('membership required');
+
+    await db
+      .collection('admin-actionvations-with-volume')
+      .add({ ...body, created_at: new Date() });
+
+    await this.subscriptionService.onPaymentMembership(
+      body.user_id,
+      body.membership,
+      'monthly',
+    );
+  }
+
   @Post('sendPack')
   sendPack(@Body() body) {
     return this.subscriptionService.createShopifyPack(body.user_id, body.pack);
