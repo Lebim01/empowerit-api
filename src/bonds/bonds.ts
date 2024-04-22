@@ -1,4 +1,5 @@
-import { Ranks } from 'src/ranks/ranks_object';
+import { ADMIN_MENTOR_PERCENT, ADMIN_USERS } from '../admin/admin.service';
+import { Ranks } from '../ranks/ranks_object';
 
 export enum Bonds {
   PRESENTER = 'bond_presenter',
@@ -54,4 +55,9 @@ export const messages: Record<Bonds, string> = {
   bond_car: 'Bono Auto',
   bond_direct_sale: 'Bono venta directa',
   bond_presenter: 'Bono presentador',
+};
+
+export const getMentorPercent = (id_user: string, rank: string) => {
+  const isAdmin = ADMIN_USERS.includes(id_user);
+  return isAdmin ? ADMIN_MENTOR_PERCENT : menthor_percent[rank] / 100;
 };

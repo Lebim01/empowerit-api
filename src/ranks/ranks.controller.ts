@@ -1,4 +1,4 @@
-import { Controller, Param, Post, Get, Query } from '@nestjs/common';
+import { Controller, Param, Post, Get, Query, Body } from '@nestjs/common';
 import { RanksService } from './ranks.service';
 @Controller('ranks')
 export class RanksController {
@@ -21,8 +21,9 @@ export class RanksController {
   }
 
   @Post('getRankKey/:key')
-  async getRankKey(@Param('key') key: string) {
-    return await this.ranksService.getRankKey(key);
+  async getRankKey(@Body() body, @Param('key') key: string) {
+    if (!body.id_user) throw new Error('id_user is required');
+    return await this.ranksService.getRankKey(body.id_user, key);
   }
 
   @Get('report/new-ranks/:year/:week')

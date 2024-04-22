@@ -365,6 +365,12 @@ export class SubscriptionsService {
       'vip-pack',
     ];
     if (packs.includes(type as any)) {
+      await userDocRef.collection('pending-ships').add({
+        created_at: new Date(),
+        pack: type,
+        sent: false,
+      });
+
       const required_fields =
         data.get('address') &&
         data.get('zip') &&
@@ -377,13 +383,14 @@ export class SubscriptionsService {
           id_user,
           type as HibridMembership | PhisicMembership,
         );
-      } else {
+      }
+      /* else {
         await userDocRef.collection('pending-ships').add({
           created_at: new Date(),
           pack: type,
           sent: false,
         });
-      }
+      }*/
     }
   }
 

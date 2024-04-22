@@ -3,19 +3,19 @@ import { db } from '../firebase/admin';
 import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { BinaryService } from '../binary/binary.service';
 import fs from 'fs';
-import { pack_binary } from 'src/binary/binary_packs';
-import { menthor_percent } from 'src/bonds/bonds';
+import { getBinaryPercent } from '../binary/binary_packs';
+import { getMentorPercent } from '../bonds/bonds';
 
-const ADMIN_BINARY_PERCENT = 15 / 100;
+export const ADMIN_BINARY_PERCENT = 15 / 100;
 const ADMIN_QUICK_START = 30 / 100;
-const ADMIN_MENTOR_PERCENT = 30 / 100;
-const ADMIN_USERS = [
+export const ADMIN_MENTOR_PERCENT = 30 / 100;
+export const ADMIN_USERS = [
   'eN7hWGlS2mVC1O9YnXU3U5xEknz1',
   'sVarUBihvSZ7ahMUMgwaAbXcRs03',
   'vzzvaofd1GXAdgH890pGswl5A5x1',
   '9CXMbcJt2sNWG40zqWwQSxH8iki2',
 ];
-const INFINITE_POINTS = [
+export const INFINITE_POINTS = [
   'eN7hWGlS2mVC1O9YnXU3U5xEknz1',
   'sVarUBihvSZ7ahMUMgwaAbXcRs03',
   '9CXMbcJt2sNWG40zqWwQSxH8iki2',
@@ -34,7 +34,6 @@ export class AdminService {
 
     let payroll_data = docs
       .map((docData: any) => {
-        const isAdmin = ADMIN_USERS.includes(docData.id);
         const hasInfinitePoints = INFINITE_POINTS.includes(docData.id);
 
         const binary_side = hasInfinitePoints
@@ -43,12 +42,8 @@ export class AdminService {
           ? 'right'
           : 'left';
         const binary_points = docData[`${binary_side}_points`];
-        const binary_percent = isAdmin
-          ? ADMIN_BINARY_PERCENT
-          : pack_binary[docData.membership];
-        const mentor_percent = isAdmin
-          ? ADMIN_MENTOR_PERCENT
-          : menthor_percent[docData.rank] / 100;
+        const binary_percent = getBinaryPercent(docData.id, docData.membership);
+        const mentor_percent = getMentorPercent(docData.id, docData.rank);
 
         const res = {
           id: docData.id,

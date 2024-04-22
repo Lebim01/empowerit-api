@@ -4,6 +4,8 @@ import dayjs, { Dayjs } from 'dayjs';
 import { Ranks, ranksOrder, ranksPoints, ranks_object } from './ranks_object';
 import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
+import { getBinaryPercent } from '../binary/binary_packs';
+import { getMentorPercent } from '../bonds/bonds';
 
 type UserRank = {
   rank?: Ranks;
@@ -273,10 +275,16 @@ export class RanksService {
     }
   }
 
-  async getRankKey(key: string) {
-    const current = ranks_object[key];
+  async getRankKey(id_user: string, rank_key: string) {
+    const user = await admin.collection('users').doc(id_user).get();
+    const current = ranks_object[rank_key];
     const next_rank = ranks_object[ranksOrder[current.order + 1]];
-    return { ...current, next_rank };
+    return {
+      ...current,
+      next_rank,
+      binary_percent: getBinaryPercent(user.id, user.get('membership')),
+      mentor_percent: getMentorPercent(user.id, current.rank),
+    };
   }
 
   async newRanks(

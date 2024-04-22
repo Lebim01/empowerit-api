@@ -1,3 +1,6 @@
+import { ADMIN_BINARY_PERCENT } from '../admin/admin.service';
+import { ADMIN_USERS } from '../constants';
+
 /**
  * Puntos que ganas al inscribir un paquete
  */
@@ -24,4 +27,12 @@ export const pack_binary: Record<Memberships, number> = {
   supreme: 15 / 100,
   'vip-pack': 15 / 100,
   'elite-pack': 15 / 100,
+};
+
+export const getBinaryPercent = (user_id: string, membership: string) => {
+  const isAdmin = ADMIN_USERS.includes(user_id);
+  const binary_percent = isAdmin
+    ? ADMIN_BINARY_PERCENT
+    : pack_binary[membership];
+  return binary_percent;
 };
