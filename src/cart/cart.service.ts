@@ -30,7 +30,10 @@ export class CartService {
         (a, b) => a + b.quantity * b.sale_price,
         0,
       );
-      const total_usd = total_mxn / 20;
+      const exchange_rate = await this.cryptoapisService.getUSDExchange(
+        total_mxn,
+      );
+      const total_usd = total_mxn / exchange_rate;
       const total = await this.cryptoapisService.getLTCExchange(total_usd);
 
       const qr: string = this.cryptoapisService.generateQrUrl(
