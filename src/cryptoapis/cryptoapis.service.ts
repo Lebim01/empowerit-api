@@ -490,8 +490,12 @@ export class CryptoapisService {
     }
   };
 
-  generateQrUrl = (address: string, amount: string): string =>
-    `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=bitcoin:${address}?amount=${amount}`;
+  generateQrUrl = (
+    address: string,
+    amount: string,
+    blockchain: 'bitcoin' | 'litecoin',
+  ): string =>
+    `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${blockchain}:${address}?amount=${amount}`;
 
   async getAddressInfo(address: string): Promise<ResponseBalanceAddress> {
     const options = {
@@ -592,106 +596,6 @@ export class CryptoapisService {
     };
   }
 
-  async sendXRPTransactionFromAddress(
-    xAddress: string,
-    fromAddress: string,
-    amount: string,
-  ) {
-    if (!xAddress) {
-      throw new Error('Fallo al encodear X address');
-    }
-
-    const options = {
-      ...default_options,
-      method: 'POST',
-      path: `/v2/wallet-as-a-service/wallets/${this.walletId}/xrp/${this.network}/addresses/${fromAddress}/transaction-requests?context=yourExampleString`,
-    };
-    const payload = {
-      context: '',
-      data: {
-        item: {
-          amount: amount.toString(),
-          callbackSecretKey: 'a12k*?_1ds',
-          callbackUrl: `${this.hostapi}/admin/callbackSendedCoins/xrp/${fromAddress}/${amount}`,
-          feePriority: 'standard',
-          note: 'withdraw',
-          recipientAddress: xAddress,
-        },
-      },
-    };
-
-    const res: TransactionRequest = await cryptoApis
-      .post(options.path, payload)
-      .then((r) => r.data);
-
-    await db
-      .collection('cryptoapis-transaction-requests')
-      .doc(res.data.item.transactionRequestId)
-      .set({
-        fromAddress,
-        payload,
-        response: res,
-      });
-
-    return res;
-  }
-
-  async encodeXAddress(
-    address: string,
-    tag: string,
-  ): Promise<ResponseEncodeXAddress> {
-    const options = {
-      ...default_options,
-      method: 'GET',
-      path: `/v2/blockchain-tools/xrp/${this.network}/encode-x-address/${address}/${tag}?context=yourExampleString`,
-    };
-    return await cryptoapisRequest<ResponseEncodeXAddress>(options);
-  }
-
-  async listAllXRP() {
-    const res = await cryptoApis.get(
-      `/wallet-as-a-service/wallets/658213a1b50a7c0007a7a30b/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=0`,
-    );
-
-    const total_pages = Math.ceil(res.data.data.total / 50);
-
-    let wallets = res.data.data.items;
-
-    for (let i = 2; i <= total_pages; i++) {
-      const res = await cryptoApis.get(
-        `/wallet-as-a-service/wallets/658213a1b50a7c0007a7a30b/xrp/mainnet/addresses?context=yourExampleString&limit=50&offset=${
-          (i - 1) * 50
-        }`,
-      );
-      wallets = [...wallets, ...res.data.data.items];
-    }
-
-    return wallets;
-  }
-
-  async fixAllXRP() {
-    const wallets = await this.listAllXRP();
-
-    for (const wallet of wallets) {
-      const res = await db
-        .collection('wallets')
-        .where('address', '==', wallet.address)
-        .get();
-      const amount = Number(wallet.confirmedBalance.amount); //await this.getAddressBalance(wallet.address, 'xrp');
-
-      if (!res.empty) {
-        await res.docs[0].ref.update({
-          amount,
-        });
-      } else {
-        await db.collection('wallets').add({
-          address: wallet.address,
-          amount,
-        });
-      }
-    }
-  }
-
   async getAddressBalance(address: string, blockchain: 'bitcoin' | 'litecoin') {
     const res = await cryptoApis
       .get(
@@ -731,11 +635,70 @@ export class CryptoapisService {
    * LITECOIN
    */
 
-  async getLTCExchange(usd: number) {
+  async getLTCExchange(usd: number): Promise<number> {
     const res = await api_conlayer.get<ResponseConvert>(
       `/convert?from=USD&to=LTC&amount=${usd}&access_key=c4aa2042e33beee513ff1f915279a3c9`,
     );
 
     return res.data.result;
+  }
+
+  async createFirstConfirmationCartTransaction(
+    userId: string,
+    address: string,
+  ) {
+    const blockchain = 'litecoin';
+    try {
+      const options = {
+        ...default_options,
+        method: 'POST',
+        path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
+        qs: { context: userId },
+      };
+      const payload = {
+        context: userId,
+        data: {
+          item: {
+            address: address,
+            allowDuplicates: false,
+            callbackSecretKey: 'a12k*?_1ds',
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackCart/first`,
+          },
+        },
+      };
+      const res =
+        await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
+          options,
+          payload,
+        );
+      console.log(JSON.stringify(res));
+      return res;
+    } catch (err) {
+      console.error(JSON.stringify(err));
+      return null;
+    }
+  }
+
+  async createCallbackCartConfirmation(address: string) {
+    const blockchain = this.getBlockchainFromCurrency('LTC');
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-confirmed`,
+    };
+    return await cryptoapisRequest<ResponseNewConfirmedCoinsTransactions>(
+      options,
+      {
+        data: {
+          item: {
+            address: address,
+            allowDuplicates: 'true',
+            callbackSecretKey: 'a12k*?_1ds',
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackCart`,
+            receiveCallbackOn: '2',
+          },
+        },
+      },
+    );
   }
 }

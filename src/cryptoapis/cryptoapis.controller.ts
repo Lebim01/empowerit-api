@@ -21,6 +21,7 @@ import {
 import * as Sentry from '@sentry/node';
 import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
+import { BinaryService } from 'src/binary/binary.service';
 
 @Controller('cryptoapis')
 export class CryptoapisController {
@@ -29,6 +30,7 @@ export class CryptoapisController {
     private readonly subscriptionService: SubscriptionsService,
     private readonly usersService: UsersService,
     private readonly googleTaskService: GoogletaskService,
+    private readonly binaryService: BinaryService,
   ) {}
 
   isValidCryptoApis(
@@ -156,6 +158,7 @@ export class CryptoapisController {
           const qr: string = this.cryptoapisService.generateQrUrl(
             address,
             pendingAmount.toFixed(8),
+            'litecoin',
           );
           await userDoc.ref.update({
             [`payment_link.${type}.qr`]: qr,
@@ -245,6 +248,7 @@ export class CryptoapisController {
         const qr: string = this.cryptoapisService.generateQrUrl(
           address,
           pendingAmount.toFixed(8),
+          'litecoin',
         );
         await doc.ref.update({
           [`payment_link.${type}.qr`]: qr,
@@ -282,5 +286,99 @@ export class CryptoapisController {
   @Delete('/deleteUnusedBlockChainEvents')
   deleteUnusedBlockChainEvents() {
     return this.cryptoapisService.deleteUnusedBlockChainEvents();
+  }
+
+  @Post('callbackCart/first')
+  async callbackCartFirst(
+    @Body() body: CallbackNewUnconfirmedCoins,
+  ): Promise<any> {
+    if (this.isValidCryptoApis(body, false)) {
+      const { address } = body.data.item;
+      const snap = await db
+        .collectionGroup('cart')
+        .where(`payment_link.address`, '==', address)
+        .get();
+
+      if (snap.size > 0) {
+        const doc = snap.docs[0];
+        const data = doc.data();
+
+        const currency = 'LTC';
+
+        // Guardar registro de la transaccion.
+        await this.cryptoapisService.addTransactionToUser(doc.id, body);
+
+        // Verificar si el pago fue completado
+        const pendingAmount: number =
+          await this.cryptoapisService.calculatePendingAmount(
+            doc.id,
+            address,
+            Number.parseFloat(data.payment_link.amount),
+          );
+
+        // Si se cubrio el pago completo
+        if (pendingAmount <= 0) {
+          await doc.ref.update({
+            [`payment_link.status`]: 'confirming',
+          });
+
+          await this.cryptoapisService.removeCallbackEvent(
+            body.referenceId,
+            currency,
+          );
+          await this.cryptoapisService.createCallbackCartConfirmation(
+            body.data.item.address,
+          );
+        }
+
+        // Actualizar QR
+        const qr: string = this.cryptoapisService.generateQrUrl(
+          address,
+          pendingAmount.toFixed(8),
+          'litecoin',
+        );
+        await doc.ref.update({
+          [`payment_link.qr`]: qr,
+        });
+
+        return 'OK';
+      }
+    }
+  }
+
+  @Post('callbackCart')
+  async callbackCart(@Body() body: CallbackNewConfirmedCoins): Promise<any> {
+    if (this.isValidCryptoApis(body, false)) {
+      const { address } = body.data.item;
+      const snap = await db
+        .collectionGroup('cart')
+        .where(`payment_link.address`, '==', address)
+        .get();
+
+      if (snap.size > 0) {
+        const doc = snap.docs[0];
+        const userDocRef = doc.ref.parent.parent;
+
+        // Guardar registro de la transaccion.
+        await this.cryptoapisService.addTransactionToUser(doc.id, body);
+
+        await userDocRef.collection('pending-ships').add({
+          created_at: new Date(),
+          pack: 'none',
+          sent: false,
+          cart: doc.data(),
+        });
+
+        const total_points = doc.get('payment_link.total_usd') / 2;
+
+        await this.binaryService.increaseBinaryPoints(
+          userDocRef.id,
+          total_points,
+          'Compra de productos',
+        );
+
+        await doc.ref.delete();
+      }
+    }
   }
 }

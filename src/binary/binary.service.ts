@@ -76,7 +76,11 @@ export class BinaryService {
     await batch.commit();
   }
 
-  async increaseBinaryPoints(registerUserId: string, points: number) {
+  async increaseBinaryPoints(
+    registerUserId: string,
+    points: number,
+    concept = 'Inscripción',
+  ) {
     const batch = writeBatch(db);
 
     console.log('Repartir', points, 'puntos');
@@ -131,13 +135,14 @@ export class BinaryService {
 
           batch.set(subCollectionPointsRef, {
             points,
-            side: position,
+            side: position || 'right',
             user_id: registerUserId,
-            user_email: registerUser.get('email'),
+            user_email: registerUser.get('email') || 'noemail',
             user_name: registerUser.get('name') || '',
-            user_sponsor_id: registerUser.get('sponsor_id'),
+            user_sponsor_id: registerUser.get('sponsor_id') || null,
             user_sponsor: registerUser.get('sponsor') || '',
             created_at: new Date(),
+            concept,
           });
         }
       } else {

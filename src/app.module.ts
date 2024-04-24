@@ -25,6 +25,7 @@ import { AcademyModule } from './academy/academy.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
 import { ShopifyModule } from './shopify/shopify.module';
 import { EmailModule } from './email/email.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { EmailModule } from './email/email.module';
     AcademyModule,
     ShopifyModule,
     EmailModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [
