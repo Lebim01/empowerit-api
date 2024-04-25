@@ -27,7 +27,7 @@ export class CartService {
 
       const products = JSON.parse(cart.get('json'));
       const total_mxn = products.reduce(
-        (a, b) => a + b.quantity * b.sale_price,
+        (a, b) => a + (b.quantity > 0 ? b.quantity * b.sale_price : 0),
         0,
       );
       const exchange_rate = await this.cryptoapisService.getUSDExchange(
@@ -47,6 +47,7 @@ export class CartService {
         total_usd,
         qr,
         address,
+        exchange_rate,
         status: 'pending',
       };
 
