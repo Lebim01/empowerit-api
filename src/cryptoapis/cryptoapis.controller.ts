@@ -302,6 +302,7 @@ export class CryptoapisController {
       if (snap.size > 0) {
         const doc = snap.docs[0];
         const data = doc.data();
+        const userDocRef = doc.ref.parent.parent;
 
         const currency = 'LTC';
 
@@ -329,19 +330,43 @@ export class CryptoapisController {
           await this.cryptoapisService.createCallbackCartConfirmation(
             body.data.item.address,
           );
+
+          // Actualizar QR
+          const qr: string = this.cryptoapisService.generateQrUrl(
+            address,
+            pendingAmount.toFixed(8),
+            'litecoin',
+          );
+          await doc.ref.update({
+            [`payment_link.qr`]: qr,
+          });
+
+          return 'OK';
+        } else {
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(
+            body.referenceId,
+            currency,
+          );
+
+          // Crear nuevo evento
+          await this.cryptoapisService.createFirstConfirmationCartTransaction(
+            userDocRef.id,
+            address,
+          );
+
+          // Actualizar QR
+          const qr: string = this.cryptoapisService.generateQrUrl(
+            address,
+            pendingAmount.toFixed(8),
+            'litecoin',
+          );
+          await doc.ref.update({
+            [`payment_link.qr`]: qr,
+          });
+
+          return 'El monto pagado es menor al requerido. ';
         }
-
-        // Actualizar QR
-        const qr: string = this.cryptoapisService.generateQrUrl(
-          address,
-          pendingAmount.toFixed(8),
-          'litecoin',
-        );
-        await doc.ref.update({
-          [`payment_link.qr`]: qr,
-        });
-
-        return 'OK';
       } else {
         throw new HttpException('Address not found', HttpStatus.BAD_REQUEST);
       }
