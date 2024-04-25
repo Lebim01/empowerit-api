@@ -26,13 +26,17 @@ export class CartService {
       }
 
       const products = JSON.parse(cart.get('json'));
+      const total_quantity = products.reduce((a, b) => a + b.quantity, 0);
       const total_mxn = products.reduce(
         (a, b) => a + (b.quantity > 0 ? b.quantity * b.sale_price : 0),
         0,
       );
       const exchange_rate = await this.cryptoapisService.getUSDExchange();
       const total_usd = total_mxn / exchange_rate;
-      const total = await this.cryptoapisService.getLTCExchange(total_usd);
+      const subtotal = await this.cryptoapisService.getLTCExchange(total_usd);
+      const shipping_price =
+        total_quantity >= 22 ? 600 : total_quantity >= 10 ? 300 : 200;
+      const total = shipping_price + subtotal;
 
       const qr: string = this.cryptoapisService.generateQrUrl(
         address,
@@ -44,6 +48,7 @@ export class CartService {
         total_mxn,
         total_usd,
         qr,
+        shipping_price,
         address,
         exchange_rate,
         status: 'pending',
