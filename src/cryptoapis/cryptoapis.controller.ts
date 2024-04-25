@@ -312,7 +312,7 @@ export class CryptoapisController {
         // Verificar si el pago fue completado
         const pendingAmount: number =
           await this.cryptoapisService.calculatePendingAmount(
-            doc.id,
+            userDocRef.id,
             address,
             Number.parseFloat(data.payment_link.amount),
           );
@@ -359,6 +359,7 @@ export class CryptoapisController {
             'litecoin',
           );
           await doc.ref.update({
+            [`payment_link.pending_amount`]: pendingAmount,
             [`payment_link.qr`]: qr,
           });
 
