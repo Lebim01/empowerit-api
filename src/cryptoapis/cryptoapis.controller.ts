@@ -307,7 +307,7 @@ export class CryptoapisController {
         const currency = 'LTC';
 
         // Guardar registro de la transaccion.
-        await this.cryptoapisService.addTransactionToUser(doc.id, body);
+        await this.cryptoapisService.addTransactionToUser(userDocRef.id, body);
 
         // Verificar si el pago fue completado
         const pendingAmount: number =
@@ -386,7 +386,7 @@ export class CryptoapisController {
         const userDocRef = doc.ref.parent.parent;
 
         // Guardar registro de la transaccion.
-        await this.cryptoapisService.addTransactionToUser(doc.id, body);
+        await this.cryptoapisService.addTransactionToUser(userDocRef.id, body);
 
         await userDocRef.collection('pending-ships').add({
           created_at: new Date(),
