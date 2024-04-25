@@ -631,9 +631,9 @@ export class CryptoapisService {
     return res;
   }
 
-  async getUSDExchange(usd: number): Promise<number> {
+  async getUSDExchange(): Promise<number> {
     const res = await api_conlayer.get<ResponseConvert>(
-      `/convert?from=MXN&to=USD&amount=${usd}&access_key=c4aa2042e33beee513ff1f915279a3c9`,
+      `/convert?from=USD&to=MXN&amount=1&access_key=c4aa2042e33beee513ff1f915279a3c9`,
     );
 
     return res.data.result;
