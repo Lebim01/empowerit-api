@@ -375,7 +375,7 @@ export class CryptoapisController {
 
   @Post('callbackCart')
   async callbackCart(@Body() body: CallbackNewConfirmedCoins): Promise<any> {
-    if (this.isValidCryptoApis(body, false)) {
+    if (this.isValidCryptoApis(body, true)) {
       const { address } = body.data.item;
       const snap = await db
         .collectionGroup('cart')
