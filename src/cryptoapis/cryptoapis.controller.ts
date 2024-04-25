@@ -319,10 +319,6 @@ export class CryptoapisController {
 
         // Si se cubrio el pago completo
         if (pendingAmount <= 0) {
-          await doc.ref.update({
-            [`payment_link.status`]: 'confirming',
-          });
-
           await this.cryptoapisService.removeCallbackEvent(
             body.referenceId,
             currency,
@@ -338,6 +334,7 @@ export class CryptoapisController {
             'litecoin',
           );
           await doc.ref.update({
+            [`payment_link.status`]: 'confirming',
             [`payment_link.qr`]: qr,
           });
 
@@ -365,7 +362,7 @@ export class CryptoapisController {
             [`payment_link.qr`]: qr,
           });
 
-          return 'El monto pagado es menor al requerido. ';
+          return 'El monto pagado es menor al requerido.';
         }
       } else {
         throw new HttpException('Address not found', HttpStatus.BAD_REQUEST);
