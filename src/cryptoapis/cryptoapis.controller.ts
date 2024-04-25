@@ -342,7 +342,11 @@ export class CryptoapisController {
         });
 
         return 'OK';
+      } else {
+        throw new HttpException('Address not found', HttpStatus.BAD_REQUEST);
       }
+    } else {
+      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
     }
   }
 
