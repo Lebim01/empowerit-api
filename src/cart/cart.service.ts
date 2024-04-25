@@ -34,9 +34,10 @@ export class CartService {
       const exchange_rate = await this.cryptoapisService.getUSDExchange();
       const total_usd = total_mxn / exchange_rate;
       const subtotal = await this.cryptoapisService.getLTCExchange(total_usd);
-      const shipping_price =
+      const shipping_price_mxn =
         total_quantity >= 22 ? 600 : total_quantity >= 10 ? 300 : 200;
-      const total = shipping_price + subtotal;
+      const shipping_price_usd = shipping_price_mxn / exchange_rate;
+      const total = shipping_price_usd + subtotal;
 
       const qr: string = this.cryptoapisService.generateQrUrl(
         address,
@@ -48,7 +49,8 @@ export class CartService {
         total_mxn,
         total_usd,
         qr,
-        shipping_price,
+        shipping_price_mxn,
+        shipping_price_usd,
         address,
         exchange_rate,
         status: 'pending',
