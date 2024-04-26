@@ -396,7 +396,9 @@ export class CryptoapisController {
           cart: doc.data(),
         });
 
-        const total_points = Math.ceil(doc.get('payment_link.total_usd') / 2);
+        const total_points = Math.ceil(
+          doc.get('payment_link.total_products_usd') / 2,
+        );
 
         await this.binaryService.increaseBinaryPoints(
           userDocRef.id,
