@@ -402,7 +402,7 @@ export class CryptoapisController {
 
         await this.binaryService.increaseBinaryPoints(
           userDocRef.id,
-          total_points,
+          total_points || 0,
           'Compra de productos',
         );
 

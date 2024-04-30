@@ -28,7 +28,7 @@ export class ShopifyController {
       });
       await this.binaryService.increaseBinaryPoints(
         user.id,
-        binary_points,
+        binary_points || 0,
         'Compra de productos',
       );
     } else {
