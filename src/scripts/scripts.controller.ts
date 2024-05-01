@@ -14,4 +14,11 @@ export class ScriptsController {
   repeatPayroll() {
     return this.scriptsService.getDuplicatedPayroll();
   }
+
+  @Get('testTimeout')
+  testTimeout() {
+    setTimeout(() => {
+      // nada
+    }, 1000 * 60 * 5);
+  }
 }
