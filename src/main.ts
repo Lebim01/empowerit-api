@@ -34,4 +34,4 @@ async function bootstrap() {
 }
 bootstrap();
 
-export const maxDuration = 300;
+//export const maxDuration = 300;
