@@ -556,7 +556,7 @@ export class CryptoapisService {
           callbackSecretKey: 'a12k*?_1ds',
           callbackUrl: `${this.hostapi}/callbackSendedCoins`,
           feePriority: 'standard',
-          note: 'yourAdditionalInformationhere',
+          note: 'WITHDRAW',
           prepareStrategy: 'minimize-dust',
           recipients: [
             {
