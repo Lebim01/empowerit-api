@@ -527,6 +527,8 @@ export class SubscriptionsService {
         parent_id: null,
       };
 
+      console.log('sponsor_id', user.get('sponsor_id'));
+
       while (!binaryPosition?.parent_id) {
         binaryPosition = await this.binaryService.calculatePositionOfBinary(
           user.get('sponsor_id'),
@@ -574,6 +576,7 @@ export class SubscriptionsService {
       try {
         await this.binaryService.increaseUnderlinePeople(user.id);
       } catch (err) {
+        console.log('Error increaseUnderlinePeople');
         console.error(err);
         /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', user.id);
@@ -598,6 +601,7 @@ export class SubscriptionsService {
             : pack_points[user.get('membership')];
         await this.binaryService.increaseBinaryPoints(user.id, points);
       } catch (err) {
+        console.log('Error increaseBinaryPoints');
         console.error(err);
         /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', user.id);
