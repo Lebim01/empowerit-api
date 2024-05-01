@@ -273,11 +273,17 @@ export class AdminService {
 
   async withdraw(
     address: string,
-    amount_usd: string,
+    amount: string,
     blockchain: 'bitcoin' | 'litecoin',
   ) {
     if (blockchain == 'bitcoin' || blockchain == 'litecoin') {
-      return this.cryptoapisService.withdraw(address, amount_usd, blockchain);
+      await db.collection('withdraws').add({
+        created_at: new Date(),
+        address,
+        amount,
+        blockchain,
+      });
+      return this.cryptoapisService.withdraw(address, amount, blockchain);
     }
   }
 

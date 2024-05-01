@@ -1,11 +1,12 @@
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as Sentry from '@sentry/node';
-import { SentryFilter } from './sentry/sentry.filter';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import isoWeek from 'dayjs/plugin/isoWeek';
+
+import * as Sentry from '@sentry/node';
+import { SentryFilter } from './sentry/sentry.filter';
 
 async function bootstrap() {
   /*Sentry.init({
@@ -32,6 +33,5 @@ async function bootstrap() {
 
   await app.listen(8080);
 }
-bootstrap();
 
-//export const maxDuration = 300;
+bootstrap();
