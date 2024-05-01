@@ -1,6 +1,12 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ScriptsService } from './scripts.service';
 
+const _testTimeout = () => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 1000 * 60 * 5);
+  });
+};
+
 @Controller('scripts')
 export class ScriptsController {
   constructor(private scriptsService: ScriptsService) {}
@@ -17,8 +23,6 @@ export class ScriptsController {
 
   @Get('testTimeout')
   testTimeout() {
-    setTimeout(() => {
-      // nada
-    }, 1000 * 60 * 5);
+    return _testTimeout();
   }
 }
