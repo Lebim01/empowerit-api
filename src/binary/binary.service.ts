@@ -62,11 +62,25 @@ export class BinaryService {
         .doc(user.get('parent_binary_user_id'))
         .get();
       if (user.exists) {
+        const side =
+          user.get('left_binary_user_id') == currentUser ? 'left' : 'right';
         currentUser = user.id;
 
         batch.update(user.ref, {
           count_underline_people: firestore.FieldValue.increment(1),
         });
+
+        batch.set(
+          admin
+            .collection('users')
+            .doc(user.id)
+            .collection(`${side}-people`)
+            .doc(registerUserId),
+          {
+            user_id: registerUserId,
+            created_at: new Date(),
+          },
+        );
       } else {
         currentUser = null;
       }
@@ -127,12 +141,18 @@ export class BinaryService {
             collection(db, `users/${user.id}/points`),
           );
 
+          /**
+           * add (left | right) points
+           */
           batch.set(subCollectionRef, {
             points,
             user_id: registerUserId,
             name: registerUser.get('name') || '',
           });
 
+          /**
+           * (add points)
+           */
           batch.set(subCollectionPointsRef, {
             points,
             side: position || 'right',
@@ -236,5 +256,32 @@ export class BinaryService {
     }
 
     return notFound;
+  }
+
+  async getPeopleTree(rootId: string, nodes: any = {}) {
+    if (!rootId) return [];
+
+    const rootDocId = rootId;
+    const queue = [rootDocId];
+    const people = [];
+
+    while (queue.length > 0) {
+      const user_id = queue.shift();
+      const node = nodes[user_id];
+      if (!node) continue;
+      const leftDocId = node.left_binary_user_id;
+      const rightDocId = node.right_binary_user_id;
+
+      if (leftDocId && nodes[leftDocId]) {
+        people.push(nodes[leftDocId].id);
+        queue.push(nodes[leftDocId].id);
+      }
+      if (rightDocId && nodes[rightDocId]) {
+        people.push(nodes[rightDocId].id);
+        queue.push(nodes[rightDocId].id);
+      }
+    }
+
+    return people;
   }
 }

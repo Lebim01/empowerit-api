@@ -25,7 +25,7 @@ export class RanksService {
 
     await Promise.all(
       users.docs.map(async (user) => {
-        type Method = 'POST';
+        /*type Method = 'POST';
         const task: google.cloud.tasks.v2.ITask = {
           httpRequest: {
             httpMethod: 'POST' as Method,
@@ -39,7 +39,8 @@ export class RanksService {
         await this.googleTaskService.addToQueue(
           task,
           this.googleTaskService.getPathQueue('user-rank'),
-        );
+        );*/
+        await this.updateUserRank(user.id);
       }),
     );
 
@@ -97,6 +98,7 @@ export class RanksService {
   }
 
   async updateUserRank(id_user: string) {
+    console.log('id_user', id_user);
     const rankData = await this.getRankUser(id_user);
 
     const start = dayjs().add(-1, 'day').utcOffset(-6).startOf('month');
@@ -120,6 +122,10 @@ export class RanksService {
       points.right,
     );
 
+    await admin.collection('users').doc(id_user).update({
+      rank: rankData.rank,
+    });
+
     return rankData;
   }
 
@@ -133,7 +139,7 @@ export class RanksService {
     /* Crear subcoleccion para el historial de rangos */
     const smaller_leg = points.right > points.left ? 'left' : 'right';
     const points_smaller_leg = points[smaller_leg];
-    const rank = await this.getRank(points_smaller_leg);
+    const rank = await this.getRank(userId, points_smaller_leg);
 
     return {
       order: rank.order,
@@ -172,7 +178,10 @@ export class RanksService {
     };
   }
 
-  async getRank(points_smaller_leg: number): Promise<{
+  async getRank(
+    userId: string,
+    points_smaller_leg: number,
+  ): Promise<{
     rank: Ranks;
     missing_points: number;
     points_smaller_leg: number;
@@ -183,50 +192,88 @@ export class RanksService {
     let next_rank: Ranks = Ranks.NONE;
     let missing_points = 0;
 
-    if (points_smaller_leg >= ranksPoints[Ranks.TOP_LEGEND]) {
+    const hasRankBothSides = async (rank: Ranks): Promise<boolean> => {
+      return (
+        (await this.getUserRankBySide(userId, rank, 'left')) &&
+        (await this.getUserRankBySide(userId, rank, 'right'))
+      );
+    };
+
+    if (
+      points_smaller_leg >= ranksPoints[Ranks.TOP_LEGEND] &&
+      (await hasRankBothSides(Ranks.TOP_1))
+    ) {
       rank = Ranks.TOP_LEGEND;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.TOP_1]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.TOP_1] &&
+      (await hasRankBothSides(Ranks.TOP_DIAMOND))
+    ) {
       rank = Ranks.TOP_1;
       missing_points = ranksPoints[Ranks.TOP_LEGEND] - points_smaller_leg;
       next_rank = Ranks.TOP_LEGEND;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.TOP_DIAMOND]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.TOP_DIAMOND] &&
+      (await hasRankBothSides(Ranks.INTERNATIONAL_DIRECTOR))
+    ) {
       rank = Ranks.TOP_DIAMOND;
       next_rank = Ranks.TOP_1;
       missing_points = ranksPoints[Ranks.TOP_1] - points_smaller_leg;
     } else if (
-      points_smaller_leg >= ranksPoints[Ranks.INTERNATIONAL_DIRECTOR]
+      points_smaller_leg >= ranksPoints[Ranks.INTERNATIONAL_DIRECTOR] &&
+      (await hasRankBothSides(Ranks.NATIONAL_DIRECTOR))
     ) {
       rank = Ranks.INTERNATIONAL_DIRECTOR;
       missing_points = ranksPoints[Ranks.TOP_DIAMOND] - points_smaller_leg;
       next_rank = Ranks.TOP_DIAMOND;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.NATIONAL_DIRECTOR]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.NATIONAL_DIRECTOR] &&
+      (await hasRankBothSides(Ranks.REGIONAL_DIRECTOR))
+    ) {
       rank = Ranks.NATIONAL_DIRECTOR;
       missing_points =
         ranksPoints[Ranks.INTERNATIONAL_DIRECTOR] - points_smaller_leg;
       next_rank = Ranks.INTERNATIONAL_DIRECTOR;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.REGIONAL_DIRECTOR]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.REGIONAL_DIRECTOR] &&
+      (await hasRankBothSides(Ranks.MASTER_2500))
+    ) {
       rank = Ranks.REGIONAL_DIRECTOR;
       missing_points =
         ranksPoints[Ranks.NATIONAL_DIRECTOR] - points_smaller_leg;
       next_rank = Ranks.NATIONAL_DIRECTOR;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.MASTER_2500]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.MASTER_2500] &&
+      (await hasRankBothSides(Ranks.MASTER_1500))
+    ) {
       rank = Ranks.MASTER_2500;
       missing_points =
         ranksPoints[Ranks.REGIONAL_DIRECTOR] - points_smaller_leg;
       next_rank = Ranks.REGIONAL_DIRECTOR;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.MASTER_1500]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.MASTER_1500] &&
+      (await hasRankBothSides(Ranks.MASTER_1000))
+    ) {
       rank = Ranks.MASTER_1500;
       missing_points = ranksPoints[Ranks.MASTER_2500] - points_smaller_leg;
       next_rank = Ranks.MASTER_2500;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.MASTER_1000]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.MASTER_1000] &&
+      (await hasRankBothSides(Ranks.ADVANCED_BUILDER))
+    ) {
       rank = Ranks.MASTER_1000;
       missing_points = ranksPoints[Ranks.MASTER_2500] - points_smaller_leg;
       next_rank = Ranks.MASTER_2500;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.ADVANCED_BUILDER]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.ADVANCED_BUILDER] &&
+      (await hasRankBothSides(Ranks.STAR_BUILD))
+    ) {
       rank = Ranks.ADVANCED_BUILDER;
       missing_points = ranksPoints[Ranks.MASTER_1000] - points_smaller_leg;
       next_rank = Ranks.MASTER_1000;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.STAR_BUILD]) {
+    } else if (
+      points_smaller_leg >= ranksPoints[Ranks.STAR_BUILD] &&
+      (await hasRankBothSides(Ranks.INITIAL_BUILD))
+    ) {
       rank = Ranks.STAR_BUILD;
       missing_points = ranksPoints[Ranks.ADVANCED_BUILDER] - points_smaller_leg;
       next_rank = Ranks.ADVANCED_BUILDER;
@@ -249,6 +296,28 @@ export class RanksService {
       next_rank,
       order: order ?? -1,
     };
+  }
+
+  async getUserRankBySide(
+    userId: string,
+    rankNeeded: string,
+    side: 'left' | 'right',
+  ) {
+    const users_points = await admin
+      .collection('users')
+      .doc(userId)
+      .collection(`${side}-people`)
+      .orderBy('created_at', 'desc')
+      .get();
+
+    for (const doc of users_points.docs) {
+      const rank = await this.getRankUser(doc.id);
+      if (rankNeeded == rank.rank) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   async insertRank(
