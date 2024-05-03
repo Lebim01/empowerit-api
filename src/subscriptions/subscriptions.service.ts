@@ -369,6 +369,19 @@ export class SubscriptionsService {
         created_at: new Date(),
         pack: type,
         sent: false,
+        cart: {
+          address: {
+            city: data.get('city.label') || '',
+            country: data.get('country.label') || '',
+            cp: data.get('zip') || '',
+            num_ext: data.get('num_ext') || '',
+            num_int: data.get('num_int') || '',
+            phone: data.get('whatsapp') || '',
+            reference: data.get('reference') || '',
+            state: data.get('state.label') || '',
+            street: data.get('street') || '',
+          },
+        },
       });
 
       const required_fields =
