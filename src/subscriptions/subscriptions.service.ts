@@ -116,7 +116,7 @@ export class SubscriptionsService {
     const payment_link = {
       referenceId,
       address,
-      qr: `https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=${qr_name}:${address}?amount=${amount}`,
+      qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
       status: 'pending',
       created_at: new Date(),
       amount,
@@ -712,6 +712,14 @@ export class SubscriptionsService {
   async execFounderPack(registerUserId: string) {
     const user = await admin.collection('users').doc(registerUserId).get();
     const bond = 147.5;
+
+    await user.ref.update({
+      founder_pack: {
+        status: 'paid',
+        created_at: new Date(),
+        price: 2950,
+      },
+    });
 
     await admin
       .collection('users')
