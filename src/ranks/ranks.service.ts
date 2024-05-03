@@ -98,7 +98,7 @@ export class RanksService {
   }
 
   async updateUserRank(id_user: string) {
-    console.log('id_user', id_user);
+    const user = await admin.collection('users').doc(id_user).get();
     const rankData = await this.getRankUser(id_user);
 
     const start = dayjs().add(-1, 'day').utcOffset(-6).startOf('month');
@@ -122,9 +122,31 @@ export class RanksService {
       points.right,
     );
 
+    /**
+     * Guardar rango corte
+     */
     await admin.collection('users').doc(id_user).update({
       rank: rankData.rank,
     });
+
+    /**
+     * Guardar maximo rango
+     */
+    if (!user.get('max_rank')) {
+      await admin.collection('users').doc(id_user).update({
+        max_rank: rankData.rank,
+      });
+    } else {
+      const orderPastMaxRank = ranksOrder.findIndex(
+        (r) => r == user.get('max_rank'),
+      );
+      const orderNewRank = ranksOrder.findIndex((r) => r == rankData.rank);
+      if (orderNewRank > orderPastMaxRank) {
+        await admin.collection('users').doc(id_user).update({
+          max_rank: rankData.rank,
+        });
+      }
+    }
 
     return rankData;
   }
