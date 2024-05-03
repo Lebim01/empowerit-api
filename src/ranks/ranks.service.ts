@@ -25,7 +25,7 @@ export class RanksService {
 
     await Promise.all(
       users.docs.map(async (user) => {
-        /*type Method = 'POST';
+        type Method = 'POST';
         const task: google.cloud.tasks.v2.ITask = {
           httpRequest: {
             httpMethod: 'POST' as Method,
@@ -39,8 +39,7 @@ export class RanksService {
         await this.googleTaskService.addToQueue(
           task,
           this.googleTaskService.getPathQueue('user-rank'),
-        );*/
-        await this.updateUserRank(user.id);
+        );
       }),
     );
 
