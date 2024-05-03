@@ -9,7 +9,6 @@ import {
   CallbackNewConfirmedCoins,
   ResponseBalanceAddress,
   ResponseListOfEvents,
-  ResponseEncodeXAddress,
   TransactionRequest,
 } from './types';
 import axios from 'axios';

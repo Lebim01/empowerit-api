@@ -9,6 +9,7 @@ import {
   writeBatch,
   collectionGroup,
   setDoc,
+  FieldValue,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
@@ -31,6 +32,7 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   'business-pack': 1289,
   'vip-pack': 228,
   'elite-pack': 678,
+  'founder-pack': 2950,
 };
 
 export const MEMBERSHIP_PRICES_YEARLY = {
@@ -258,6 +260,11 @@ export class SubscriptionsService {
         ? MEMBERSHIP_PRICES_YEARLY
         : MEMBERSHIP_PRICES_MONTHLY
     )[type];
+
+    if (type == 'founder-pack') {
+      await this.execFounderPack(id_user);
+      return;
+    }
 
     /**
      * Reconsumo pagado antes de tiempo
@@ -700,5 +707,30 @@ export class SubscriptionsService {
         useCustomerDefaultAddress: true,
       });
     }
+  }
+
+  async execFounderPack(registerUserId: string) {
+    const user = await admin.collection('users').doc(registerUserId).get();
+    const bond = 147.5;
+
+    await admin
+      .collection('users')
+      .doc(user.get('sponsor_id'))
+      .collection('profits_details')
+      .add({
+        amount: bond,
+        created_at: new Date(),
+        description: 'Founder pack',
+        id_user: registerUserId,
+        type: 'bond_founder',
+        user_name: user.get('name'),
+      });
+
+    await admin
+      .collection('users')
+      .doc(user.get('sponsor_id'))
+      .update({
+        bond_founder: firestore.FieldValue.increment(bond),
+      });
   }
 }
