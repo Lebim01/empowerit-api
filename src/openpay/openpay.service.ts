@@ -14,6 +14,8 @@ export class OpenpayService {
 
     if (!users.empty) {
       const user = users.docs[0];
+      await user.ref.collection('openpay-transactions').add(body);
+
       const payment_link = user.get('payment_link');
       const membership = Object.keys(payment_link)[0] as Memberships;
       const period = payment_link[membership].membership_period || 'monthly';

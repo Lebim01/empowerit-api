@@ -125,7 +125,7 @@ export class SubscriptionsService {
 
       const newCharge = {
         method: 'card',
-        amount: 5000,
+        amount,
         description: 'Compra de paquete',
         customer: customer,
         send_email: false,
