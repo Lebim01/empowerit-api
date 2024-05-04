@@ -26,6 +26,7 @@ import { Neo4jModule } from './neo4j/neo4j.module';
 import { ShopifyModule } from './shopify/shopify.module';
 import { EmailModule } from './email/email.module';
 import { CartModule } from './cart/cart.module';
+import { OpenpayModule } from './openpay/openpay.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { CartModule } from './cart/cart.module';
     ShopifyModule,
     EmailModule,
     CartModule,
+    OpenpayModule,
   ],
   controllers: [AppController],
   providers: [

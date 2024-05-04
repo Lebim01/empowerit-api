@@ -9,7 +9,6 @@ import {
   writeBatch,
   collectionGroup,
   setDoc,
-  FieldValue,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
@@ -23,6 +22,7 @@ import { GoogletaskService } from 'src/googletask/googletask.service';
 import { ShopifyService } from 'src/shopify/shopify.service';
 import { alivePack, businessPack, freedomPack } from './products_packs';
 import { pack_points, pack_points_yearly } from '../binary/binary_packs';
+import Openpay from 'openpay';
 
 export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   supreme: 199,
@@ -105,9 +105,38 @@ export class SubscriptionsService {
       period == 'yearly' ? MEMBERSHIP_PRICES_YEARLY : MEMBERSHIP_PRICES_MONTHLY;
 
     let amount = 0;
+    let exchange = 0;
+    let redirect_url = '';
+    let openpay = {};
 
     if (currency == 'LTC') {
       amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
+    }
+    if (currency == 'MXN') {
+      exchange = await this.cryptoapisService.getUSDExchange();
+      amount = Number(Number(exchange * amount_type[type]).toFixed(2));
+
+      const customer = {
+        name: userData.name,
+        last_name: '',
+        phone_number: userData.whatsapp,
+        email: userData.email,
+      };
+
+      const newCharge = {
+        method: 'card',
+        amount: 5000,
+        description: 'Compra de paquete',
+        customer: customer,
+        send_email: false,
+        confirm: false,
+        redirect_url: 'https://backoffice.empowerittop.com/subscriptions',
+      };
+
+      const res = await this.createCharge(newCharge);
+
+      redirect_url = res.payment_method.redirect_url;
+      openpay = res;
     }
 
     const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
@@ -121,8 +150,11 @@ export class SubscriptionsService {
       created_at: new Date(),
       amount,
       currency,
+      exchange,
       expires_at: dayjs().add(15, 'minutes').toDate(),
       membership_period: period,
+      redirect_url,
+      openpay,
     };
 
     // Guardar payment_link
@@ -140,6 +172,25 @@ export class SubscriptionsService {
       qr: payment_link.qr,
     };
   }
+
+  createCharge(newCharge: any): Promise<any> {
+    const openpay = new Openpay(
+      process.env.OPENPAY_MERCHANT_ID,
+      process.env.OPENPAY_SK,
+      false,
+    );
+
+    return new Promise((resolve, reject) => {
+      openpay.charges.create(newCharge, function (error, body) {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(body);
+        }
+      });
+    });
+  }
+
   async isActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
     const expires_at = user.get('membership_expires_at');
