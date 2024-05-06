@@ -75,7 +75,7 @@ export interface CallbackNewConfirmedCoins {
     product: 'BLOCKCHAIN_EVENTS';
     event: 'ADDRESS_COINS_TRANSACTION_CONFIRMED';
     item: {
-      blockchain: 'bitcoin';
+      blockchain: 'bitcoin' | 'litecoin';
       network: 'testnet' | 'mainnet';
       address: string;
       minedInBlock: {
@@ -85,7 +85,7 @@ export interface CallbackNewConfirmedCoins {
       };
       transactionId: string;
       amount: string;
-      unit: 'BTC';
+      unit: 'BTC' | 'LTC';
       direction: 'incoming' | 'outgoing';
     };
   };

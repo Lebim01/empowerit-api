@@ -418,4 +418,65 @@ export class CryptoapisController {
       throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
     }
   }
+
+  @Post('activeCart')
+  async activeCart(@Body() body: { id_user; address }): Promise<any> {
+    if (!body.address) throw 'address is required';
+
+    const snap = await db
+      .collectionGroup('cart')
+      .where(`payment_link.address`, '==', body.address)
+      .get();
+
+    if (snap.size > 0) {
+      const doc = snap.docs[0];
+      const userDocRef = doc.ref.parent.parent;
+
+      // Guardar registro de la transaccion.
+      await this.cryptoapisService.addTransactionToUser(userDocRef.id, {
+        data: {
+          event: 'ADDRESS_COINS_TRANSACTION_CONFIRMED',
+          item: {
+            address: body.address,
+            amount: doc.get('payment_link.amount'),
+            blockchain: 'litecoin',
+            direction: 'incoming',
+            minedInBlock: {} as any,
+            network: 'mainnet',
+            transactionId: 'manual',
+            unit: 'LTC',
+          },
+          product: 'BLOCKCHAIN_EVENTS',
+        },
+        apiVersion: '',
+        idempotencyKey: '',
+        referenceId: '',
+      });
+
+      await userDocRef.collection('pending-ships').add({
+        created_at: new Date(),
+        pack: 'none',
+        sent: false,
+        cart: doc.data(),
+        cartId: doc.id,
+      });
+
+      const total_points = Math.ceil(
+        doc.get('payment_link.total_products_usd') / 2,
+      );
+
+      await this.binaryService.increaseBinaryPoints(
+        userDocRef.id,
+        total_points || 0,
+        'Compra de productos',
+        doc.id,
+      );
+
+      await doc.ref.delete();
+
+      return 'OK';
+    } else {
+      throw new HttpException('Address not found', HttpStatus.BAD_REQUEST);
+    }
+  }
 }
