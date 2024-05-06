@@ -135,9 +135,7 @@ export class SubscriptionsService {
 
       const res = await this.createCharge(newCharge);
 
-      console.log(res);
-
-      redirect_url = res.payment_method.redirect_url;
+      redirect_url = res.payment_method.url;
       openpay = res;
     }
 
