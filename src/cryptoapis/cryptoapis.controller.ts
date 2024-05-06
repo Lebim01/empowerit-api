@@ -394,6 +394,7 @@ export class CryptoapisController {
           pack: 'none',
           sent: false,
           cart: doc.data(),
+          cartId: doc.id,
         });
 
         const total_points = Math.ceil(
@@ -404,6 +405,7 @@ export class CryptoapisController {
           userDocRef.id,
           total_points || 0,
           'Compra de productos',
+          doc.id,
         );
 
         await doc.ref.delete();

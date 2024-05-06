@@ -94,6 +94,7 @@ export class BinaryService {
     registerUserId: string,
     points: number,
     concept = 'Inscripción',
+    cartId?: string,
   ) {
     const batch = writeBatch(db);
 
@@ -163,6 +164,7 @@ export class BinaryService {
             user_sponsor: registerUser.get('sponsor') || '',
             created_at: new Date(),
             concept,
+            cartId: cartId || '',
           });
         }
       } else {
