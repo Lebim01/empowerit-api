@@ -104,18 +104,15 @@ export class BondsService {
     const percent = (presenter2 ? 1 : 2) / 100;
     const total = Math.round(amount * percent * 100) / 100;
 
-    const u_presenter_1 = await admin
-      .collection('users')
-      .where('presenter_code', '==', presenter1)
-      .get();
+    const u_presenter_1 = await admin.collection('users').doc(presenter1).get();
 
-    if (!u_presenter_1.empty) {
-      await u_presenter_1.docs[0].ref.update({
+    if (u_presenter_1.exists) {
+      await u_presenter_1.ref.update({
         [Bonds.PRESENTER]: firestore.FieldValue.increment(total),
       });
 
       await this.addProfitDetail(
-        u_presenter_1.docs[0].id,
+        u_presenter_1.id,
         Bonds.PRESENTER,
         total,
         registerUserId,
@@ -125,16 +122,16 @@ export class BondsService {
     if (presenter2) {
       const u_presenter_2 = await admin
         .collection('users')
-        .where('presenter_code', '==', presenter2)
+        .doc(presenter2)
         .get();
 
-      if (!u_presenter_2.empty) {
-        await u_presenter_2.docs[0].ref.update({
+      if (u_presenter_2.exists) {
+        await u_presenter_2.ref.update({
           [Bonds.PRESENTER]: firestore.FieldValue.increment(total),
         });
 
         await this.addProfitDetail(
-          u_presenter_2.docs[0].id,
+          u_presenter_2.id,
           Bonds.PRESENTER,
           total,
           registerUserId,
