@@ -66,7 +66,7 @@ export class CryptoapisController {
       const task: google.cloud.tasks.v2.ITask = {
         httpRequest: {
           httpMethod: 'POST' as Method,
-          url: `https://empowerit-api.vercel.app/cryptoapis/callbackPayment/${type}`,
+          url: `${process.env.API_URL}/cryptoapis/callbackPayment/${type}`,
           body: Buffer.from(JSON.stringify(body)),
           headers: {
             'Content-Type': 'application/json',

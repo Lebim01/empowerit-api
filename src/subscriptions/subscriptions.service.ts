@@ -470,7 +470,7 @@ export class SubscriptionsService {
     const task: google.cloud.tasks.v2.ITask = {
       httpRequest: {
         httpMethod: 'POST' as Method,
-        url: `https://empowerit-api.vercel.app/subscriptions/assignBinaryPosition`,
+        url: `${process.env.API_URL}/subscriptions/assignBinaryPosition`,
         body: Buffer.from(JSON.stringify(body)),
         headers: {
           'Content-Type': 'application/json',

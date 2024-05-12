@@ -29,7 +29,7 @@ export class RanksService {
         const task: google.cloud.tasks.v2.ITask = {
           httpRequest: {
             httpMethod: 'POST' as Method,
-            url: `https://empowerit-api.vercel.app/ranks/updateUserRank/${user.id}`,
+            url: `${process.env.API_URL}/ranks/updateUserRank/${user.id}`,
             headers: {
               'Content-Type': 'application/json',
             },
