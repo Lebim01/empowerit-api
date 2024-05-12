@@ -9,6 +9,7 @@ import {
   messages,
   quick_start_percent,
 } from './bonds';
+import { Ranks } from 'src/ranks/ranks_object';
 
 @Injectable()
 export class BondsService {
@@ -24,7 +25,7 @@ export class BondsService {
     const sponsor_id = user.get('sponsor_id');
     const sponsorRef = admin.collection('users').doc(sponsor_id);
     const sponsor = await sponsorRef.get().then((r) => r.data());
-    const sponsor_rank = sponsor.rank;
+    const sponsor_rank = sponsor.rank as Ranks;
     const percent = quick_start_percent[sponsor_rank] / 100;
 
     // primer nivel
@@ -152,6 +153,7 @@ export class BondsService {
       .update({
         bond_presenter: firestore.FieldValue.increment(total),
       });
+    return 'OK';
   }
 
   async addProfitDetail(
