@@ -131,6 +131,7 @@ export class SubscriptionsService {
         send_email: false,
         confirm: false,
         redirect_url: 'https://backoffice.empowerittop.com/subscriptions',
+        use_3d_secure: true,
       };
 
       const res = await this.createCharge(newCharge);
