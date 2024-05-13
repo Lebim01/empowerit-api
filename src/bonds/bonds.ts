@@ -29,6 +29,17 @@ export const quick_start_percent: Record<Ranks, number> = {
 };
 
 /**
+ * Porcentaje de ganancia bono inicio rapido de las neuvas Franquicias
+ */
+export const quick_start_percent_by_Franchise : Record<Franchises,number> = {
+  '100-pack': 15,
+  '300-pack': 15,
+  '500-pack': 20,
+  '1000-pack': 20,
+  '2000-pack': 20,
+}
+
+/**
  * Porcentaje de ganancia bono mentor
  */
 export const menthor_percent: Record<Ranks, number> = {
@@ -46,6 +57,17 @@ export const menthor_percent: Record<Ranks, number> = {
   top_legend: 30,
   none: 10,
 };
+
+/**
+ * Porcentaje de ganancia bono mentor ahora con las Franquicias
+ */
+export const menthor_percent_by_Franchise : Record<Franchises,number> = {
+  '100-pack': 10,
+  '300-pack': 15,
+  '500-pack': 15,
+  '1000-pack': 15,
+  '2000-pack': 20,
+}
 
 export const BOND_CAR = 250;
 
