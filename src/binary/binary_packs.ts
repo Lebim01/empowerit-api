@@ -28,6 +28,11 @@ export const pack_binary: Record<Memberships, number> = {
   supreme: 15 / 100,
   'vip-pack': 15 / 100,
   'elite-pack': 15 / 100,
+  '100-pack': 10 / 100,
+  '300-pack': 10 / 100,
+  '500-pack': 10 / 100,
+  '1000-pack': 15 / 100,
+  '2000-pack': 15 / 100,
   'founder-pack': 0,
 };
 

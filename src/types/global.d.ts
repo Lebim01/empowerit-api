@@ -7,8 +7,11 @@ type Memberships =
   | 'supreme'
   | 'founder-pack'
   | HibridMembership
-  | PhisicMembership;
+  | PhisicMembership
+  | Franchises
 
 type Coins = 'BTC' | 'LTC' | 'MXN';
+
+type Franchises = '100-pack' | '300-pack' | '500-pack' | '1000-pack' | '2000-pack';
 
 type Blockchains = 'bitcoin' | 'litecoin';
