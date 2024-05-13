@@ -84,7 +84,7 @@ export class CryptoapisService {
       : accounts.saul.walletIdTest;
   blockchain = 'bitcoin';
   network = process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
-  hostapi = 'https://empowerit-api.vercel.app';
+  hostapi = process.env.API_URL;
 
   async removeSubscriptionEvent(referenceId: string) {
     const options = {

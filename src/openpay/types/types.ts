@@ -1,5 +1,5 @@
 type ChangeSuccess = {
-  type: 'charge.succeeded';
+  type: 'charge.succeeded' | 'payout.failed' | 'spei.recived';
   event_date: Date;
   transaction: {
     id: string;
