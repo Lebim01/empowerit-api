@@ -134,6 +134,8 @@ export class SubscriptionsService {
         use_3d_secure: true,
       };
 
+      console.log(newCharge);
+
       const res = await this.createCharge(newCharge);
 
       redirect_url = res.payment_method.url;
