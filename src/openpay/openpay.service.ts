@@ -7,6 +7,8 @@ export class OpenpayService {
   constructor(private readonly subscriptionService: SubscriptionsService) {}
 
   async newChange(body: ChangeSuccess) {
+    if (body.type != 'charge.succeeded') return body;
+
     const users = await db
       .collection('users')
       .where('email', '==', body.transaction.customer.email)
