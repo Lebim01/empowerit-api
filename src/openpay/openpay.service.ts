@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { delay } from '../constants';
 import { db } from 'src/firebase/admin';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 
@@ -38,6 +39,11 @@ export class OpenpayService {
         const payment_link = user.get('payment_link');
         const membership = Object.keys(payment_link)[0] as Memberships;
         const period = payment_link[membership].membership_period || 'monthly';
+        await user.ref.update({
+          [`payment_link.${membership}.status`]: 'success',
+        });
+
+        await delay(500);
         await this.subscriptionService.onPaymentMembership(
           user.id,
           membership,
