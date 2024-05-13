@@ -135,7 +135,8 @@ export class SubscriptionsService {
         customer: customer,
         send_email: false,
         confirm: false,
-        redirect_url: 'https://backoffice.empowerittop.com/subscriptions',
+        redirect_url:
+          'https://backoffice.empowerittop.com/subscriptions?transaction=pending',
         use_3d_secure: true,
       };
 
