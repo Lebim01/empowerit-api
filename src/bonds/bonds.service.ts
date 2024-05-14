@@ -25,8 +25,10 @@ export class BondsService {
     const sponsor_id = user.get('sponsor_id');
     const sponsorRef = admin.collection('users').doc(sponsor_id);
     const sponsor = await sponsorRef.get().then((r) => r.data());
-    const sponsor_membership = sponsor.membership as Memberships;
-    const percent = quick_start_percent[sponsor_membership] / 100;
+    /*const sponsor_membership = sponsor.membership as Memberships;
+    const percent = quick_start_percent[sponsor_membership] / 100;*/
+    const sponsor_rank = sponsor.rank as Ranks;
+    const percent = quick_start_percent[sponsor_rank] / 100;
 
     // primer nivel
     if (sponsor) {
