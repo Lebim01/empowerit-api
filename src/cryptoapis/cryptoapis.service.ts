@@ -201,7 +201,7 @@ export class CryptoapisService {
         data: {
           item: {
             address: address,
-            allowDuplicates: 'true',
+            allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
             callbackUrl: `${this.hostapi}/cryptoapis/callbackPayment/${type}/queue`,
             receiveCallbackOn: '2',
