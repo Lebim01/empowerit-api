@@ -33,6 +33,11 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   'vip-pack': 228,
   'elite-pack': 678,
   'founder-pack': 2950,
+  '100-pack': 100,
+  '300-pack': 300,
+  '500-pack': 500,
+  '1000-pack': 1000,
+  '2000-pack': 2000,
 };
 
 export const MEMBERSHIP_PRICES_YEARLY = {
@@ -422,6 +427,11 @@ export class SubscriptionsService {
       'business-pack',
       'elite-pack',
       'vip-pack',
+      '100-pack',
+      '300-pack',
+      '500-pack',
+      '1000-pack',
+      '2000-pack'
     ];
     if (packs.includes(type as any)) {
       await userDocRef.collection('pending-ships').add({
