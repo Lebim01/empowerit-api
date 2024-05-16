@@ -427,11 +427,6 @@ export class SubscriptionsService {
       'business-pack',
       'elite-pack',
       'vip-pack',
-      '100-pack',
-      '300-pack',
-      '500-pack',
-      '1000-pack',
-      '2000-pack'
     ];
     if (packs.includes(type as any)) {
       await userDocRef.collection('pending-ships').add({

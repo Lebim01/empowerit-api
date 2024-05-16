@@ -114,6 +114,10 @@ export class CryptoapisController {
       if (userDoc) {
         // Agregar registro de la transaccion
         await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, {
+          ...body,
+          data: { ...body.data, event: 'ADDRESS_COINS_TRANSACTION_CONFIRMED' },
+        });
 
         // Verificar si ya se pago todo o no
         const { is_complete, pendingAmount, currency } =
@@ -196,6 +200,10 @@ export class CryptoapisController {
   /**
    * Primera confirmacion de transaccion
    * Cambiar status a "confirming"
+   */
+  /**
+   * Transaccion confirmada
+   * Cambiar status a "paid"
    */
   @Post('callbackCoins/:type')
   async callbackCoins(
