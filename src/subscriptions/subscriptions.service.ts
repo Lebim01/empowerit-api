@@ -183,7 +183,7 @@ export class SubscriptionsService {
     const openpay = new Openpay(
       process.env.OPENPAY_MERCHANT_ID,
       process.env.OPENPAY_SK,
-      false,
+      true,
     );
 
     return new Promise((resolve, reject) => {
