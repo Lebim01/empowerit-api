@@ -28,12 +28,17 @@ export class SubscriptionsController {
     @Body() body,
     @Param('type') type: Memberships,
   ) {
-    return this.subscriptionService.createPaymentAddress(
-      body.userId,
-      type,
-      body.coin,
-      body.period,
-    );
+    try {
+      return await this.subscriptionService.createPaymentAddress(
+        body.userId,
+        type,
+        body.coin,
+        body.period,
+      );
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
   }
 
   @Post('assignBinaryPosition')
