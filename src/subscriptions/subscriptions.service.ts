@@ -347,12 +347,6 @@ export class SubscriptionsService {
       );
     }
 
-    await this.addQueueBinaryPosition({
-      id_user,
-      sponsor_id: data.get('sponsor_id'),
-      position: data.get('position'),
-    });
-
     /**
      * Se activa la membresia
      */
@@ -469,6 +463,12 @@ export class SubscriptionsService {
         });
       }*/
     }
+
+    await this.addQueueBinaryPosition({
+      id_user,
+      sponsor_id: data.get('sponsor_id'),
+      position: data.get('position'),
+    });
   }
 
   async addQueueBinaryPosition(body: PayloadAssignBinaryPosition) {
@@ -549,7 +549,7 @@ export class SubscriptionsService {
     const _query = query(
       collection(db, 'users'),
       where(`membership_status`, '==', 'paid'),
-      where(`memberhsip_expires_at`, '<=', new Date()),
+      where(`membership_expires_at`, '<=', new Date()),
     );
 
     try {
@@ -676,6 +676,7 @@ export class SubscriptionsService {
           membership_period == 'yearly'
             ? pack_points_yearly[user.get('membership')]
             : pack_points[user.get('membership')];
+        console.log('increaseBinaryPoints', user.id, points);
         await this.binaryService.increaseBinaryPoints(user.id, points);
       } catch (err) {
         console.log('Error increaseBinaryPoints');
