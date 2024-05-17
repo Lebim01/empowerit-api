@@ -38,10 +38,10 @@ export class CryptoapisController {
     confirmed: boolean,
   ) {
     return (
-      body.data.event ==
-        (confirmed
-          ? 'ADDRESS_COINS_TRANSACTION_CONFIRMED'
-          : 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED') &&
+      [
+        'ADDRESS_COINS_TRANSACTION_CONFIRMED',
+        'ADDRESS_COINS_TRANSACTION_UNCONFIRMED',
+      ].includes(body.data.event) &&
       body.data.item.network == this.cryptoapisService.network &&
       body.data.item.direction == 'incoming' &&
       ['BTC', 'LTC', 'XRP'].includes(body.data.item.unit.toUpperCase())
