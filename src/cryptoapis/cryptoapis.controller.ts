@@ -397,16 +397,16 @@ export class CryptoapisController {
           cartId: doc.id,
         });
 
-        const total_points = Math.ceil(
+        /* const total_points = Math.ceil(
           doc.get('payment_link.total_products_usd') / 2,
-        );
+        ); */
 
-        await this.binaryService.increaseBinaryPoints(
+        /* await this.binaryService.increaseBinaryPoints(
           userDocRef.id,
           total_points || 0,
           'Compra de productos',
           doc.id,
-        );
+        ); */
 
         await doc.ref.delete();
 

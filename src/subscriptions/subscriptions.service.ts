@@ -223,6 +223,8 @@ export class SubscriptionsService {
       period,
     );
 
+    /* Aqui va la parte para ver cuantos creditos le tocan dependiendo la membresia */
+
     // Registrar cambios
     await admin.collection('users').doc(id_user).update({
       count_direct_people_this_cycle: 0,
@@ -233,8 +235,11 @@ export class SubscriptionsService {
       membership_expires_at: expiresAt,
       payment_link: {},
       is_new: false,
+      cap: 0,
+      /* credits: */
     });
 
+    /* Ya no seran ciclos quitar o dejarlo */
     await admin.collection('users').doc(id_user).collection('cycles').add({
       type,
       start_at: startAt,
