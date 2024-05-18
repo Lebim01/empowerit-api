@@ -386,7 +386,6 @@ export class CryptoapisService {
 
       await doc.ref.update({
         [`data.event`]: 'ADDRESS_COINS_TRANSACTION_CONFIRMED',
-        [`data.item.minedInBlock`]: transactionBody.data.item.minedInBlock,
         [`data.item.firstSeenInMempoolTimestamp`]:
           firestore.FieldValue.delete(),
       });
