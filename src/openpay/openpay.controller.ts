@@ -7,6 +7,7 @@ export class OpenpayController {
 
   @Post('charges')
   charges(@Body() body: ChangeSuccess) {
+    console.log(body);
     return this.openpayService.newChange(body);
   }
 }

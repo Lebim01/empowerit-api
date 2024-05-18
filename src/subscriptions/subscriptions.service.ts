@@ -73,6 +73,7 @@ export class SubscriptionsService {
     const userData = await userRef.get().then((r) => r.data());
     let address = '';
     let referenceId = '';
+    let referenceId2 = '';
 
     // Si no existe registro de la informacion de pago...
     if (
@@ -94,14 +95,31 @@ export class SubscriptionsService {
       // Crear primera confirmación de la transaccion
 
       if (currency == 'LTC') {
-        const resConfirmation =
-          await this.cryptoapisService.createFirstConfirmationTransaction(
-            id_user,
-            newAddress,
-            type,
-            currency,
-          );
-        referenceId = resConfirmation.data.item.referenceId;
+        try {
+          const resConfirmation =
+            await this.cryptoapisService.createFirstConfirmationTransaction(
+              id_user,
+              newAddress,
+              type,
+              currency,
+            );
+          referenceId = resConfirmation.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
+
+        try {
+          const resConfirmation2 =
+            await this.cryptoapisService.createCallbackConfirmation(
+              id_user,
+              newAddress,
+              type,
+              currency,
+            );
+          referenceId2 = resConfirmation2.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
       } else if (currency == 'MXN') {
       }
     }
@@ -135,7 +153,8 @@ export class SubscriptionsService {
         customer: customer,
         send_email: false,
         confirm: false,
-        redirect_url: 'https://backoffice.empowerittop.com/subscriptions',
+        redirect_url:
+          'https://backoffice.empowerittop.com/subscriptions?transaction=pending',
         use_3d_secure: true,
       };
 
@@ -150,6 +169,7 @@ export class SubscriptionsService {
     // Estructurar el campo payment_link
     const payment_link = {
       referenceId,
+      referenceId2,
       address,
       qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
       status: 'pending',
@@ -183,7 +203,7 @@ export class SubscriptionsService {
     const openpay = new Openpay(
       process.env.OPENPAY_MERCHANT_ID,
       process.env.OPENPAY_SK,
-      false,
+      true,
     );
 
     return new Promise((resolve, reject) => {
@@ -352,12 +372,6 @@ export class SubscriptionsService {
       );
     }
 
-    await this.addQueueBinaryPosition({
-      id_user,
-      sponsor_id: data.get('sponsor_id'),
-      position: data.get('position'),
-    });
-
     /**
      * Se activa la membresia
      */
@@ -432,11 +446,6 @@ export class SubscriptionsService {
       'business-pack',
       'elite-pack',
       'vip-pack',
-      '100-pack',
-      '300-pack',
-      '500-pack',
-      '1000-pack',
-      '2000-pack'
     ];
     if (packs.includes(type as any)) {
       await userDocRef.collection('pending-ships').add({
@@ -479,6 +488,12 @@ export class SubscriptionsService {
         });
       }*/
     }
+
+    await this.addQueueBinaryPosition({
+      id_user,
+      sponsor_id: data.get('sponsor_id'),
+      position: data.get('position'),
+    });
   }
 
   async addQueueBinaryPosition(body: PayloadAssignBinaryPosition) {
@@ -559,7 +574,7 @@ export class SubscriptionsService {
     const _query = query(
       collection(db, 'users'),
       where(`membership_status`, '==', 'paid'),
-      where(`memberhsip_expires_at`, '<=', new Date()),
+      where(`membership_expires_at`, '<=', new Date()),
     );
 
     try {
@@ -686,6 +701,7 @@ export class SubscriptionsService {
           membership_period == 'yearly'
             ? pack_points_yearly[user.get('membership')]
             : pack_points[user.get('membership')];
+        console.log('increaseBinaryPoints', user.id, points);
         await this.binaryService.increaseBinaryPoints(user.id, points);
       } catch (err) {
         console.log('Error increaseBinaryPoints');

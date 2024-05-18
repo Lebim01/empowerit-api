@@ -154,7 +154,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${this.hostapi}/cryptoapis/callbackCoins/${type}`,
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackPayment/${type}/queue`,
           },
         },
       };
@@ -201,10 +201,10 @@ export class CryptoapisService {
         data: {
           item: {
             address: address,
-            allowDuplicates: 'true',
+            allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
             callbackUrl: `${this.hostapi}/cryptoapis/callbackPayment/${type}/queue`,
-            receiveCallbackOn: '2',
+            receiveCallbackOn: 2,
           },
         },
       },
@@ -668,7 +668,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: false,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${this.hostapi}/cryptoapis/callbackCart/first`,
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackCart`,
           },
         },
       };
@@ -701,7 +701,7 @@ export class CryptoapisService {
             allowDuplicates: 'true',
             callbackSecretKey: 'a12k*?_1ds',
             callbackUrl: `${this.hostapi}/cryptoapis/callbackCart`,
-            receiveCallbackOn: '2',
+            receiveCallbackOn: 2,
           },
         },
       },

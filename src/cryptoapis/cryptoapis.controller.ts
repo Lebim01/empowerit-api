@@ -38,10 +38,10 @@ export class CryptoapisController {
     confirmed: boolean,
   ) {
     return (
-      body.data.event ==
-        (confirmed
-          ? 'ADDRESS_COINS_TRANSACTION_CONFIRMED'
-          : 'ADDRESS_COINS_TRANSACTION_UNCONFIRMED') &&
+      [
+        'ADDRESS_COINS_TRANSACTION_CONFIRMED',
+        'ADDRESS_COINS_TRANSACTION_UNCONFIRMED',
+      ].includes(body.data.event) &&
       body.data.item.network == this.cryptoapisService.network &&
       body.data.item.direction == 'incoming' &&
       ['BTC', 'LTC', 'XRP'].includes(body.data.item.unit.toUpperCase())
@@ -110,10 +110,16 @@ export class CryptoapisController {
         address,
         type,
       );
+      const referenceId = body.referenceId;
+      const referenceId2 = userDoc.get(`payment_link.${type}.referenceId2`);
 
       if (userDoc) {
         // Agregar registro de la transaccion
         await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, {
+          ...body,
+          data: { ...body.data, event: 'ADDRESS_COINS_TRANSACTION_CONFIRMED' },
+        });
 
         // Verificar si ya se pago todo o no
         const { is_complete, pendingAmount, currency } =
@@ -131,7 +137,11 @@ export class CryptoapisController {
 
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
-            body.referenceId,
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
             currency,
           );
 
@@ -142,7 +152,11 @@ export class CryptoapisController {
         else {
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
-            body.referenceId,
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
             currency,
           );
 
@@ -196,6 +210,10 @@ export class CryptoapisController {
   /**
    * Primera confirmacion de transaccion
    * Cambiar status a "confirming"
+   */
+  /**
+   * Transaccion confirmada
+   * Cambiar status a "paid"
    */
   @Post('callbackCoins/:type')
   async callbackCoins(
