@@ -73,6 +73,7 @@ export class SubscriptionsService {
     const userData = await userRef.get().then((r) => r.data());
     let address = '';
     let referenceId = '';
+    let referenceId2 = '';
 
     // Si no existe registro de la informacion de pago...
     if (
@@ -94,14 +95,31 @@ export class SubscriptionsService {
       // Crear primera confirmación de la transaccion
 
       if (currency == 'LTC') {
-        const resConfirmation =
-          await this.cryptoapisService.createFirstConfirmationTransaction(
-            id_user,
-            newAddress,
-            type,
-            currency,
-          );
-        referenceId = resConfirmation.data.item.referenceId;
+        try {
+          const resConfirmation =
+            await this.cryptoapisService.createFirstConfirmationTransaction(
+              id_user,
+              newAddress,
+              type,
+              currency,
+            );
+          referenceId = resConfirmation.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
+
+        try {
+          const resConfirmation2 =
+            await this.cryptoapisService.createCallbackConfirmation(
+              id_user,
+              newAddress,
+              type,
+              currency,
+            );
+          referenceId2 = resConfirmation2.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
       } else if (currency == 'MXN') {
       }
     }
@@ -151,6 +169,7 @@ export class SubscriptionsService {
     // Estructurar el campo payment_link
     const payment_link = {
       referenceId,
+      referenceId2,
       address,
       qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
       status: 'pending',

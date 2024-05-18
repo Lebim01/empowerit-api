@@ -110,6 +110,8 @@ export class CryptoapisController {
         address,
         type,
       );
+      const referenceId = body.referenceId;
+      const referenceId2 = userDoc.get(`payment_link.${type}.referenceId2`);
 
       if (userDoc) {
         // Agregar registro de la transaccion
@@ -135,7 +137,11 @@ export class CryptoapisController {
 
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
-            body.referenceId,
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
             currency,
           );
 
@@ -146,7 +152,11 @@ export class CryptoapisController {
         else {
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
-            body.referenceId,
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
             currency,
           );
 
