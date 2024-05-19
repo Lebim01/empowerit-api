@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get } from '@nestjs/common';
 
 import { BinaryService } from 'src/binary/binary.service';
 import { db } from 'src/firebase/admin';
+//
 
 @Controller('binary')
 export class BinaryController {
