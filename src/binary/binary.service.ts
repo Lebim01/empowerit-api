@@ -146,7 +146,7 @@ export class BinaryService {
            * add (left | right) points
            */
           batch.set(subCollectionRef, {
-            points,
+            points : points/2,
             user_id: registerUserId,
             name: registerUser.get('name') || '',
           });

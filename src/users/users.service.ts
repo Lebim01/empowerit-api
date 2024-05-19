@@ -25,14 +25,13 @@ export class UsersService {
 
   async isActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
-    const expires_at = user.get('membership_expires_at');
+    const membership_cap_limit = user.get('membership_cap_limit');
+    const membership_cap_current = user.get('membership_cap_current');
     const is_admin =
       Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
     return is_admin
       ? true
-      : expires_at
-      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-      : false;
+      : membership_cap_current < membership_cap_limit 
   }
 
   async getUserByPaymentAddress(

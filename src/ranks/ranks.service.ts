@@ -373,7 +373,7 @@ export class RanksService {
       ...current,
       next_rank,
       binary_percent: getBinaryPercent(user.id, user.get('membership')),
-      mentor_percent: getMentorPercent(user.id, current.rank),
+      mentor_percent: getMentorPercent(user.id, user.get('membership')),
     };
   }
 

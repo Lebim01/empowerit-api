@@ -24,21 +24,21 @@ import { alivePack, businessPack, freedomPack } from './products_packs';
 import { pack_points, pack_points_yearly } from '../binary/binary_packs';
 import Openpay from 'openpay';
 
-export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
-  supreme: 199,
-  pro: 99,
-  'alive-pack': 129,
-  'freedom-pack': 479,
-  'business-pack': 1289,
-  'vip-pack': 228,
-  'elite-pack': 678,
-  'founder-pack': 2950,
+export const MEMBERSHIP_PRICES_MONTHLY: Record<Franchises, number> = {
   '100-pack': 100,
   '300-pack': 300,
   '500-pack': 500,
   '1000-pack': 1000,
   '2000-pack': 2000,
 };
+
+export const MEMBERSHIP_CAP: Record<Franchises, number> = {
+  '100-pack': 300,
+  '300-pack': 1000,
+  '500-pack': 2000,
+  '1000-pack': 6000,
+  '2000-pack': 10000,
+}
 
 export const MEMBERSHIP_PRICES_YEARLY = {
   supreme: 1999,
@@ -255,8 +255,9 @@ export class SubscriptionsService {
       membership_expires_at: expiresAt,
       payment_link: {},
       is_new: false,
-      cap: 0,
-      /* credits: */
+      credits: MEMBERSHIP_PRICES_MONTHLY[type],
+      membership_cap_limit: MEMBERSHIP_CAP[type],
+      membership_cap_current: 0
     });
 
     /* Ya no seran ciclos quitar o dejarlo */

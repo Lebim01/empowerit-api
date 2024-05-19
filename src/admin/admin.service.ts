@@ -43,7 +43,7 @@ export class AdminService {
           : 'left';
         const binary_points = docData[`${binary_side}_points`];
         const binary_percent = getBinaryPercent(docData.id, docData.membership);
-        const mentor_percent = getMentorPercent(docData.id, docData.rank);
+        const mentor_percent = getMentorPercent(docData.id, docData.membership);
 
         const res = {
           id: docData.id,
