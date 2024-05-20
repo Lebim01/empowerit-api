@@ -4,7 +4,7 @@ import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { BinaryService } from '../binary/binary.service';
 import fs from 'fs';
 import { getBinaryPercent } from '../binary/binary_packs';
-import { getMentorPercent } from '../bonds/bonds';
+import { getMentorPercent, getMentorPercentByRank } from '../bonds/bonds';
 
 export const ADMIN_BINARY_PERCENT = 15 / 100;
 const ADMIN_QUICK_START = 30 / 100;
@@ -42,8 +42,26 @@ export class AdminService {
           ? 'right'
           : 'left';
         const binary_points = docData[`${binary_side}_points`];
-        const binary_percent = getBinaryPercent(docData.id, docData.membership);
-        const mentor_percent = getMentorPercent(docData.id, docData.membership);
+
+        let binary_percent = 0;
+        let mentor_percent = 0;
+        if (
+          [
+            'pro',
+            'supreme',
+            'alive-pack',
+            'business-pack',
+            'freedom-pack',
+            'vip-pack',
+            'elite-pack',
+          ].includes(docData.membership)
+        ) {
+          binary_percent = getBinaryPercent(docData.id, docData.membership);
+          mentor_percent = getMentorPercentByRank(docData.id, docData.rank);
+        } else {
+          binary_percent = getBinaryPercent(docData.id, docData.membership);
+          mentor_percent = getMentorPercent(docData.id, docData.membership);
+        }
 
         const res = {
           id: docData.id,
