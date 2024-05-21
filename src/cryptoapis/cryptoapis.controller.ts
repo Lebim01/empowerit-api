@@ -93,7 +93,7 @@ export class CryptoapisController {
   async callbackPaymentProMembership(
     @Body() body: CallbackNewConfirmedCoins,
     @Headers() headers,
-    @Param('type') type: Memberships,
+    @Param('type') type: Franchises,
   ): Promise<any> {
     await db.collection('cryptoapis-requests').add({
       created_at: new Date(),
@@ -111,7 +111,9 @@ export class CryptoapisController {
         type,
       );
       const referenceId = body.referenceId;
-      const referenceId2 = userDoc.get(`payment_link.${type}.referenceId2`);
+      let referenceId2 = '';
+      if (userDoc && userDoc.get)
+        referenceId2 = userDoc.get(`payment_link.${type}.referenceId2`);
 
       if (userDoc) {
         // Agregar registro de la transaccion
@@ -130,11 +132,7 @@ export class CryptoapisController {
         console.log({ is_complete });
 
         if (is_complete) {
-          await this.subscriptionService.onPaymentMembership(
-            userDoc.id,
-            type,
-            userDoc.get('payment_link.membership_period'),
-          );
+          await this.subscriptionService.onPaymentMembership(userDoc.id, type);
 
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(

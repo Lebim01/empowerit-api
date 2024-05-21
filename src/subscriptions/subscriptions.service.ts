@@ -46,7 +46,7 @@ export const MEMBERSHIP_CAP: Record<Franchises, number> = {
   '500-pack': 2000,
   '1000-pack': 6000,
   '2000-pack': 10000,
-}
+};
 
 export const MEMBERSHIP_PRICES_YEARLY = {
   supreme: 1999,
@@ -238,11 +238,7 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingMembership(
-    id_user: string,
-    type: Memberships,
-    period: 'monthly' | 'yearly',
-  ) {
+  async assingMembership(id_user: string, type: Franchises) {
     // Obtener fechas
     /*const startAt: Date = await this.calculateStartDate(id_user);
     const expiresAt: Date = await this.calculateExpirationDate(
@@ -339,18 +335,13 @@ export class SubscriptionsService {
 
   async onPaymentMembership(
     id_user: string,
-    type: Memberships,
-    membership_period: 'monthly' | 'yearly',
+    type: Franchises | 'founder-pack',
   ) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
     const isNew = await this.isNewMember(id_user);
 
-    const pack_price = (
-      membership_period == 'yearly'
-        ? MEMBERSHIP_PRICES_YEARLY
-        : MEMBERSHIP_PRICES_MONTHLY
-    )[type];
+    const pack_price = MEMBERSHIP_PRICES_MONTHLY[type];
 
     if (type == 'founder-pack') {
       await this.execFounderPack(id_user);
@@ -384,7 +375,7 @@ export class SubscriptionsService {
     /**
      * Se activa la membresia
      */
-    await this.assingMembership(id_user, type, membership_period);
+    await this.assingMembership(id_user, type);
 
     if (isNew) {
       await userDocRef.update({

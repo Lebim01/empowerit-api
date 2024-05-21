@@ -17,7 +17,7 @@ export class OpenpayService {
       if (!users.empty) {
         const user = users.docs[0];
         const payment_link = user.get('payment_link');
-        const membership = Object.keys(payment_link)[0] as Memberships;
+        const membership = Object.keys(payment_link)[0] as Franchises;
 
         await user.ref.update({
           [`payment_link.${membership}.status`]: 'failed',
@@ -37,18 +37,14 @@ export class OpenpayService {
         await user.ref.collection('openpay-transactions').add(body);
 
         const payment_link = user.get('payment_link');
-        const membership = Object.keys(payment_link)[0] as Memberships;
+        const membership = Object.keys(payment_link)[0] as Franchises;
         const period = payment_link[membership].membership_period || 'monthly';
         await user.ref.update({
           [`payment_link.${membership}.status`]: 'success',
         });
 
         await delay(500);
-        await this.subscriptionService.onPaymentMembership(
-          user.id,
-          membership,
-          period,
-        );
+        await this.subscriptionService.onPaymentMembership(user.id, membership);
 
         return 'OK';
       }

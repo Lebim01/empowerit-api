@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Body, Post, Param } from '@nestjs/common';
-import { SubscriptionsService } from './subscriptions.service';
+import { MEMBERSHIP_CAP, SubscriptionsService } from './subscriptions.service';
 import { PayloadAssignBinaryPosition } from './types';
 import { auth, db } from 'src/firebase/admin';
 import { firestore } from 'firebase-admin';
@@ -56,6 +56,9 @@ export class SubscriptionsController {
     if (!body.side) throw new Error('side: left or right required');
     if (!body.membership) throw new Error('membership required');
 
+    if (!MEMBERSHIP_CAP[body.membership])
+      throw new Error('el type esta mal: ' + body.membership);
+
     await db
       .collection('users')
       .doc(body.sponsor_id)
@@ -74,8 +77,6 @@ export class SubscriptionsController {
       membership: body.membership,
     });
 
-    await sleep(3000);
-
     await db
       .collection('users')
       .doc(user.uid)
@@ -87,11 +88,9 @@ export class SubscriptionsController {
         position: body.side,
       });
 
-    await this.subscriptionService.assingMembership(
-      user.uid,
-      body.membership,
-      'monthly',
-    );
+    await sleep(5000);
+
+    await this.subscriptionService.assingMembership(user.uid, body.membership);
 
     await this.subscriptionService.insertSanguineUsers(user.uid);
 
@@ -121,7 +120,6 @@ export class SubscriptionsController {
     await this.subscriptionService.onPaymentMembership(
       body.user_id,
       body.membership,
-      'monthly',
     );
   }
 

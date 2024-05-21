@@ -26,7 +26,6 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, {
     cors: true,
-    logger: false,
   });
 
   const { httpAdapter } = app.get(HttpAdapterHost);
