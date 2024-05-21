@@ -24,7 +24,15 @@ import { alivePack, businessPack, freedomPack } from './products_packs';
 import { pack_points, pack_points_yearly } from '../binary/binary_packs';
 import Openpay from 'openpay';
 
-export const MEMBERSHIP_PRICES_MONTHLY: Record<Franchises, number> = {
+export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
+  'supreme': 199,
+  'pro': 99,
+  'alive-pack': 129,
+  'freedom-pack': 479,
+  'business-pack': 1289,
+  'vip-pack': 228,
+  'elite-pack': 678,
+  'founder-pack': 2950,
   '100-pack': 100,
   '300-pack': 300,
   '500-pack': 500,

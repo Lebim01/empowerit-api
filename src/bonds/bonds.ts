@@ -10,6 +10,26 @@ export enum Bonds {
 }
 
 /**
+ * Porcentaje de ganancia bono inicio rapido
+ */
+export const quick_start_percent: Record<Ranks, number> = {
+  initial_builder: 20,
+  star_builder: 20,
+  advanced_builder: 20,
+  master_1000: 20,
+  master_1500: 20,
+  master_2500: 20,
+  regional_director: 20,
+  national_director: 20,
+  international_director: 20,
+  top_diamond: 25,
+  top_1: 25,
+  top_legend: 30,
+  none: 20,
+};
+
+
+/**
  * Porcentaje de ganancia bono inicio rapido de las neuvas Franquicias
  */
 export const quick_start_percent_by_Franchise: Record<Franchises, number> = {

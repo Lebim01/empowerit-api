@@ -7,6 +7,7 @@ import {
   Bonds,
   menthor_percent,
   messages,
+  quick_start_percent,
   quick_start_percent_by_Franchise,
 } from './bonds';
 import { Ranks } from 'src/ranks/ranks_object';
@@ -35,8 +36,14 @@ export class BondsService {
     const sponsor_id = user.get('sponsor_id');
     const sponsorRef = admin.collection('users').doc(sponsor_id);
     const sponsor = await sponsorRef.get().then((r) => r.data());
-    const sponsor_membership = sponsor.membership as Memberships;
-    const percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
+    let percent = 0;
+    if (['100-pack', '300-pack', '500-pack', '1000-pack', '2000-pack'].includes(sponsor.membership)) {
+      const sponsor_membership = sponsor.membership as Memberships;
+      percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
+    }else{
+      const sponsor_rank = sponsor.rank as Ranks;
+      percent = quick_start_percent[sponsor_rank] / 100;
+    }
 
     // primer nivel
     if (sponsor) {
