@@ -244,12 +244,12 @@ export class SubscriptionsService {
     period: 'monthly' | 'yearly',
   ) {
     // Obtener fechas
-    const startAt: Date = await this.calculateStartDate(id_user);
+    /*const startAt: Date = await this.calculateStartDate(id_user);
     const expiresAt: Date = await this.calculateExpirationDate(
       id_user,
       type,
       period,
-    );
+    );*/
 
     /* Aqui va la parte para ver cuantos creditos le tocan dependiendo la membresia */
 
@@ -260,19 +260,19 @@ export class SubscriptionsService {
       membership: type,
       membership_started_at: new Date(),
       membership_status: 'paid',
-      membership_expires_at: expiresAt,
+      //membership_expires_at: expiresAt,
       payment_link: {},
       is_new: false,
       credits: MEMBERSHIP_PRICES_MONTHLY[type],
       membership_cap_limit: MEMBERSHIP_CAP[type],
-      membership_cap_current: 0
+      membership_cap_current: 0,
     });
 
     /* Ya no seran ciclos quitar o dejarlo */
     await admin.collection('users').doc(id_user).collection('cycles').add({
       type,
-      start_at: startAt,
-      expires_at: expiresAt,
+      //start_at: startAt,
+      //expires_at: expiresAt,
     });
   }
 
@@ -361,7 +361,7 @@ export class SubscriptionsService {
      * Reconsumo pagado antes de tiempo
      * Agregar transaccion pendiente y repartir bonos despues
      */
-    if (!isExpired(data.get('membership_expires_at'))) {
+    /*if (!isExpired(data.get('membership_expires_at'))) {
       await userDocRef.update({
         pending_activation: {
           created_at: new Date(),
@@ -370,7 +370,7 @@ export class SubscriptionsService {
         },
       });
       return;
-    }
+    }*/
 
     if (isNew) {
       await this.bondService.execBondPresenter(

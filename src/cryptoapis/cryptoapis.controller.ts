@@ -42,7 +42,7 @@ export class CryptoapisController {
         'ADDRESS_COINS_TRANSACTION_CONFIRMED',
         'ADDRESS_COINS_TRANSACTION_UNCONFIRMED',
       ].includes(body.data.event) &&
-      body.data.item.network == this.cryptoapisService.network &&
+      body.data.item.network == 'mainnet' &&
       body.data.item.direction == 'incoming' &&
       ['BTC', 'LTC', 'XRP'].includes(body.data.item.unit.toUpperCase())
     );
@@ -127,6 +127,7 @@ export class CryptoapisController {
             type,
             userDoc.id,
           );
+        console.log({ is_complete });
 
         if (is_complete) {
           await this.subscriptionService.onPaymentMembership(

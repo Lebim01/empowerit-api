@@ -24,7 +24,7 @@ export async function availableCap(registerUserId: string, cash: number) {
 
 @Injectable()
 export class BondsService {
-  constructor(private readonly userService: UsersService) { }
+  constructor(private readonly userService: UsersService) {}
 
   /**
    * solo se reparte este bono a los usuarios activos
@@ -49,7 +49,7 @@ export class BondsService {
     if (sponsor) {
       const isProActive = await this.userService.isActiveUser(sponsor_id);
       const amount = Math.round(membership_price * percent * 100) / 100;
-      const availableAmount = await availableCap(sponsor_id, amount)
+      const availableAmount = await availableCap(sponsor_id, amount);
 
       if (isProActive) {
         await sponsorRef.update({
@@ -83,7 +83,7 @@ export class BondsService {
     const mentor_total = Number(
       Number(binary_total * (percent / 100)).toFixed(2),
     );
-    const availableAmount = await availableCap(sponsorId, mentor_total)
+    const availableAmount = await availableCap(sponsorId, mentor_total);
 
     await admin
       .collection('users')
@@ -126,7 +126,7 @@ export class BondsService {
     const u_presenter_1 = await admin.collection('users').doc(presenter1).get();
 
     if (u_presenter_1.exists) {
-    const availableAmount = await availableCap(u_presenter_1.id, total)
+      const availableAmount = await availableCap(u_presenter_1.id, total);
       await u_presenter_1.ref.update({
         [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
       });
@@ -146,7 +146,7 @@ export class BondsService {
         .get();
 
       if (u_presenter_2.exists) {
-        const availableAmount = await availableCap(u_presenter_2.id, total)
+        const availableAmount = await availableCap(u_presenter_2.id, total);
         await u_presenter_2.ref.update({
           [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
         });
@@ -166,8 +166,13 @@ export class BondsService {
     userId: string,
     total: number,
   ) {
-    const availableAmount = await availableCap(userId, total)
-    await this.addProfitDetail(userId, Bonds.PRESENTER, availableAmount, registerUserId);
+    const availableAmount = await availableCap(userId, total);
+    await this.addProfitDetail(
+      userId,
+      Bonds.PRESENTER,
+      availableAmount,
+      registerUserId,
+    );
     await admin
       .collection('users')
       .doc(userId)
