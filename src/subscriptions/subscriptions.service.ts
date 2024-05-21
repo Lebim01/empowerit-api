@@ -25,8 +25,8 @@ import { pack_points, pack_points_yearly } from '../binary/binary_packs';
 import Openpay from 'openpay';
 
 export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
-  'supreme': 199,
-  'pro': 99,
+  supreme: 199,
+  pro: 99,
   'alive-pack': 129,
   'freedom-pack': 479,
   'business-pack': 1289,
@@ -431,12 +431,7 @@ export class SubscriptionsService {
      */
     if (isNew) {
       try {
-        const prices =
-          membership_period == 'yearly'
-            ? MEMBERSHIP_PRICES_YEARLY
-            : MEMBERSHIP_PRICES_MONTHLY;
-        const membership_price = prices[type];
-        await this.bondService.execUserDirectBond(id_user, membership_price);
+        await this.bondService.execUserDirectBond(id_user, pack_price);
       } catch (err) {
         console.error(err);
         /*Sentry.configureScope((scope) => {
@@ -445,58 +440,6 @@ export class SubscriptionsService {
           Sentry.captureException(err);
         });*/
       }
-    }
-
-    /**
-     * enviar paquete de productos
-     */
-    const packs: string[] = [
-      'alive-pack',
-      'freedom-pack',
-      'business-pack',
-      'elite-pack',
-      'vip-pack',
-    ];
-    if (packs.includes(type as any)) {
-      await userDocRef.collection('pending-ships').add({
-        created_at: new Date(),
-        pack: type,
-        sent: false,
-        cart: {
-          address: {
-            city: data.get('city.label') || '',
-            country: data.get('country.label') || '',
-            cp: data.get('zip') || '',
-            num_ext: data.get('num_ext') || '',
-            num_int: data.get('num_int') || '',
-            phone: data.get('whatsapp') || '',
-            reference: data.get('reference') || '',
-            state: data.get('state.label') || '',
-            street: data.get('street') || '',
-          },
-        },
-      });
-
-      const required_fields =
-        data.get('address') &&
-        data.get('zip') &&
-        data.get('city.value') &&
-        data.get('country.value') &&
-        data.get('state.value') &&
-        data.get('whatsapp');
-      if (required_fields) {
-        await this.createShopifyPack(
-          id_user,
-          type as HibridMembership | PhisicMembership,
-        );
-      }
-      /* else {
-        await userDocRef.collection('pending-ships').add({
-          created_at: new Date(),
-          pack: type,
-          sent: false,
-        });
-      }*/
     }
 
     await this.addQueueBinaryPosition({

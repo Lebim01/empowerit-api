@@ -44,7 +44,7 @@ export class BondsService {
       '1000-pack',
       '2000-pack',
     ].includes(sponsor.membership);
-    console.log(sponsor.membership, { is_new_pack })
+    console.log(sponsor.membership, { is_new_pack });
     if (is_new_pack) {
       const sponsor_membership = sponsor.membership as Memberships;
       percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;

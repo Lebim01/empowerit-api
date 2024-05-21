@@ -25,13 +25,25 @@ export class UsersService {
 
   async isActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
-    const membership_cap_limit = user.get('membership_cap_limit');
-    const membership_cap_current = user.get('membership_cap_current');
     const is_admin =
       Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
-    return is_admin
-      ? true
-      : membership_cap_current < membership_cap_limit 
+    if (is_admin) return true;
+
+    const is_new_pack = [
+      '100-pack',
+      '300-pack',
+      '500-pack',
+      '1000-pack',
+      '2000-pack',
+    ].includes(user.get('membership'));
+    if (is_new_pack) {
+      const membership_cap_limit = user.get('membership_cap_limit');
+      const membership_cap_current = user.get('membership_cap_current');
+      return membership_cap_current < membership_cap_limit;
+    } else {
+      const expires_at = user.get('membership_expires_at');
+      return dayjs(expires_at.seconds * 1000).isAfter(dayjs());
+    }
   }
 
   async getUserByPaymentAddress(
