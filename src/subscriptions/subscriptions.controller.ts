@@ -84,13 +84,14 @@ export class SubscriptionsController {
         name: body.name || '',
         sponsor: body.sponsor || '',
         sponsor_id: body.sponsor_id,
-        membership: body.membership,
-        membership_status: 'paid',
         position: body.side,
-        membership_expires_at: dayjs()
-          .add(body.days || 30, 'days')
-          .toDate(),
       });
+
+    await this.subscriptionService.assingMembership(
+      user.uid,
+      body.membership,
+      'monthly',
+    );
 
     await this.subscriptionService.insertSanguineUsers(user.uid);
 
