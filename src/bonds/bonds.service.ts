@@ -14,12 +14,12 @@ import { Ranks } from 'src/ranks/ranks_object';
 
 export async function availableCap(registerUserId: string, cash: number) {
   const user = await admin.collection('users').doc(registerUserId).get();
-  const membership_cap_current = user.get('membership_cap_current')
-  const membership_cap_limit = user.get('membership_cap_limit')
-  if (cash <= (membership_cap_limit - membership_cap_current)) {
-    return cash
+  const membership_cap_current = user.get('membership_cap_current');
+  const membership_cap_limit = user.get('membership_cap_limit');
+  if (cash <= membership_cap_limit - membership_cap_current) {
+    return cash;
   }
-  return membership_cap_limit - membership_cap_current
+  return membership_cap_limit - membership_cap_current;
 }
 
 @Injectable()
@@ -37,7 +37,15 @@ export class BondsService {
     const sponsorRef = admin.collection('users').doc(sponsor_id);
     const sponsor = await sponsorRef.get().then((r) => r.data());
     let percent = 0;
-    if (['100-pack', '300-pack', '500-pack', '1000-pack', '2000-pack'].includes(sponsor.membership)) {
+    const is_new_pack = [
+      '100-pack',
+      '300-pack',
+      '500-pack',
+      '1000-pack',
+      '2000-pack',
+    ].includes(sponsor.membership);
+    console.log(sponsor.membership, { is_new_pack })
+    if (is_new_pack) {
       const sponsor_membership = sponsor.membership as Memberships;
       percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
     }else{
@@ -49,7 +57,10 @@ export class BondsService {
     if (sponsor) {
       const isProActive = await this.userService.isActiveUser(sponsor_id);
       const amount = Math.round(membership_price * percent * 100) / 100;
-      const availableAmount = await availableCap(sponsor_id, amount);
+      let availableAmount = amount;
+      if(is_new_pack){
+        availableAmount = await availableCap(sponsor_id, amount);
+      }
 
       if (isProActive) {
         await sponsorRef.update({
@@ -126,7 +137,18 @@ export class BondsService {
     const u_presenter_1 = await admin.collection('users').doc(presenter1).get();
 
     if (u_presenter_1.exists) {
-      const availableAmount = await availableCap(u_presenter_1.id, total);
+      const is_new_pack = [
+        '100-pack',
+        '300-pack',
+        '500-pack',
+        '1000-pack',
+        '2000-pack',
+      ].includes(u_presenter_1.get("membership"))
+      let availableAmount = total;
+      if(is_new_pack){
+        availableAmount = await availableCap(u_presenter_1.id, total);
+      }
+      
       await u_presenter_1.ref.update({
         [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
       });
@@ -146,7 +168,17 @@ export class BondsService {
         .get();
 
       if (u_presenter_2.exists) {
-        const availableAmount = await availableCap(u_presenter_2.id, total);
+        const is_new_pack = [
+          '100-pack',
+          '300-pack',
+          '500-pack',
+          '1000-pack',
+          '2000-pack',
+        ].includes(u_presenter_2.get("membership"))
+        let availableAmount = total;
+        if(is_new_pack){
+          availableAmount = await availableCap(u_presenter_2.id, total);
+        }
         await u_presenter_2.ref.update({
           [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
         });

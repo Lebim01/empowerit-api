@@ -399,6 +399,7 @@ export class SubscriptionsService {
       try {
         await this.insertSanguineUsers(id_user);
       } catch (err) {
+        console.error(err);
         /*Sentry.configureScope((scope) => {
           scope.setExtra('id_user', id_user);
           scope.setExtra(
