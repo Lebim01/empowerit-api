@@ -48,7 +48,7 @@ export class BondsService {
     if (is_new_pack) {
       const sponsor_membership = sponsor.membership as Memberships;
       percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
-    }else{
+    } else {
       const sponsor_rank = sponsor.rank as Ranks;
       percent = quick_start_percent[sponsor_rank] / 100;
     }
@@ -58,7 +58,7 @@ export class BondsService {
       const isProActive = await this.userService.isActiveUser(sponsor_id);
       const amount = Math.round(membership_price * percent * 100) / 100;
       let availableAmount = amount;
-      if(is_new_pack){
+      if (is_new_pack) {
         availableAmount = await availableCap(sponsor_id, amount);
       }
 
@@ -134,31 +134,36 @@ export class BondsService {
     const percent = (presenter2 ? 1 : 2) / 100;
     const total = Math.round(amount * percent * 100) / 100;
 
-    const u_presenter_1 = await admin.collection('users').doc(presenter1).get();
+    if (presenter1) {
+      const u_presenter_1 = await admin
+        .collection('users')
+        .doc(presenter1)
+        .get();
 
-    if (u_presenter_1.exists) {
-      const is_new_pack = [
-        '100-pack',
-        '300-pack',
-        '500-pack',
-        '1000-pack',
-        '2000-pack',
-      ].includes(u_presenter_1.get("membership"))
-      let availableAmount = total;
-      if(is_new_pack){
-        availableAmount = await availableCap(u_presenter_1.id, total);
+      if (u_presenter_1.exists) {
+        const is_new_pack = [
+          '100-pack',
+          '300-pack',
+          '500-pack',
+          '1000-pack',
+          '2000-pack',
+        ].includes(u_presenter_1.get('membership'));
+        let availableAmount = total;
+        if (is_new_pack) {
+          availableAmount = await availableCap(u_presenter_1.id, total);
+        }
+
+        await u_presenter_1.ref.update({
+          [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
+        });
+
+        await this.addProfitDetail(
+          u_presenter_1.id,
+          Bonds.PRESENTER,
+          availableAmount,
+          registerUserId,
+        );
       }
-      
-      await u_presenter_1.ref.update({
-        [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-      });
-
-      await this.addProfitDetail(
-        u_presenter_1.id,
-        Bonds.PRESENTER,
-        availableAmount,
-        registerUserId,
-      );
     }
 
     if (presenter2) {
@@ -174,9 +179,9 @@ export class BondsService {
           '500-pack',
           '1000-pack',
           '2000-pack',
-        ].includes(u_presenter_2.get("membership"))
+        ].includes(u_presenter_2.get('membership'));
         let availableAmount = total;
-        if(is_new_pack){
+        if (is_new_pack) {
           availableAmount = await availableCap(u_presenter_2.id, total);
         }
         await u_presenter_2.ref.update({

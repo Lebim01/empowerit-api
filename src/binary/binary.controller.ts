@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { BinaryService } from 'src/binary/binary.service';
 import { db } from 'src/firebase/admin';
@@ -22,6 +23,12 @@ export class BinaryController {
       body.registerUserId,
       body.points,
     );
+  }
+
+  @Get('utc')
+  utc(){
+    const fecha = dayjs('2024-05-21 19:09:00').utc(false);
+    console.log(new Date(fecha.toISOString()));
   }
 
   /*
