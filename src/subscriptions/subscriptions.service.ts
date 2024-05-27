@@ -44,7 +44,7 @@ export const MEMBERSHIP_CAP: Record<Franchises, number> = {
   '100-pack': 300,
   '300-pack': 1000,
   '500-pack': 2000,
-  '1000-pack': 6000,
+  '1000-pack': 5000,
   '2000-pack': 10000,
 };
 
