@@ -53,6 +53,15 @@ export const MEMBERSHIP_PRICES_YEARLY = {
   pro: 999,
 };
 
+export const FRANCHISE_FIRMS: Record<Franchises, number> = {
+  '100-pack': 1,
+  '300-pack': 3,
+  '500-pack': 5,
+  '1000-pack': 10,
+  '2000-pack': 20,
+}
+
+
 const isExpired = (expires_at: { seconds: number } | null) => {
   if (!expires_at) return true;
   const date = dayjs(expires_at.seconds * 1000);
@@ -413,7 +422,7 @@ export class SubscriptionsService {
     if (isNew) {
       await sponsorRef.ref.update({
         count_direct_people: firestore.FieldValue.increment(1),
-        count_direct_people_this_month: firestore.FieldValue.increment(1),
+        count_direct_people_this_month: firestore.FieldValue.increment(FRANCHISE_FIRMS[type]),
       });
     }
 
