@@ -5,6 +5,7 @@ import { BinaryService } from '../binary/binary.service';
 import fs from 'fs';
 import { getBinaryPercent } from '../binary/binary_packs';
 import { getMentorPercent, getMentorPercentByRank } from '../bonds/bonds';
+import { firestore } from 'firebase-admin';
 
 export const ADMIN_BINARY_PERCENT = 15 / 100;
 const ADMIN_QUICK_START = 30 / 100;
@@ -194,18 +195,65 @@ export class AdminService {
     );
 
     for (const doc of clean_payroll_data) {
-      await db
-        .collection('users')
-        .doc(doc.id)
-        .update({
-          profits: doc.profits + doc.total,
-          bond_quick_start: 0,
-          bond_founder: 0,
-          bond_direct_sale: 0,
-          bond_mentor: 0,
-          bond_presenter: 0,
-          profits_this_month: doc.profits_this_month + doc.total,
+      const docRef = await db.collection('users').doc(doc.id).get()
+      const membershipCapCurrent = await docRef.get('membership_cap_current')
+      const membershipCapLimit = await docRef.get('membership_cap_limit')
+      if (docRef.exists) {
+        const is_new_pack = [
+          '100-pack',
+          '300-pack',
+          '500-pack',
+          '1000-pack',
+          '2000-pack',
+        ].includes(docRef.get('membership'));
+        if(is_new_pack){
+          if(membershipCapCurrent + doc.bond_binary + doc.bond_mentor > membershipCapLimit){
+            const availableAmount = membershipCapLimit - membershipCapCurrent
+            doc.total = availableAmount
+            doc.crypto_amount = await this.cryptoapisService.getLTCExchange(doc.total)
+            await db
+              .collection('users')
+              .doc(doc.id)
+              .update({
+                profits: doc.profits + doc.total,
+                bond_quick_start: 0,
+                bond_founder: 0,
+                bond_direct_sale: 0,
+                bond_mentor: 0,
+                bond_presenter: 0,
+                profits_this_month: doc.profits_this_month + doc.total,
+                membership_cap_current: firestore.FieldValue.increment(availableAmount)
+              });
+          } else {
+            await db
+              .collection('users')
+              .doc(doc.id)
+              .update({
+                profits: doc.profits + doc.total,
+                bond_quick_start: 0,
+                bond_founder: 0,
+                bond_direct_sale: 0,
+                bond_mentor: 0,
+                bond_presenter: 0,
+                profits_this_month: doc.profits_this_month + doc.total,
+                membership_cap_current: firestore.FieldValue.increment(doc.bond_binary + doc.bond_mentor)
+              });
+          }
+        } else {
+          await db
+            .collection('users')
+            .doc(doc.id)
+            .update({
+              profits: doc.profits + doc.total,
+              bond_quick_start: 0,
+              bond_founder: 0,
+              bond_direct_sale: 0,
+              bond_mentor: 0,
+              bond_presenter: 0,
+              profits_this_month: doc.profits_this_month + doc.total
         });
+        }
+      }
     }
 
     if (['bitcoin', 'litecoin'].includes(blockchain)) {
