@@ -4,7 +4,11 @@ import { CryptoapisService } from '../cryptoapis/cryptoapis.service';
 import { BinaryService } from '../binary/binary.service';
 import fs from 'fs';
 import { getBinaryPercent } from '../binary/binary_packs';
-import { getMentorPercent, getMentorPercentByRank } from '../bonds/bonds';
+import {
+  Bonds,
+  getMentorPercent,
+  getMentorPercentByRank,
+} from '../bonds/bonds';
 import { firestore } from 'firebase-admin';
 
 export const ADMIN_BINARY_PERCENT = 15 / 100;
@@ -169,12 +173,49 @@ export class AdminService {
     return payroll_data_2;
   }
 
+  async payrollCapCurrent(payroll_data: any[]) {
+    /**
+     * Solo cobrar el limite disponible
+     * (membership_cap_limit - membership_cap_current)
+     */
+    const clean_data = [...payroll_data];
+    for (const index in clean_data) {
+      const doc = clean_data[index];
+      const docRef = await db.collection('users').doc(doc.id).get();
+      const membershipCapCurrent = docRef.get('membership_cap_current');
+      const membershipCapLimit = docRef.get('membership_cap_limit');
+      if (docRef.exists) {
+        const is_new_pack = [
+          '100-pack',
+          '300-pack',
+          '500-pack',
+          '1000-pack',
+          '2000-pack',
+        ].includes(docRef.get('membership'));
+        if (is_new_pack) {
+          if (
+            membershipCapCurrent + doc.bond_binary + doc.bond_mentor >
+            membershipCapLimit
+          ) {
+            const availableAmount = membershipCapLimit - membershipCapCurrent;
+            clean_data[index].total = availableAmount;
+            clean_data[index].crypto_amount =
+              await this.cryptoapisService.getLTCExchange(doc.total);
+          }
+        }
+      }
+    }
+    return clean_data;
+  }
+
   async payroll(blockchain: Blockchains) {
     const payroll_data = await this.getPayroll(blockchain);
 
-    const clean_payroll_data = payroll_data
-      .filter((doc) => doc.total >= 40)
-      .filter((doc) => Boolean(doc.wallet_litecoin));
+    const clean_payroll_data = await this.payrollCapCurrent(
+      payroll_data
+        .filter((doc) => doc.total >= 40)
+        .filter((doc) => Boolean(doc.wallet_litecoin)),
+    );
 
     const ref = await db.collection('payroll').add({
       total_usd: clean_payroll_data.reduce((a, b) => a + b.total, 0),
@@ -194,66 +235,23 @@ export class AdminService {
       }),
     );
 
+    /**
+     * resear todos los bonos a cero
+     */
     for (const doc of clean_payroll_data) {
-      const docRef = await db.collection('users').doc(doc.id).get()
-      const membershipCapCurrent = await docRef.get('membership_cap_current')
-      const membershipCapLimit = await docRef.get('membership_cap_limit')
-      if (docRef.exists) {
-        const is_new_pack = [
-          '100-pack',
-          '300-pack',
-          '500-pack',
-          '1000-pack',
-          '2000-pack',
-        ].includes(docRef.get('membership'));
-        if(is_new_pack){
-          if(membershipCapCurrent + doc.bond_binary + doc.bond_mentor > membershipCapLimit){
-            const availableAmount = membershipCapLimit - membershipCapCurrent
-            doc.total = availableAmount
-            doc.crypto_amount = await this.cryptoapisService.getLTCExchange(doc.total)
-            await db
-              .collection('users')
-              .doc(doc.id)
-              .update({
-                profits: doc.profits + doc.total,
-                bond_quick_start: 0,
-                bond_founder: 0,
-                bond_direct_sale: 0,
-                bond_mentor: 0,
-                bond_presenter: 0,
-                profits_this_month: doc.profits_this_month + doc.total,
-                membership_cap_current: firestore.FieldValue.increment(availableAmount)
-              });
-          } else {
-            await db
-              .collection('users')
-              .doc(doc.id)
-              .update({
-                profits: doc.profits + doc.total,
-                bond_quick_start: 0,
-                bond_founder: 0,
-                bond_direct_sale: 0,
-                bond_mentor: 0,
-                bond_presenter: 0,
-                profits_this_month: doc.profits_this_month + doc.total,
-                membership_cap_current: firestore.FieldValue.increment(doc.bond_binary + doc.bond_mentor)
-              });
-          }
-        } else {
-          await db
-            .collection('users')
-            .doc(doc.id)
-            .update({
-              profits: doc.profits + doc.total,
-              bond_quick_start: 0,
-              bond_founder: 0,
-              bond_direct_sale: 0,
-              bond_mentor: 0,
-              bond_presenter: 0,
-              profits_this_month: doc.profits_this_month + doc.total
+      await db
+        .collection('users')
+        .doc(doc.id)
+        .update({
+          profits: doc.profits + doc.total,
+          bond_quick_start: 0,
+          bond_founder: 0,
+          bond_direct_sale: 0,
+          bond_mentor: 0,
+          bond_presenter: 0,
+          profits_this_month: doc.profits_this_month + doc.total,
+          membership_cap_current: firestore.FieldValue.increment(doc.total),
         });
-        }
-      }
     }
 
     if (['bitcoin', 'litecoin'].includes(blockchain)) {
@@ -387,5 +385,23 @@ export class AdminService {
     for (const doc of res.docs) {
       await doc.ref.delete();
     }
+  }
+
+  async addLostProfit(
+    id_user: string,
+    type: Bonds,
+    amount: number,
+    registerUserId: string,
+  ) {
+    const userRef = await db.collection('users').doc(registerUserId).get();
+    const user_name = userRef.get('name');
+    await db.collection('users').doc(id_user).collection('lost_profits').add({
+      description: 'Has perdido un bono por membresia inactiva',
+      id_user: registerUserId,
+      user_name,
+      amount,
+      created_at: new Date(),
+      type,
+    });
   }
 }

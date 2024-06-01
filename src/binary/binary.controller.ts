@@ -25,12 +25,6 @@ export class BinaryController {
     );
   }
 
-  @Get('utc')
-  utc(){
-    const fecha = dayjs('2024-05-21 19:09:00').utc(false);
-    console.log(new Date(fecha.toISOString()));
-  }
-
   /*
   volver a subir left-points y right-points
 

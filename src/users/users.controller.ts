@@ -89,6 +89,9 @@ export class UsersController {
       .collection('users')
       .doc('uxDEwMSoTOeviAXL6wmpTcE0rkx2')
       .get();
-    await db.collection('users').doc('BPhiz2FmzMZuiAwMZ2bgCIPTEBf2').set(user.data());
+    await db
+      .collection('users')
+      .doc('BPhiz2FmzMZuiAwMZ2bgCIPTEBf2')
+      .set(user.data());
   }
 }

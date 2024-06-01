@@ -64,14 +64,17 @@ export class BondsService {
 
       /* Aqui */
       if (isProActive) {
-        if(is_new_pack) {
+        if (is_new_pack) {
           await sponsorRef.update({
-            [Bonds.QUICK_START]: firestore.FieldValue.increment(availableAmount),
-            membership_cap_current: firestore.FieldValue.increment(availableAmount)
+            [Bonds.QUICK_START]:
+              firestore.FieldValue.increment(availableAmount),
+            membership_cap_current:
+              firestore.FieldValue.increment(availableAmount),
           });
-        }else{
+        } else {
           await sponsorRef.update({
-            [Bonds.QUICK_START]: firestore.FieldValue.increment(availableAmount),
+            [Bonds.QUICK_START]:
+              firestore.FieldValue.increment(availableAmount),
           });
         }
         await this.addProfitDetail(
@@ -161,12 +164,13 @@ export class BondsService {
           availableAmount = await availableCap(u_presenter_1.id, total);
         }
 
-        if(is_new_pack){
+        if (is_new_pack) {
           await u_presenter_1.ref.update({
             [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-            membership_cap_current: firestore.FieldValue.increment(availableAmount)
+            membership_cap_current:
+              firestore.FieldValue.increment(availableAmount),
           });
-        }else{
+        } else {
           await u_presenter_1.ref.update({
             [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
           });
@@ -199,12 +203,13 @@ export class BondsService {
         if (is_new_pack) {
           availableAmount = await availableCap(u_presenter_2.id, total);
         }
-        if(is_new_pack){
+        if (is_new_pack) {
           await u_presenter_2.ref.update({
             [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-            membership_cap_current: firestore.FieldValue.increment(availableAmount)
+            membership_cap_current:
+              firestore.FieldValue.increment(availableAmount),
           });
-        }else{
+        } else {
           await u_presenter_2.ref.update({
             [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
           });
@@ -226,10 +231,7 @@ export class BondsService {
     total: number,
   ) {
     const availableAmount = await availableCap(userId, total);
-    const userIdDoc = await admin
-        .collection('users')
-        .doc(userId)
-        .get();
+    const userIdDoc = await admin.collection('users').doc(userId).get();
     const is_new_pack = [
       '100-pack',
       '300-pack',
@@ -237,23 +239,23 @@ export class BondsService {
       '1000-pack',
       '2000-pack',
     ].includes(userIdDoc.get('membership'));
-    
+
     await this.addProfitDetail(
       userId,
       Bonds.PRESENTER,
       availableAmount,
       registerUserId,
     );
-    if(is_new_pack){
+    if (is_new_pack) {
       await admin
-      .collection('users')
-      .doc(userId)
-      .update({
-        bond_presenter: firestore.FieldValue.increment(availableAmount),
-        membership_cap_current: firestore.FieldValue.increment(availableAmount)
-      });
-    } 
-    else{
+        .collection('users')
+        .doc(userId)
+        .update({
+          bond_presenter: firestore.FieldValue.increment(availableAmount),
+          membership_cap_current:
+            firestore.FieldValue.increment(availableAmount),
+        });
+    } else {
       await admin
         .collection('users')
         .doc(userId)
