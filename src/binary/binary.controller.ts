@@ -113,4 +113,38 @@ export class BinaryController {
   checkNotFound() {
     return this.binaryService.checkBinary();
   }
+
+  @Get('fixParent')
+  async fixParent() {
+    const users = await db
+      .collection('users')
+      .where('membership', '!=', null)
+      .where('parent_binary_user_id', '==', null)
+      .orderBy('created_at', 'asc')
+      .get();
+
+    for (const u of users.docs) {
+      if (u.get('sponsor_id')) {
+        console.log(u.id);
+        console.log(u.get('sponsor_id'), u.get('position'));
+        const { parent_id } =
+          await this.binaryService.calculatePositionOfBinary(
+            u.get('sponsor_id'),
+            u.get('position'),
+          );
+        console.log(u.id, parent_id || 'no_parent');
+        if (parent_id) {
+          await u.ref.update({
+            parent_binary_user_id: parent_id,
+          });
+          await db
+            .collection('users')
+            .doc(parent_id)
+            .update({
+              [`${u.get('position')}_binary_user_id`]: u.id,
+            });
+        }
+      }
+    }
+  }
 }
