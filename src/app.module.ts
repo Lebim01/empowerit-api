@@ -27,6 +27,7 @@ import { ShopifyModule } from './shopify/shopify.module';
 import { EmailModule } from './email/email.module';
 import { CartModule } from './cart/cart.module';
 import { OpenpayModule } from './openpay/openpay.module';
+import { AlgorithmMrRangeModule } from './algorithm-mr-range/algorithm-mr-range.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { OpenpayModule } from './openpay/openpay.module';
     EmailModule,
     CartModule,
     OpenpayModule,
+    AlgorithmMrRangeModule,
   ],
   controllers: [AppController],
   providers: [
