@@ -24,8 +24,9 @@ export class AlgorithmMrRangeService {
       let documentData = null;
       querySnapshot.forEach((doc) => {
         documentData = {
-            licenseId: doc.data().licenseId,
-            isActive: doc.data().expires_at.seconds > new Date().getTime() / 1000 ? true : false
+            licenseId: doc.data().licenseId,  
+            isActive: doc.data().expires_at.seconds > new Date().getTime() / 1000 ? true : false,
+            userAlgorithmId: doc.data().algorithmId
         };
       });
 
