@@ -268,6 +268,7 @@ export class SubscriptionsService {
       //membership_expires_at: expiresAt,
       payment_link: {},
       is_new: false,
+      credits: 0,
       membership_cap_limit: MEMBERSHIP_CAP[type],
       membership_cap_current: 0,
     });
