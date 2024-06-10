@@ -90,7 +90,7 @@ export class SubscriptionsController {
 
     await sleep(5000);
 
-    await this.subscriptionService.assingMembership(user.uid, body.membership);
+    await this.subscriptionService.assingMembershipWithoutCredits(user.uid, body.membership);
 
     await this.subscriptionService.insertSanguineUsers(user.uid);
 

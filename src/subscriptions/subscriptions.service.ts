@@ -247,6 +247,39 @@ export class SubscriptionsService {
       : false;
   }
 
+  async assingMembershipWithoutCredits(id_user: string, type: Franchises) {
+    // Obtener fechas
+    /*const startAt: Date = await this.calculateStartDate(id_user);
+    const expiresAt: Date = await this.calculateExpirationDate(
+      id_user,
+      type,
+      period,
+    );*/
+
+    /* Aqui va la parte para ver cuantos creditos le tocan dependiendo la membresia */
+
+    // Registrar cambios
+    await admin.collection('users').doc(id_user).update({
+      count_direct_people_this_cycle: 0,
+      count_scholarship_people: 0,
+      membership: type,
+      membership_started_at: new Date(),
+      membership_status: 'paid',
+      //membership_expires_at: expiresAt,
+      payment_link: {},
+      is_new: false,
+      membership_cap_limit: MEMBERSHIP_CAP[type],
+      membership_cap_current: 0,
+    });
+
+    /* Ya no seran ciclos quitar o dejarlo */
+    await admin.collection('users').doc(id_user).collection('cycles').add({
+      type,
+      //start_at: startAt,
+      //expires_at: expiresAt,
+    });
+  }
+
   async assingMembership(id_user: string, type: Franchises) {
     // Obtener fechas
     /*const startAt: Date = await this.calculateStartDate(id_user);
