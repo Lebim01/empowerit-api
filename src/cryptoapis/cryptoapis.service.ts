@@ -14,6 +14,7 @@ import {
 import axios from 'axios';
 import { firestore } from 'firebase-admin';
 import { ResponseConvert } from './types/conlayer';
+import dayjs from 'dayjs';
 
 const accounts = {
   victor: {
@@ -82,7 +83,7 @@ export class CryptoapisService {
     process.env.CUSTOM_ENV == 'production'
       ? accounts.saul.walletIdProd
       : accounts.saul.walletIdTest;
-  blockchain = 'bitcoin';
+  blockchain = 'litecoin';
   network = process.env.CUSTOM_ENV == 'production' ? 'mainnet' : 'testnet';
   hostapi = process.env.API_URL;
 
@@ -174,12 +175,9 @@ export class CryptoapisService {
 
   async removeCallbackEvent(refereceId: string, currency: Coins) {
     const blockchain = this.getBlockchainFromCurrency(currency);
-    const options = {
-      ...default_options,
-      method: 'DELETE',
-      path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/${refereceId}`,
-    };
-    await cryptoapisRequest(options);
+    await cryptoApis.delete(
+      `/v2/blockchain-events/${blockchain}/mainnet/subscriptions/${refereceId}`,
+    );
   }
 
   async createCallbackConfirmation(
@@ -506,35 +504,28 @@ export class CryptoapisService {
 
   async deleteUnusedBlockChainEvents() {
     const events = await this.getListOfEvents();
-
+    console.log(events.data.items.length);
     for (const event of events.data.items) {
-      const membership_type = event.callbackUrl.includes('pro')
-        ? 'pro'
-        : event.callbackUrl.includes('ibo')
-        ? 'ibo'
-        : event.callbackUrl.includes('supreme')
-        ? 'supreme'
-        : '';
       const user = await db
-        .collection('users')
-        .where(`payment_link.${membership_type}.address`, '==', event.address)
+        .collection('wallets')
+        .where(`address`, '==', event.address)
+        .where('created_at', '<', dayjs().add(-3, 'day').toDate())
         .get();
 
-      if (user.empty) {
+      if (!user.empty) {
         // eliminar callback
-        await this.removeCallbackEvent(event.referenceId, 'BTC');
+        await this.removeCallbackEvent(event.referenceId, 'LTC');
         console.log('deleted', event.referenceId);
       }
     }
   }
 
   async getListOfEvents() {
-    const options = {
-      ...default_options,
-      method: 'GET',
-      path: `/blockchain-events/${this.blockchain}/${this.network}/subscriptions?limit=50&offset=70`,
-    };
-    return await cryptoapisRequest<ResponseListOfEvents>(options);
+    return await cryptoApis
+      .get<ResponseListOfEvents>(
+        `/blockchain-events/${this.blockchain}/mainnet/subscriptions?limit=50`,
+      )
+      .then((r) => r.data);
   }
 
   async withdraw(

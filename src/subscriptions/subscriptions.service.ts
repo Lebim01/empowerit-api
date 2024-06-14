@@ -32,7 +32,7 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   'business-pack': 1289,
   'vip-pack': 228,
   'elite-pack': 678,
-  'founder-pack': 2950,
+  'founder-pack': 3000,
   '100-pack': 100,
   '300-pack': 300,
   '500-pack': 500,
