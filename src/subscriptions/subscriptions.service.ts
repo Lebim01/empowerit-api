@@ -23,6 +23,7 @@ import { ShopifyService } from 'src/shopify/shopify.service';
 import { alivePack, businessPack, freedomPack } from './products_packs';
 import { pack_points, pack_points_yearly } from '../binary/binary_packs';
 import Openpay from 'openpay';
+import { EmailService } from 'src/email/email.service';
 
 export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   supreme: 199,
@@ -59,8 +60,7 @@ export const FRANCHISE_FIRMS: Record<Franchises, number> = {
   '500-pack': 5,
   '1000-pack': 10,
   '2000-pack': 20,
-}
-
+};
 
 const isExpired = (expires_at: { seconds: number } | null) => {
   if (!expires_at) return true;
@@ -77,6 +77,7 @@ export class SubscriptionsService {
     private readonly cryptoapisService: CryptoapisService,
     private readonly googleTaskService: GoogletaskService,
     private readonly shopifyService: ShopifyService,
+    private readonly emailService: EmailService,
   ) {}
 
   async createPaymentAddress(
@@ -421,6 +422,10 @@ export class SubscriptionsService {
     await this.assingMembership(id_user, type);
 
     if (isNew) {
+      await this.emailService.sendEmailNewUser(id_user);
+    }
+
+    if (isNew) {
       await userDocRef.update({
         first_cycle_started_at: new Date(),
       });
@@ -456,7 +461,9 @@ export class SubscriptionsService {
     if (isNew) {
       await sponsorRef.ref.update({
         count_direct_people: firestore.FieldValue.increment(1),
-        count_direct_people_this_month: firestore.FieldValue.increment(FRANCHISE_FIRMS[type]),
+        count_direct_people_this_month: firestore.FieldValue.increment(
+          FRANCHISE_FIRMS[type],
+        ),
       });
     }
 

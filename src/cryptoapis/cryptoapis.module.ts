@@ -7,6 +7,7 @@ import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { GoogletaskService } from 'src/googletask/googletask.service';
 import { ShopifyService } from 'src/shopify/shopify.service';
+import { EmailService } from 'src/email/email.service';
 
 @Module({
   providers: [
@@ -17,6 +18,7 @@ import { ShopifyService } from 'src/shopify/shopify.service';
     BondsService,
     GoogletaskService,
     ShopifyService,
+    EmailService,
   ],
   controllers: [CryptoapisController],
 })
