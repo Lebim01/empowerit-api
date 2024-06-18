@@ -538,28 +538,30 @@ export class SubscriptionsService {
         },
       );
 
-    const sanguine_sponsors = await getDocs(
-      query(
-        collectionGroup(db, 'sanguine_users'),
-        where('id_user', '==', current_user.sponsor_id),
-      ),
-    );
+    const sanguine_sponsors = await admin
+      .collectionGroup('sanguine_users')
+      .where('id_user', '==', current_user.sponsor_id)
+      .get();
 
     for (const sponsorSanguineRef of sanguine_sponsors.docs) {
       const userId = sponsorSanguineRef.ref.parent.parent.id;
-      await setDoc(
-        doc(db, `users/${userId}/sanguine_users/${id_user}`),
-        {
-          id_user: userRef.id,
-          sponsor_id: current_user.sponsor_id,
-          is_active: current_user.is_active,
-          created_at: new Date() || null,
-          position: sponsorSanguineRef.get('position') || null,
-        },
-        {
-          merge: true,
-        },
-      );
+      await admin
+        .collection('users')
+        .doc(userId)
+        .collection('sanguine_users')
+        .doc(id_user)
+        .set(
+          {
+            id_user: userRef.id,
+            sponsor_id: current_user.sponsor_id,
+            is_active: current_user.is_active,
+            created_at: new Date() || null,
+            position: sponsorSanguineRef.get('position') || null,
+          },
+          {
+            merge: true,
+          },
+        );
     }
   }
 
