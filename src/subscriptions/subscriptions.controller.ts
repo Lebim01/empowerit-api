@@ -66,10 +66,20 @@ export class SubscriptionsController {
         count_direct_people: firestore.FieldValue.increment(1),
       });
 
-    const user = await auth.createUser({
-      email: body.email,
-      password: body.password || '123987xd',
-    });
+    const res = await db
+      .collection('users')
+      .where('email', '==', body.email)
+      .get();
+
+    let user;
+    if (res.empty) {
+      user = await auth.createUser({
+        email: body.email,
+        password: body.password || '123987xd',
+      });
+    } else {
+      user = res.docs[0];
+    }
 
     await db.collection('admin-activations').add({
       id_user: user.uid,
@@ -90,18 +100,23 @@ export class SubscriptionsController {
 
     await sleep(5000);
 
-    await this.subscriptionService.assingMembershipWithoutCredits(user.uid, body.membership);
-
-    await this.subscriptionService.insertSanguineUsers(user.uid);
-
-    await this.subscriptionService.assignBinaryPosition(
-      {
-        id_user: user.uid,
-        position: body.side,
-        sponsor_id: body.sponsor_id,
-      },
-      false,
+    await this.subscriptionService.assingMembershipWithoutCredits(
+      user.uid,
+      body.membership,
     );
+
+    if (!user.parent_binary_user_id) {
+      await this.subscriptionService.insertSanguineUsers(user.uid);
+
+      await this.subscriptionService.assignBinaryPosition(
+        {
+          id_user: user.uid,
+          position: body.side,
+          sponsor_id: body.sponsor_id,
+        },
+        false,
+      );
+    }
 
     return {
       status: 200,
