@@ -62,6 +62,12 @@ export const FRANCHISE_FIRMS: Record<Franchises, number> = {
   '2000-pack': 20,
 };
 
+export const CREDITS_PACKS_PRICE: Record<PackCredits, number> = {
+  '100-credits': 100,
+  '500-credits': 500,
+  '1000-credits': 1000,
+};
+
 const isExpired = (expires_at: { seconds: number } | null) => {
   if (!expires_at) return true;
   const date = dayjs(expires_at.seconds * 1000);
@@ -79,6 +85,98 @@ export class SubscriptionsService {
     private readonly shopifyService: ShopifyService,
     private readonly emailService: EmailService,
   ) {}
+
+  async createPaymentAddressForCredits(
+    id_user: string,
+    type: PackCredits,
+    currency: Coins,
+  ) {
+    // Obtener datos del usuario
+    const userRef = admin.collection('users').doc(id_user);
+    const userData = await userRef.get().then((r) => r.data());
+    let address = '';
+    let referenceId = '';
+    let referenceId2 = '';
+
+    // Si no existe registro de la informacion de pago...
+    if (
+      userData.payment_link_credits &&
+      userData.payment_link_credits[type] &&
+      userData.payment_link_credits[type].currency == currency
+    ) {
+      address = userData.payment_link_credits[type].address;
+      referenceId = userData.payment_link_credits[type].referenceId;
+    } else {
+      // Obtener un nuevo wallet para el pago
+      const newAddress = await this.cryptoapisService.createNewWalletAddress(
+        currency,
+      );
+      address = newAddress;
+
+      // Crear primera confirmación de la transaccion
+      if (currency == 'LTC') {
+        try {
+          const resConfirmation =
+            await this.cryptoapisService.createFirstConfirmationTransactionForCredits(
+              id_user,
+              newAddress,
+              type,
+              currency,
+            );
+          referenceId = resConfirmation.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
+
+        try {
+          const resConfirmation2 =
+            await this.cryptoapisService.createCallbackConfirmationForCredits(
+              id_user,
+              newAddress,
+              type,
+              currency,
+            );
+          referenceId2 = resConfirmation2.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      let amount = 0;
+      if (currency == 'LTC') {
+        amount = await this.cryptoapisService.getLTCExchange(
+          CREDITS_PACKS_PRICE[type],
+        );
+      }
+      const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+      // Estructurar el campo payment_link
+      const payment_link_credits = {
+        referenceId,
+        referenceId2,
+        address,
+        qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+        status: 'pending',
+        created_at: new Date(),
+        amount,
+        currency,
+        expires_at: dayjs().add(15, 'minutes').toDate(),
+      };
+      // Guardar payment_link
+      await userRef
+        .collection('address-history')
+        .add({ ...payment_link_credits, type });
+      await userRef.update({
+        payment_link_credits: {
+          [type]: payment_link_credits,
+        },
+      });
+      return {
+        address: address,
+        amount: payment_link_credits.amount,
+        currency: payment_link_credits.currency,
+        qr: payment_link_credits.qr,
+      };
+    }
+  }
 
   async createPaymentAddress(
     id_user: string,
@@ -140,6 +238,7 @@ export class SubscriptionsService {
         }
       } else if (currency == 'MXN') {
       }
+      const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
     }
 
     const amount_type =
@@ -375,6 +474,20 @@ export class SubscriptionsService {
     const userRef = await admin.collection('users').doc(id_user).get();
     const isNew = Boolean(userRef.get('is_new')) ?? false;
     return isNew;
+  }
+
+  async addCredits(
+    id_user: string,
+    pack_credits: PackCredits
+  ) {
+    const userDocRef = admin.collection('users').doc(id_user);
+    try {
+      await userDocRef.update({
+        credits: firestore.FieldValue.increment(CREDITS_PACKS_PRICE[pack_credits])
+      })
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   async onPaymentMembership(

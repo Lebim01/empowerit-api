@@ -18,6 +18,23 @@ export class SubscriptionsController {
     return this.subscriptionService.isActiveUser(idUser);
   }
 
+  @Post('createPaymentAddressForCredits/:type')
+  async createPaymentAddressProForCredits(
+    @Body() body,
+    @Param('type') type: PackCredits,
+  ){
+    try {
+      return await this.subscriptionService.createPaymentAddressForCredits(
+        body.userId,
+        type,
+        body.coin
+      );
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  }
+
   @Post('statusToExpired')
   statusToExpired() {
     return this.subscriptionService.statusToExpired();
