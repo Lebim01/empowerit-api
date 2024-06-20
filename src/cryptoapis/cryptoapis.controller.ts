@@ -56,6 +56,37 @@ export class CryptoapisController {
     return this.cryptoapisService.validateWallet(wallet, blockchain);
   }
 
+  @Post('callbackPaymentForCredits/:type/queue')
+  async callbackPaymentQueueForCredits(
+    @Body() body: CallbackNewConfirmedCoins,
+    @Param('type') type: PackCredits,
+  ) {
+    if (this.isValidCryptoApis(body, true)) {
+      type Method = 'POST';
+      const task: google.cloud.tasks.v2.ITask = {
+        httpRequest: {
+          httpMethod: 'POST' as Method,
+          url: `${process.env.API_URL}/cryptoapis/callbackPaymentForCredits/${type}`,
+          body: Buffer.from(JSON.stringify(body)),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      };
+
+      await this.googleTaskService.addToQueue(
+        task,
+        this.googleTaskService.getPathQueue('payment-credits'),
+      );
+
+      return 'OK';
+    }
+
+    return 'FAIL';
+  }
+
+  
+
   @Post('callbackPayment/:type/queue')
   async callbackPaymentQueue(
     @Body() body: CallbackNewConfirmedCoins,
@@ -196,6 +227,108 @@ export class CryptoapisController {
             payload: JSON.stringify(body),
           },
         });*/
+        throw new HttpException(
+          'No se encontro el usuario',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } else {
+      throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
+    }
+  }
+  @Post('callbackPaymentForCredits/:type')
+  async callbackPaymentProMembershipForCredits(
+    @Body() body: CallbackNewConfirmedCoins,
+    @Headers() headers,
+    @Param('type') type: PackCredits,
+  ): Promise<any> {
+    await db.collection('cryptoapis-requests').add({
+      created_at: new Date(),
+      url: `cryptoapis/callbackPaymentForCredits/${type}`,
+      body,
+      headers,
+    });
+
+    if (body.data.item.direction == 'outgoing') return;
+
+    if (this.isValidCryptoApis(body, true)) {
+      const { address } = body.data.item;
+      const userDoc = await this.usersService.getUserByPaymentAddress(
+        address,
+        type,
+      );
+      const referenceId = body.referenceId;
+      let referenceId2 = '';
+      if (userDoc && userDoc.get)
+        referenceId2 = userDoc.get(`payment_link_credits.${type}.referenceId2`);
+
+      if (userDoc) {
+        // Agregar registro de la transaccion
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, {
+          ...body,
+          data: { ...body.data, event: 'ADDRESS_COINS_TRANSACTION_CONFIRMED' },
+        });
+
+        // Verificar si ya se pago todo o no
+        const { is_complete, pendingAmount, currency } =
+          await this.cryptoapisService.transactionIsCompletePaid(
+            type,
+            userDoc.id,
+          );
+        console.log({ is_complete });
+
+        if (is_complete) {
+          await this.subscriptionService.addCredits(userDoc.id, type);
+
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
+            currency,
+          );
+
+          return 'transaccion correcta';
+        }
+
+        // Sí el pago esta incompleto
+        else {
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
+            currency,
+          );
+
+          // Crear nuevo evento
+          await this.cryptoapisService.createCallbackConfirmationForCredits(
+            userDoc.id,
+            address,
+            type,
+            currency,
+          );
+
+          // Actualizar QR
+          const qr: string = this.cryptoapisService.generateQrUrl(
+            address,
+            pendingAmount.toFixed(8),
+            'litecoin',
+          );
+          await userDoc.ref.update({
+            [`payment_link_credits.${type}.qr`]: qr,
+          });
+          throw new HttpException(
+            'El monto pagado es menor al requerido. ',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      } else {
         throw new HttpException(
           'No se encontro el usuario',
           HttpStatus.BAD_REQUEST,

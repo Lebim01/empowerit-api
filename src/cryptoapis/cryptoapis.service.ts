@@ -134,10 +134,10 @@ export class CryptoapisService {
     return 'bitcoin';
   }
 
-  async createFirstConfirmationTransaction(
+  async createFirstConfirmationTransactionForCredits(
     userId: string,
     address: string,
-    type: Memberships,
+    type: PackCredits,
     currency: Coins,
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
@@ -155,6 +155,45 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
+            /* Agrega este callbackpayment en la queue en cloud functions */
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackPaymentForCredits/${type}/queue`,
+          },
+        },
+      };
+      const res =
+        await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
+          options,
+          payload,
+        );
+      return res;
+    } catch (err) {
+      console.error(JSON.stringify(err));
+      return null;
+    }
+  }
+
+  async createFirstConfirmationTransaction(
+    userId: string,
+    address: string,
+    type: Memberships | PackCredits,
+    currency: Coins,
+  ) {
+    const blockchain = this.getBlockchainFromCurrency(currency);
+    try {
+      const options = {
+        ...default_options,
+        method: 'POST',
+        path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
+        qs: { context: userId },
+      };
+      const payload = {
+        context: userId,
+        data: {
+          item: {
+            address: address,
+            allowDuplicates: true,
+            callbackSecretKey: 'a12k*?_1ds',
+            /* Agrega este callbackpayment en la queue en cloud functions */
             callbackUrl: `${this.hostapi}/cryptoapis/callbackPayment/${type}/queue`,
           },
         },
@@ -165,7 +204,6 @@ export class CryptoapisService {
           options,
           payload,
         );
-      console.log(JSON.stringify(res));
       return res;
     } catch (err) {
       console.error(JSON.stringify(err));
@@ -177,6 +215,35 @@ export class CryptoapisService {
     const blockchain = this.getBlockchainFromCurrency(currency);
     await cryptoApis.delete(
       `/v2/blockchain-events/${blockchain}/mainnet/subscriptions/${refereceId}`,
+    );
+  }
+
+  async createCallbackConfirmationForCredits(
+    id_user: string,
+    address: string,
+    type: PackCredits,
+    currency: Coins,
+  ) {
+    const blockchain = this.getBlockchainFromCurrency(currency);
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-confirmed`,
+    };
+    return await cryptoapisRequest<ResponseNewConfirmedCoinsTransactions>(
+      options,
+      {
+        context: id_user,
+        data: {
+          item: {
+            address: address,
+            allowDuplicates: true,
+            callbackSecretKey: 'a12k*?_1ds',
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackPaymentForCredits/${type}/queue`,
+            receiveCallbackOn: 2,
+          },
+        },
+      },
     );
   }
 
@@ -566,7 +633,7 @@ export class CryptoapisService {
     return res.data.result;
   }
 
-  async transactionIsCompletePaid(type: Memberships, id_user: string) {
+  async transactionIsCompletePaid(type: Memberships | PackCredits, id_user: string) {
     const userDoc = await db.collection('users').doc(id_user).get();
     // Verificar si el pago se completo
     const required_amount = Number(userDoc.get(`payment_link.${type}.amount`));

@@ -48,7 +48,7 @@ export class UsersService {
 
   async getUserByPaymentAddress(
     address: string,
-    type: Memberships,
+    type: Memberships | PackCredits,
   ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
     try {
       const snap = await admin
