@@ -64,6 +64,24 @@ export class UsersService {
       return null;
     }
   }
+  async getUserByPaymentAddressForCredits(
+    address: string,
+    type: PackCredits,
+  ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
+    try {
+      const snap = await admin
+        .collection('users')
+        .where(`payment_link_credits.${type}.address`, '==', address)
+        .get();
+
+      if (snap.empty) return null;
+
+      return snap.docs[0];
+    } catch (err) {
+      //Sentry.captureException(err);
+      return null;
+    }
+  }
 
   async getTopUsersByProfit() {
     const snap = await getDocs(

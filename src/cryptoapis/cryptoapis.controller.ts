@@ -253,7 +253,7 @@ export class CryptoapisController {
 
     if (this.isValidCryptoApis(body, true)) {
       const { address } = body.data.item;
-      const userDoc = await this.usersService.getUserByPaymentAddress(
+      const userDoc = await this.usersService.getUserByPaymentAddressForCredits(
         address,
         type,
       );
