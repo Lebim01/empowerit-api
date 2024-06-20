@@ -63,7 +63,45 @@ export class SubscriptionsController {
     @Body()
     body: PayloadAssignBinaryPosition,
   ) {
-    return this.subscriptionService.assignBinaryPosition(body);
+    return this.subscriptionService.assignBinaryPosition(body, false);
+  }
+
+  @Post('assignSanguine')
+  async assignSanguine(
+    @Body()
+    body: PayloadAssignBinaryPosition,
+  ) {
+    return await this.subscriptionService.insertSanguineUsers(body.id_user);
+  }
+
+  @Post('removeBinaryPoints')
+  async removeBinaryPoints() {
+    const USER_ID = 'HXKIeby39kZRsJwaxjlFTRX7zpg2';
+
+    const res = await db
+      .collectionGroup('points')
+      .where('user_id', '==', USER_ID)
+      .get();
+
+    const res1 = await db
+      .collectionGroup('right-points')
+      .where('user_id', '==', USER_ID)
+      .get();
+
+    const res2 = await db
+      .collectionGroup('left-points')
+      .where('user_id', '==', USER_ID)
+      .get();
+
+    await Promise.all(res.docs.map((doc) => doc.ref.delete()));
+    await Promise.all(res1.docs.map((doc) => doc.ref.delete()));
+    await Promise.all(res2.docs.map((doc) => doc.ref.delete()));
+
+    console.log({
+      points: res.size,
+      right: res1.size,
+      left: res2.size,
+    });
   }
 
   @Post('activeWithoutVolumen')
