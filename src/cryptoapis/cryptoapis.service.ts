@@ -166,32 +166,10 @@ export class CryptoapisService {
           `/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
           payload,
         );
-        console.log(response);
-        /* 
-          const res: ResponseCreateWalletAddress = await cryptoApis
-      .post(
-        `/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/addresses`,
-        {
-          context: 'yourExampleString',
-          data: {
-            item: {
-              label: 'yourLabelStringHere',
-            },
-          },
-        },
-      )
-      .then((r) => r.data);
-        */
+        return response
       } catch (error) {
         console.log(error);
       }
-      const res =
-        await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
-          options,
-          payload,
-        );
-
-      return res;
     } catch (err) {
       console.error(JSON.stringify(err));
       return null;
@@ -269,7 +247,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `https://empowerit-api-7iqymuyxsa-uc.a.run.app/cryptoapis/callbackPaymentForCredits/${type}/queue`,
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackPaymentForCredits/${type}/queue`,
             receiveCallbackOn: 2,
           },
         },

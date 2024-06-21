@@ -484,9 +484,22 @@ export class SubscriptionsService {
           CREDITS_PACKS_PRICE[pack_credits],
         ),
       });
+      await this.createAddCreditsDoc(id_user,pack_credits)
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async createAddCreditsDoc(id_user: string, pack_credits: PackCredits) {
+    await admin
+    .collection('users')
+    .doc(id_user)
+    .collection('credits-history')
+    .add({
+      total: CREDITS_PACKS_PRICE[pack_credits],
+      created_at: new Date(),
+      concept: `Compra de ${CREDITS_PACKS_PRICE[pack_credits]} créditos`
+    })
   }
 
   async onPaymentMembership(
