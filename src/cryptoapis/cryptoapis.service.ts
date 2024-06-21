@@ -141,7 +141,7 @@ export class CryptoapisService {
     currency: Coins,
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
-    console.log(blockchain)
+    console.log(blockchain);
     try {
       const options = {
         ...default_options,
@@ -162,8 +162,11 @@ export class CryptoapisService {
         },
       };
       try {
-        const response = await cryptoApis.post(`/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`, payload)
-        console.log(response)
+        const response = await cryptoApis.post(
+          `/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
+          payload,
+        );
+        console.log(response);
         /* 
           const res: ResponseCreateWalletAddress = await cryptoApis
       .post(
@@ -180,14 +183,14 @@ export class CryptoapisService {
       .then((r) => r.data);
         */
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
       const res =
         await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
           options,
           payload,
         );
-      
+
       return res;
     } catch (err) {
       console.error(JSON.stringify(err));
@@ -235,10 +238,14 @@ export class CryptoapisService {
   }
 
   async removeCallbackEvent(refereceId: string, currency: Coins) {
-    const blockchain = this.getBlockchainFromCurrency(currency);
-    await cryptoApis.delete(
-      `/v2/blockchain-events/${blockchain}/mainnet/subscriptions/${refereceId}`,
-    );
+    try {
+      const blockchain = this.getBlockchainFromCurrency(currency);
+      await cryptoApis.delete(
+        `/v2/blockchain-events/${blockchain}/mainnet/subscriptions/${refereceId}`,
+      );
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async createCallbackConfirmationForCredits(
@@ -656,10 +663,15 @@ export class CryptoapisService {
     return res.data.result;
   }
 
-  async transactionIsCompletePaidForCredits(type: PackCredits, id_user: string) {
+  async transactionIsCompletePaidForCredits(
+    type: PackCredits,
+    id_user: string,
+  ) {
     const userDoc = await db.collection('users').doc(id_user).get();
     // Verificar si el pago se completo
-    const required_amount = Number(userDoc.get(`payment_link_credits.${type}.amount`));
+    const required_amount = Number(
+      userDoc.get(`payment_link_credits.${type}.amount`),
+    );
     const tolerance = required_amount * 0.003;
     const address = userDoc.get(`payment_link_credits.${type}.address`);
     const currency = userDoc.get(`payment_link_credits.${type}.currency`);
@@ -675,7 +687,10 @@ export class CryptoapisService {
     };
   }
 
-  async transactionIsCompletePaid(type: Memberships | PackCredits, id_user: string) {
+  async transactionIsCompletePaid(
+    type: Memberships | PackCredits,
+    id_user: string,
+  ) {
     const userDoc = await db.collection('users').doc(id_user).get();
     // Verificar si el pago se completo
     const required_amount = Number(userDoc.get(`payment_link.${type}.amount`));
