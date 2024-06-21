@@ -165,6 +165,7 @@ export class CryptoapisController {
         if (is_complete) {
           await this.subscriptionService.onPaymentMembership(userDoc.id, type);
 
+          
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
             referenceId,
@@ -174,10 +175,10 @@ export class CryptoapisController {
             referenceId2,
             currency,
           );
-
+          
           return 'transaccion correcta';
         }
-
+        
         // Sí el pago esta incompleto
         else {
           // Eliminar el evento que esta en el servicio de la wallet
@@ -236,6 +237,7 @@ export class CryptoapisController {
       throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
     }
   }
+  /* aqui */
   @Post('callbackPaymentForCredits/:type')
   async callbackPaymentProMembershipForCredits(
     @Body() body: CallbackNewConfirmedCoins,
@@ -248,7 +250,7 @@ export class CryptoapisController {
       body,
       headers,
     });
-
+    
     if (body.data.item.direction == 'outgoing') return;
 
     if (this.isValidCryptoApis(body, true)) {
@@ -261,7 +263,6 @@ export class CryptoapisController {
       let referenceId2 = '';
       if (userDoc && userDoc.get)
         referenceId2 = userDoc.get(`payment_link_credits.${type}.referenceId2`);
-
       if (userDoc) {
         // Agregar registro de la transaccion
         await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
@@ -272,7 +273,7 @@ export class CryptoapisController {
 
         // Verificar si ya se pago todo o no
         const { is_complete, pendingAmount, currency } =
-          await this.cryptoapisService.transactionIsCompletePaid(
+          await this.cryptoapisService.transactionIsCompletePaidForCredits(
             type,
             userDoc.id,
           );
