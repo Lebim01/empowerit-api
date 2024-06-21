@@ -141,6 +141,7 @@ export class CryptoapisService {
     currency: Coins,
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
+    console.log(blockchain)
     try {
       const options = {
         ...default_options,
@@ -160,11 +161,33 @@ export class CryptoapisService {
           },
         },
       };
+      try {
+        const response = await cryptoApis.post(`/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`, payload)
+        console.log(response)
+        /* 
+          const res: ResponseCreateWalletAddress = await cryptoApis
+      .post(
+        `/wallet-as-a-service/wallets/${this.walletId}/${blockchain}/${this.network}/addresses`,
+        {
+          context: 'yourExampleString',
+          data: {
+            item: {
+              label: 'yourLabelStringHere',
+            },
+          },
+        },
+      )
+      .then((r) => r.data);
+        */
+      } catch (error) {
+        console.log(error)
+      }
       const res =
         await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
           options,
           payload,
         );
+      
       return res;
     } catch (err) {
       console.error(JSON.stringify(err));
@@ -239,7 +262,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${this.hostapi}/cryptoapis/callbackPaymentForCredits/${type}/queue`,
+            callbackUrl: `https://empowerit-api-7iqymuyxsa-uc.a.run.app/cryptoapis/callbackPaymentForCredits/${type}/queue`,
             receiveCallbackOn: 2,
           },
         },
@@ -631,6 +654,25 @@ export class CryptoapisService {
     );
 
     return res.data.result;
+  }
+
+  async transactionIsCompletePaidForCredits(type: PackCredits, id_user: string) {
+    const userDoc = await db.collection('users').doc(id_user).get();
+    // Verificar si el pago se completo
+    const required_amount = Number(userDoc.get(`payment_link_credits.${type}.amount`));
+    const tolerance = required_amount * 0.003;
+    const address = userDoc.get(`payment_link_credits.${type}.address`);
+    const currency = userDoc.get(`payment_link_credits.${type}.currency`);
+    const pendingAmount: number = await this.calculatePendingAmount(
+      userDoc.id,
+      address,
+      required_amount,
+    );
+    return {
+      is_complete: pendingAmount - tolerance <= 0,
+      pendingAmount,
+      currency,
+    };
   }
 
   async transactionIsCompletePaid(type: Memberships | PackCredits, id_user: string) {
