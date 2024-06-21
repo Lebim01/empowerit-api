@@ -22,12 +22,12 @@ export class SubscriptionsController {
   async createPaymentAddressProForCredits(
     @Body() body,
     @Param('type') type: PackCredits,
-  ){
+  ) {
     try {
       return await this.subscriptionService.createPaymentAddressForCredits(
         body.userId,
         type,
-        body.coin
+        body.coin,
       );
     } catch (err) {
       console.error(err);
@@ -63,7 +63,7 @@ export class SubscriptionsController {
     @Body()
     body: PayloadAssignBinaryPosition,
   ) {
-    return this.subscriptionService.assignBinaryPosition(body, false);
+    return this.subscriptionService.assignBinaryPosition(body, true);
   }
 
   @Post('assignSanguine')
@@ -111,6 +111,8 @@ export class SubscriptionsController {
     if (!body.side) throw new Error('side: left or right required');
     if (!body.membership) throw new Error('membership required');
 
+    console.log(body);
+
     if (!MEMBERSHIP_CAP[body.membership])
       throw new Error('el type esta mal: ' + body.membership);
 
@@ -126,46 +128,48 @@ export class SubscriptionsController {
       .where('email', '==', body.email)
       .get();
 
-    let user;
+    let user_id;
     if (res.empty) {
-      user = await auth.createUser({
+      const user = await auth.createUser({
         email: body.email,
         password: body.password || '123987xd',
       });
+      user_id = user.uid;
+
+      await db
+        .collection('users')
+        .doc(user.uid)
+        .set({
+          email: body.email,
+          name: body.name || '',
+          sponsor: body.sponsor || '',
+          sponsor_id: body.sponsor_id,
+          position: body.side,
+        });
     } else {
-      user = res.docs[0];
+      user_id = res.docs[0].id;
     }
+    const user = await db.collection('users').doc(user_id).get();
 
     await db.collection('admin-activations').add({
-      id_user: user.uid,
+      id_user: user_id,
       created_at: new Date(),
       membership: body.membership,
     });
 
-    await db
-      .collection('users')
-      .doc(user.uid)
-      .set({
-        email: body.email,
-        name: body.name || '',
-        sponsor: body.sponsor || '',
-        sponsor_id: body.sponsor_id,
-        position: body.side,
-      });
-
     await sleep(5000);
 
     await this.subscriptionService.assingMembershipWithoutCredits(
-      user.uid,
+      user_id,
       body.membership,
     );
 
-    if (!user.parent_binary_user_id) {
-      await this.subscriptionService.insertSanguineUsers(user.uid);
+    if (!user.get('parent_binary_user_id')) {
+      await this.subscriptionService.insertSanguineUsers(user_id);
 
       await this.subscriptionService.assignBinaryPosition(
         {
-          id_user: user.uid,
+          id_user: user_id,
           position: body.side,
           sponsor_id: body.sponsor_id,
         },
