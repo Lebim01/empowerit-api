@@ -476,17 +476,16 @@ export class SubscriptionsService {
     return isNew;
   }
 
-  async addCredits(
-    id_user: string,
-    pack_credits: PackCredits
-  ) {
+  async addCredits(id_user: string, pack_credits: PackCredits) {
     const userDocRef = admin.collection('users').doc(id_user);
     try {
       await userDocRef.update({
-        credits: firestore.FieldValue.increment(CREDITS_PACKS_PRICE[pack_credits])
-      })
+        credits: firestore.FieldValue.increment(
+          CREDITS_PACKS_PRICE[pack_credits],
+        ),
+      });
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 

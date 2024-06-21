@@ -85,8 +85,6 @@ export class CryptoapisController {
     return 'FAIL';
   }
 
-  
-
   @Post('callbackPayment/:type/queue')
   async callbackPaymentQueue(
     @Body() body: CallbackNewConfirmedCoins,
@@ -165,7 +163,6 @@ export class CryptoapisController {
         if (is_complete) {
           await this.subscriptionService.onPaymentMembership(userDoc.id, type);
 
-          
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
             referenceId,
@@ -175,10 +172,10 @@ export class CryptoapisController {
             referenceId2,
             currency,
           );
-          
+
           return 'transaccion correcta';
         }
-        
+
         // Sí el pago esta incompleto
         else {
           // Eliminar el evento que esta en el servicio de la wallet
@@ -250,7 +247,7 @@ export class CryptoapisController {
       body,
       headers,
     });
-    
+
     if (body.data.item.direction == 'outgoing') return;
 
     if (this.isValidCryptoApis(body, true)) {

@@ -22,12 +22,12 @@ export class SubscriptionsController {
   async createPaymentAddressProForCredits(
     @Body() body,
     @Param('type') type: PackCredits,
-  ){
+  ) {
     try {
       return await this.subscriptionService.createPaymentAddressForCredits(
         body.userId,
         type,
-        body.coin
+        body.coin,
       );
     } catch (err) {
       console.error(err);
@@ -63,7 +63,7 @@ export class SubscriptionsController {
     @Body()
     body: PayloadAssignBinaryPosition,
   ) {
-    return this.subscriptionService.assignBinaryPosition(body, false);
+    return this.subscriptionService.assignBinaryPosition(body, true);
   }
 
   @Post('assignSanguine')
