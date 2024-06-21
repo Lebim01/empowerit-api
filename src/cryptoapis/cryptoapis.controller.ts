@@ -18,10 +18,16 @@ import {
   CallbackNewConfirmedCoins,
   CallbackNewUnconfirmedCoins,
 } from './types';
-import * as Sentry from '@sentry/node';
 import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 import { BinaryService } from 'src/binary/binary.service';
+import * as admin from 'firebase-admin';
+
+export const CREDITS_PACKS_BINARY_POINTS: Record<PackCredits, number> = {
+  '100-credits': 50,
+  '500-credits': 250,
+  '1000-credits': 500,
+};
 
 @Controller('cryptoapis')
 export class CryptoapisController {
@@ -249,7 +255,7 @@ export class CryptoapisController {
     });
 
     if (body.data.item.direction == 'outgoing') return;
-    
+
     if (this.isValidCryptoApis(body, true)) {
       const { address } = body.data.item;
       const userDoc = await this.usersService.getUserByPaymentAddressForCredits(
@@ -277,17 +283,27 @@ export class CryptoapisController {
         console.log({ is_complete });
 
         if (is_complete) {
-          await this.subscriptionService.addCredits(userDoc.id, type);
-          
-          // Eliminar el evento que esta en el servicio de la wallet
-          await this.cryptoapisService.removeCallbackEvent(
-            referenceId,
-            currency,
-          );
-          await this.cryptoapisService.removeCallbackEvent(
-            referenceId2,
-            currency,
-          );
+          try {
+            await this.subscriptionService.addCredits(userDoc.id, type);
+            // Eliminar el evento que esta en el servicio de la wallet
+            await this.cryptoapisService.removeCallbackEvent(
+              referenceId,
+              currency,
+            );
+            await this.cryptoapisService.removeCallbackEvent(
+              referenceId2,
+              currency,
+            );
+          } catch (error) {
+            console.log(error);
+          }
+          await db
+          .collection('users')
+          .doc(userDoc.id)
+          .update({
+            [`payment_link_credits.${type}`]: admin.firestore.FieldValue.delete(),
+          })
+          await this.binaryService.increaseBinaryPoints(userDoc.id, CREDITS_PACKS_BINARY_POINTS[type])
           return 'transaccion correcta';
         }
 
@@ -334,6 +350,23 @@ export class CryptoapisController {
     } else {
       throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @Get('getDoc')
+  async getDoc(): Promise<any> {
+    const docRef = db
+      .collection('users')
+      .doc('sVarUBihvSZ7ahMUMgwaAbXcRs03')
+      .collection('transactions')
+      .doc('thSeP7cwQmu3yCi1Fb42');
+    const docSnapshot = await docRef.get();
+    console.log(docSnapshot.data());
+
+    if (!docSnapshot.exists) {
+      return { message: 'Document not found' };
+    }
+
+    return docSnapshot.data();
   }
 
   /**

@@ -498,7 +498,7 @@ export class SubscriptionsService {
     .add({
       total: CREDITS_PACKS_PRICE[pack_credits],
       created_at: new Date(),
-      concept: `Compra de ${CREDITS_PACKS_PRICE[pack_credits]} créditos`
+      concept: `Recarga de  ${CREDITS_PACKS_PRICE[pack_credits]} créditos`
     })
   }
 
