@@ -184,6 +184,7 @@ export class SubscriptionsService {
     currency: Coins,
     period: 'monthly' | 'yearly' = 'monthly',
   ) {
+    console.log(id_user);
     // Obtener datos del usuario
     const userRef = admin.collection('users').doc(id_user);
     const userData = await userRef.get().then((r) => r.data());
@@ -317,6 +318,8 @@ export class SubscriptionsService {
   }
 
   createCharge(newCharge: any): Promise<any> {
+    console.log(process.env.OPENPAY_MERCHANT_ID, process.env.OPENPAY_SK);
+
     const openpay = new Openpay(
       process.env.OPENPAY_MERCHANT_ID,
       process.env.OPENPAY_SK,
@@ -484,7 +487,7 @@ export class SubscriptionsService {
           CREDITS_PACKS_PRICE[pack_credits],
         ),
       });
-      await this.createAddCreditsDoc(id_user,pack_credits)
+      await this.createAddCreditsDoc(id_user, pack_credits);
     } catch (error) {
       console.log(error);
     }
@@ -492,14 +495,14 @@ export class SubscriptionsService {
 
   async createAddCreditsDoc(id_user: string, pack_credits: PackCredits) {
     await admin
-    .collection('users')
-    .doc(id_user)
-    .collection('credits-history')
-    .add({
-      total: CREDITS_PACKS_PRICE[pack_credits],
-      created_at: new Date(),
-      concept: `Recarga de  ${CREDITS_PACKS_PRICE[pack_credits]} créditos`
-    })
+      .collection('users')
+      .doc(id_user)
+      .collection('credits-history')
+      .add({
+        total: CREDITS_PACKS_PRICE[pack_credits],
+        created_at: new Date(),
+        concept: `Recarga de  ${CREDITS_PACKS_PRICE[pack_credits]} créditos`,
+      });
   }
 
   async onPaymentMembership(

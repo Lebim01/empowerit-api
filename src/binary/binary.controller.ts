@@ -60,41 +60,48 @@ export class BinaryController {
     const users = await db
       .collection('users')
       .orderBy('created_at', 'asc')
-      .get();
-
-    const snapshot = await db.collection('users').get();
+      .get()
+      .then((r) =>
+        r.docs.map((doc) => ({
+          id: doc.id,
+          left_binary_user_id: doc.get('left_binary_user_id'),
+          right_binary_user_id: doc.get('right_binary_user_id'),
+        })),
+      );
 
     const docs: any = {};
-    snapshot.docs.forEach((doc: any) => {
-      docs[doc.id] = { id: doc.id, ...doc.data() };
+    users.forEach((doc: any) => {
+      docs[doc.id] = doc;
     });
 
-    for (const u of users.docs) {
+    for (const u of users) {
+      console.log(u.id);
       const left_people = await this.binaryService.getPeopleTree(
-        u.get('left_binary_user_id'),
+        u.left_binary_user_id,
         docs,
       );
       const right_people = await this.binaryService.getPeopleTree(
-        u.get('right_binary_user_id'),
+        u.right_binary_user_id,
         docs,
       );
 
       console.log('left', left_people.length);
       console.log('right', right_people.length);
 
-      await u.ref.update({
+      const ref = db.collection('users').doc(u.id);
+      await ref.update({
         count_underline_people: left_people.length + right_people.length,
       });
 
       const batch = db.batch();
       for (const user_id of left_people) {
-        batch.set(u.ref.collection('left-people').doc(user_id), {
+        batch.set(ref.collection('left-people').doc(user_id), {
           user_id,
           created_at: new Date(),
         });
       }
       for (const user_id of right_people) {
-        batch.set(u.ref.collection('right-people').doc(user_id), {
+        batch.set(ref.collection('right-people').doc(user_id), {
           user_id,
           created_at: new Date(),
         });
