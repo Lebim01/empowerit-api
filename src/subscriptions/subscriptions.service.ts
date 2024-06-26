@@ -318,8 +318,6 @@ export class SubscriptionsService {
   }
 
   createCharge(newCharge: any): Promise<any> {
-    console.log(process.env.OPENPAY_MERCHANT_ID, process.env.OPENPAY_SK);
-
     const openpay = new Openpay(
       process.env.OPENPAY_MERCHANT_ID,
       process.env.OPENPAY_SK,
