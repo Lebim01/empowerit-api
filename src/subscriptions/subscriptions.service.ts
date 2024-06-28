@@ -376,7 +376,7 @@ export class SubscriptionsService {
     /* Ya no seran ciclos quitar o dejarlo */
     await admin.collection('users').doc(id_user).collection('cycles').add({
       type,
-      //start_at: startAt,
+      start_at: new Date(),
       //expires_at: expiresAt,
     });
   }
@@ -484,7 +484,7 @@ export class SubscriptionsService {
           CREDITS_PACKS_PRICE[pack_credits],
         ),
       });
-      await this.createAddCreditsDoc(id_user,pack_credits)
+      await this.createAddCreditsDoc(id_user, pack_credits);
     } catch (error) {
       console.log(error);
     }
@@ -492,19 +492,20 @@ export class SubscriptionsService {
 
   async createAddCreditsDoc(id_user: string, pack_credits: PackCredits) {
     await admin
-    .collection('users')
-    .doc(id_user)
-    .collection('credits-history')
-    .add({
-      total: CREDITS_PACKS_PRICE[pack_credits],
-      created_at: new Date(),
-      concept: `Recarga de  ${CREDITS_PACKS_PRICE[pack_credits]} créditos`
-    })
+      .collection('users')
+      .doc(id_user)
+      .collection('credits-history')
+      .add({
+        total: CREDITS_PACKS_PRICE[pack_credits],
+        created_at: new Date(),
+        concept: `Recarga de  ${CREDITS_PACKS_PRICE[pack_credits]} créditos`,
+      });
   }
 
   async onPaymentMembership(
     id_user: string,
     type: Franchises | 'founder-pack',
+    currency: string | null
   ) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
@@ -604,9 +605,30 @@ export class SubscriptionsService {
           scope.setExtra('id_user', id_user);
           scope.setExtra('message', 'no se repartio el bono directo');
           Sentry.captureException(err);
-        });*/
+          });*/
       }
     }
+
+    const userRef = await admin.collection('users').doc(id_user).get();
+    const userEmail = await userRef.get('email');
+    const userName = await userRef.get('name');
+    const userPosition = await userRef.get('position');
+    const userUpline = await userRef.get('parent_binary_user_id');
+    const sponsorName = await userRef.get('sponsor');
+
+    await admin.collection('memberships-history').add({
+      activated: 'Activada con Volumen',
+      created_at: new Date(),
+      date: new Date(),
+      email: userEmail,
+      membership: type,
+      name: userName,
+      position: userPosition,
+      sponsor: sponsorName,
+      upline: userUpline,
+      user_id: id_user,
+      currency: currency || null,
+    });
 
     await this.addQueueBinaryPosition({
       id_user,
@@ -737,7 +759,8 @@ export class SubscriptionsService {
     /**
      * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
-    const hasBinaryPosition = !!user.get('parent_binary_user_id');
+    const hasBinaryPosition = !!user.get('parent_binary_user_id'); //false
+    console.log(hasBinaryPosition);
     if (!hasBinaryPosition) {
       const finish_position = user.get('position');
 
@@ -759,8 +782,6 @@ export class SubscriptionsService {
         );
       }
 
-      console.log(binaryPosition);
-
       /**
        * se setea el valor del usuario padre en el usuario que se registro
        */
@@ -768,9 +789,17 @@ export class SubscriptionsService {
         throw new Error('Error al posicionar el binario');
       }
 
-      await user.ref.update({
-        parent_binary_user_id: binaryPosition.parent_id,
-      });
+      try {
+        await user.ref.update({
+          parent_binary_user_id: binaryPosition.parent_id,
+        });
+      } catch (error) {
+        console.log(
+          'Error dentro de hacer un update en parent_binary_user_id',
+          error,
+        );
+      }
+
       await sponsorRef.update({
         count_direct_people_this_cycle: firestore.FieldValue.increment(1),
       });
@@ -810,6 +839,7 @@ export class SubscriptionsService {
           Sentry.captureException(err);
         });*/
       }
+      console.log('despues del segundo trychat');
     }
 
     /**

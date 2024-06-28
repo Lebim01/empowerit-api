@@ -63,12 +63,19 @@ export class BinaryService {
         .get();
       if (user.exists) {
         const side =
-          user.get('left_binary_user_id') == currentUser ? 'left' : 'right';
+        user.get('left_binary_user_id') == currentUser ? 'left' : 'right';
         currentUser = user.id;
+        const countUnderlinePeople = user.get('count_underline_people');
 
-        batch.update(user.ref, {
-          count_underline_people: firestore.FieldValue.increment(1),
-        });
+        if (countUnderlinePeople) {
+          batch.update(user.ref, {
+            count_underline_people: firestore.FieldValue.increment(1),
+          });
+        } else {
+          batch.update(user.ref, {
+            count_underline_people: 0,
+          });
+        }
 
         batch.set(
           admin
@@ -81,11 +88,13 @@ export class BinaryService {
             created_at: new Date(),
           },
         );
+        if (currentUser === '9CXMbcJt2sNWG40zqWwQSxH8iki2') currentUser = null;
       } else {
         currentUser = null;
       }
     } while (currentUser);
 
+    console.log(3);
     // Commit the batch
     await batch.commit();
   }

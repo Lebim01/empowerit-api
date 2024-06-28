@@ -111,7 +111,7 @@ export class SubscriptionsController {
     if (!body.side) throw new Error('side: left or right required');
     if (!body.membership) throw new Error('membership required');
 
-    console.log(body);
+    console.log(body)
 
     if (!MEMBERSHIP_CAP[body.membership])
       throw new Error('el type esta mal: ' + body.membership);
@@ -127,7 +127,6 @@ export class SubscriptionsController {
       .collection('users')
       .where('email', '==', body.email)
       .get();
-
     let user_id;
     if (res.empty) {
       const user = await auth.createUser({
@@ -145,6 +144,8 @@ export class SubscriptionsController {
           sponsor: body.sponsor || '',
           sponsor_id: body.sponsor_id,
           position: body.side,
+          created_at: new Date(),
+          count_underline_people:0
         });
     } else {
       user_id = res.docs[0].id;
@@ -176,6 +177,25 @@ export class SubscriptionsController {
         false,
       );
     }
+    const sponsorRef = await db.collection('users').doc(body.sponsor_id).get();
+    const sponsorName = await sponsorRef.get('name');
+    const userNew = await db.collection('users').doc(user_id).get();
+    const uplineId = await userNew.get('parent_binary_user_id');
+
+
+    await db.collection('memberships-history').add({
+      activated: 'Activada Sin Volumen',
+      created_at: new Date(),
+      date: new Date(),
+      email: body.email,
+      membership: body.membership,
+      name: body.name,
+      position: body.side,
+      sponsor: sponsorName,
+      upline: uplineId,
+      user_id,
+      currency: null,
+    });
 
     return {
       status: 200,
@@ -194,6 +214,7 @@ export class SubscriptionsController {
     await this.subscriptionService.onPaymentMembership(
       body.user_id,
       body.membership,
+      null
     );
   }
 

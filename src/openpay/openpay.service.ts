@@ -44,7 +44,7 @@ export class OpenpayService {
         });
 
         await delay(500);
-        await this.subscriptionService.onPaymentMembership(user.id, membership);
+        await this.subscriptionService.onPaymentMembership(user.id, membership,'FIAT (MXN)');
 
         return 'OK';
       }

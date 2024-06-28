@@ -167,7 +167,7 @@ export class CryptoapisController {
         console.log({ is_complete });
 
         if (is_complete) {
-          await this.subscriptionService.onPaymentMembership(userDoc.id, type);
+          await this.subscriptionService.onPaymentMembership(userDoc.id, type, currency);
 
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
@@ -178,6 +178,26 @@ export class CryptoapisController {
             referenceId2,
             currency,
           );
+
+          const userEmail = userDoc.get('email')
+          const userName = userDoc.get('name')
+          const userPosition = userDoc.get('position')
+          const userSponsorName = userDoc.get('sponsor')
+          const userUpline = userDoc.get('parent_binary_user_id')
+
+          await db.collection('memberships-history').add({
+            activated: 'Activada con pago',
+            created_at: new Date(),
+            date: new Date(),
+            email: userEmail,
+            membership: type,
+            name: userName,
+            position: userPosition,
+            sponsor: userSponsorName,
+            upline: userUpline,
+            user_id: userDoc.id,
+            currency: currency,
+          });
 
           return 'transaccion correcta';
         }
