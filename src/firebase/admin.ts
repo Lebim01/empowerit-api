@@ -2,7 +2,7 @@ import admin from 'firebase-admin';
 import adminCredentials from './firebaseConfigAdmin';
 
 const isProd = process.env.NODE_ENV == 'production'
-const databaseName = !isProd ? '(default)' : 'testing'
+const databaseName = isProd ? '(default)' : 'testing'
 
 admin.initializeApp({
   credential: admin.credential.cert(
