@@ -5,7 +5,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const isProd = process.env.NODE_ENV == 'production'
-const databaseName = !isProd ? '(default)' : 'testing'
+const databaseName = isProd ? '(default)' : 'testing'
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

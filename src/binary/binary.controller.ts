@@ -108,8 +108,12 @@ export class BinaryController {
       }
       await batch.commit();
     }
+    return 'miembros de organizacion actualizado'
   }
-
+  @Post('fixDirectMembers')
+  fixDirectMembers(){
+    return this.binaryService.fixDirectPeople();
+  }
   @Get('checkNotFound')
   checkNotFound() {
     return this.binaryService.checkBinary();

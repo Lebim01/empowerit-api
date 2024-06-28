@@ -295,4 +295,7 @@ export class BinaryService {
 
     return people;
   }
+  async fixDirectPeople(){
+    console.log('hola')
+  }
 }
