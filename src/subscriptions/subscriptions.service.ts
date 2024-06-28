@@ -184,6 +184,7 @@ export class SubscriptionsService {
     currency: Coins,
     period: 'monthly' | 'yearly' = 'monthly',
   ) {
+    console.log(id_user);
     // Obtener datos del usuario
     const userRef = admin.collection('users').doc(id_user);
     const userData = await userRef.get().then((r) => r.data());
