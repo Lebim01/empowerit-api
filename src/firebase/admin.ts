@@ -15,6 +15,7 @@ admin.initializeApp({
 export const auth = admin.auth();
 export const db = admin.firestore();
 
-db.settings({
+/* db.settings({
   databaseId: databaseName
 })
+ */
