@@ -214,7 +214,8 @@ export class SubscriptionsController {
     await this.subscriptionService.onPaymentMembership(
       body.user_id,
       body.membership,
-      null
+      null,
+      "Activacion con volumen"
     );
   }
 

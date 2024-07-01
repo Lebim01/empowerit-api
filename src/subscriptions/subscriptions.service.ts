@@ -506,7 +506,8 @@ export class SubscriptionsService {
   async onPaymentMembership(
     id_user: string,
     type: Franchises | 'founder-pack',
-    currency: string | null
+    currency: string | null,
+    activation_type: string
   ) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
@@ -618,7 +619,7 @@ export class SubscriptionsService {
     const sponsorName = await userRef.get('sponsor');
 
     await admin.collection('memberships-history').add({
-      activated: 'Activada con Volumen',
+      activated: activation_type,
       created_at: new Date(),
       date: new Date(),
       email: userEmail,

@@ -167,7 +167,7 @@ export class CryptoapisController {
         console.log({ is_complete });
 
         if (is_complete) {
-          await this.subscriptionService.onPaymentMembership(userDoc.id, type, currency);
+          await this.subscriptionService.onPaymentMembership(userDoc.id, type, currency, "Activada con Pago");
 
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(

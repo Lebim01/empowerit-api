@@ -73,7 +73,7 @@ export class BinaryService {
           });
         } else {
           batch.update(user.ref, {
-            count_underline_people: 0,
+            count_underline_people: 1,
           });
         }
 
@@ -88,7 +88,7 @@ export class BinaryService {
             created_at: new Date(),
           },
         );
-        if (currentUser === '9CXMbcJt2sNWG40zqWwQSxH8iki2') currentUser = null;
+        if (currentUser === '9CXMbcJt2sNWG40zqWwQSxH8iki2' || currentUser === 'corpotop@gmail.com') currentUser = null;
       } else {
         currentUser = null;
       }
