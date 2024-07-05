@@ -38,6 +38,7 @@ export const quick_start_percent_by_Franchise: Record<Franchises, number> = {
   '500-pack': 20,
   '1000-pack': 20,
   '2000-pack': 20,
+  '3000-pack': 20,
 };
 
 /**
@@ -68,6 +69,7 @@ export const menthor_percent_by_Franchise: Record<Franchises, number> = {
   '500-pack': 15,
   '1000-pack': 15,
   '2000-pack': 20,
+  '3000-pack': 20,
 };
 
 export const BOND_CAR = 250;

@@ -39,7 +39,25 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   '500-pack': 500,
   '1000-pack': 1000,
   '2000-pack': 2000,
+  '3000-pack': 3000,
 };
+
+export const MEMBERSHIP_CREDITS : Record<Memberships,number> = {
+  supreme: 199,
+  pro: 99,
+  'alive-pack': 129,
+  'freedom-pack': 479,
+  'business-pack': 1289,
+  'vip-pack': 228,
+  'elite-pack': 678,
+  'founder-pack': 3000,
+  '100-pack': 100,
+  '300-pack': 300,
+  '500-pack': 500,
+  '1000-pack': 1000,
+  '2000-pack': 2000,
+  '3000-pack': 0,
+}
 
 export const MEMBERSHIP_CAP: Record<Franchises, number> = {
   '100-pack': 300,
@@ -47,6 +65,7 @@ export const MEMBERSHIP_CAP: Record<Franchises, number> = {
   '500-pack': 2000,
   '1000-pack': 5000,
   '2000-pack': 10000,
+  '3000-pack': 15000
 };
 
 export const MEMBERSHIP_PRICES_YEARLY = {
@@ -60,6 +79,7 @@ export const FRANCHISE_FIRMS: Record<Franchises, number> = {
   '500-pack': 5,
   '1000-pack': 10,
   '2000-pack': 20,
+  '3000-pack': 30
 };
 
 export const CREDITS_PACKS_PRICE: Record<PackCredits, number> = {
@@ -67,6 +87,7 @@ export const CREDITS_PACKS_PRICE: Record<PackCredits, number> = {
   '500-credits': 500,
   '1000-credits': 1000,
 };
+
 
 const isExpired = (expires_at: { seconds: number } | null) => {
   if (!expires_at) return true;
@@ -403,7 +424,7 @@ export class SubscriptionsService {
       //membership_expires_at: expiresAt,
       payment_link: {},
       is_new: false,
-      credits: MEMBERSHIP_PRICES_MONTHLY[type],
+      credits: MEMBERSHIP_CREDITS[type],
       membership_cap_limit: MEMBERSHIP_CAP[type],
       membership_cap_current: 0,
     });
@@ -411,7 +432,7 @@ export class SubscriptionsService {
     /* Ya no seran ciclos quitar o dejarlo */
     await admin.collection('users').doc(id_user).collection('cycles').add({
       type,
-      //start_at: startAt,
+      created_at: new Date()
       //expires_at: expiresAt,
     });
   }
@@ -598,6 +619,7 @@ export class SubscriptionsService {
     /**
      * aumentar puntos de bono directo 2 niveles
      */
+    /* A partir de aqui modificare */
     if (isNew) {
       try {
         await this.bondService.execUserDirectBond(id_user, pack_price);
@@ -631,7 +653,6 @@ export class SubscriptionsService {
       user_id: id_user,
       currency: currency || null,
     });
-
     await this.addQueueBinaryPosition({
       id_user,
       sponsor_id: data.get('sponsor_id'),
@@ -866,6 +887,7 @@ export class SubscriptionsService {
         });*/
       }
     }
+    return 'Puntos incrementados exitosamente'
   }
 
   async createShopifyPack(

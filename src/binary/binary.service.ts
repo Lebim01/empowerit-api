@@ -15,6 +15,15 @@ import { db as admin } from '../firebase/admin';
 import { UsersService } from '../users/users.service';
 import { firestore } from 'firebase-admin';
 
+export const FRANCHISE_RANGE_POINTS: Record<Franchises, number> = {
+  '100-pack': 100,
+  '300-pack': 300,
+  '500-pack': 500,
+  '1000-pack': 1000,
+  '2000-pack': 2000,
+  '3000-pack': 1000,
+};
+
 @Injectable()
 export class BinaryService {
   constructor(private readonly userService: UsersService) {}
@@ -63,7 +72,7 @@ export class BinaryService {
         .get();
       if (user.exists) {
         const side =
-        user.get('left_binary_user_id') == currentUser ? 'left' : 'right';
+          user.get('left_binary_user_id') == currentUser ? 'left' : 'right';
         currentUser = user.id;
         const countUnderlinePeople = user.get('count_underline_people');
 
@@ -88,7 +97,11 @@ export class BinaryService {
             created_at: new Date(),
           },
         );
-        if (currentUser === '9CXMbcJt2sNWG40zqWwQSxH8iki2' || currentUser === 'corpotop@gmail.com') currentUser = null;
+        if (
+          currentUser === '9CXMbcJt2sNWG40zqWwQSxH8iki2' ||
+          currentUser === 'corpotop@gmail.com'
+        )
+          currentUser = null;
       } else {
         currentUser = null;
       }
@@ -113,6 +126,8 @@ export class BinaryService {
       .collection('users')
       .doc(registerUserId)
       .get();
+
+    const membership = registerUser.get('membership');
     let currentUser = registerUserId;
 
     do {
@@ -158,13 +173,14 @@ export class BinaryService {
             points,
             user_id: registerUserId,
             name: registerUser.get('name') || '',
+            created_at: new Date(),
           });
 
           /**
            * (add points)
            */
           batch.set(subCollectionPointsRef, {
-            points,
+            points: FRANCHISE_RANGE_POINTS[membership],
             side: position || 'right',
             user_id: registerUserId,
             user_email: registerUser.get('email') || 'noemail',
@@ -295,7 +311,28 @@ export class BinaryService {
 
     return people;
   }
-  async fixDirectPeople(){
-    console.log('hola')
+  async fixDirectPeople() {
+    const usersRef = admin
+      .collection('users')
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          admin
+            .collection('users')
+            .where('sponsor_id', '==', doc.id)
+            .get()
+            .then((querySnapshot) => {
+              const count = querySnapshot.size;
+              const userRef = admin.collection('users').doc(doc.id).update({
+                count_direct_people: querySnapshot.size,
+              });
+            });
+        });
+      })
+      .catch((error) => {
+        console.log('Error getting documents: ', error);
+      });
+    console.log('pasa por aca');
+    return 'listo';
   }
 }

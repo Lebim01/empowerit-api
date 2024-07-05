@@ -43,11 +43,16 @@ export class BondsService {
       '500-pack',
       '1000-pack',
       '2000-pack',
+      '3000-pack',
     ].includes(sponsor.membership);
     console.log(sponsor.membership, { is_new_pack });
     if (is_new_pack) {
-      const sponsor_membership = sponsor.membership as Memberships;
-      percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
+      if (user.get('membership') == '3000-pack') {
+        percent = 10 / 100;
+      } else {
+        const sponsor_membership = sponsor.membership as Memberships;
+        percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
+      }
     } else {
       const sponsor_rank = sponsor.rank as Ranks;
       percent = quick_start_percent[sponsor_rank] / 100;

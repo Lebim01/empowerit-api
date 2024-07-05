@@ -18,6 +18,7 @@ export const pack_points: Record<Memberships, number> = {
   '500-pack': 250,
   '1000-pack': 500,
   '2000-pack': 1000,
+  '3000-pack': 300,
 };
 
 export const pack_points_yearly: Record<'pro' | 'supreme', number> = {
@@ -39,6 +40,7 @@ export const pack_binary: Record<Memberships, number> = {
   '1000-pack': 15 / 100,
   '2000-pack': 15 / 100,
   'founder-pack': 0,
+  '3000-pack': 15 / 100,
 };
 
 export const getBinaryPercent = (user_id: string, membership: string) => {
