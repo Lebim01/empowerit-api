@@ -185,20 +185,6 @@ export class CryptoapisController {
           const userSponsorName = userDoc.get('sponsor')
           const userUpline = userDoc.get('parent_binary_user_id')
 
-          await db.collection('memberships-history').add({
-            activated: 'Activada con pago',
-            created_at: new Date(),
-            date: new Date(),
-            email: userEmail,
-            membership: type,
-            name: userName,
-            position: userPosition,
-            sponsor: userSponsorName,
-            upline: userUpline,
-            user_id: userDoc.id,
-            currency: currency,
-          });
-
           return 'transaccion correcta';
         }
 
