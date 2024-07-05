@@ -536,6 +536,15 @@ export class SubscriptionsService {
 
     const pack_price = MEMBERSHIP_PRICES_MONTHLY[type];
 
+    if (type == '3000-pack') {
+      const currentDate = new Date();
+      const nextYearDate = new Date(currentDate.setFullYear(currentDate.getFullYear() + 1));
+      
+      userDocRef.update({
+        academy_access_expires_at: nextYearDate
+      });
+    }
+
     if (type == 'founder-pack') {
       await this.execFounderPack(id_user);
       return;
