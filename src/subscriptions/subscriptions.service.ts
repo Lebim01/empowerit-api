@@ -42,7 +42,7 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   '3000-pack': 3000,
 };
 
-export const MEMBERSHIP_CREDITS : Record<Memberships,number> = {
+export const MEMBERSHIP_CREDITS: Record<Memberships, number> = {
   supreme: 199,
   pro: 99,
   'alive-pack': 129,
@@ -57,7 +57,7 @@ export const MEMBERSHIP_CREDITS : Record<Memberships,number> = {
   '1000-pack': 1000,
   '2000-pack': 2000,
   '3000-pack': 0,
-}
+};
 
 export const MEMBERSHIP_CAP: Record<Franchises, number> = {
   '100-pack': 300,
@@ -65,7 +65,7 @@ export const MEMBERSHIP_CAP: Record<Franchises, number> = {
   '500-pack': 2000,
   '1000-pack': 5000,
   '2000-pack': 10000,
-  '3000-pack': 15000
+  '3000-pack': 15000,
 };
 
 export const MEMBERSHIP_PRICES_YEARLY = {
@@ -79,7 +79,7 @@ export const FRANCHISE_FIRMS: Record<Franchises, number> = {
   '500-pack': 5,
   '1000-pack': 10,
   '2000-pack': 20,
-  '3000-pack': 30
+  '3000-pack': 30,
 };
 
 export const CREDITS_PACKS_PRICE: Record<PackCredits, number> = {
@@ -87,7 +87,6 @@ export const CREDITS_PACKS_PRICE: Record<PackCredits, number> = {
   '500-credits': 500,
   '1000-credits': 1000,
 };
-
 
 const isExpired = (expires_at: { seconds: number } | null) => {
   if (!expires_at) return true;
@@ -162,41 +161,72 @@ export class SubscriptionsService {
           console.error(err);
         }
       }
-      let amount = 0;
-      if (currency == 'LTC') {
-        amount = await this.cryptoapisService.getLTCExchange(
-          CREDITS_PACKS_PRICE[type],
-        );
-      }
-      const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
-      // Estructurar el campo payment_link
-      const payment_link_credits = {
-        referenceId,
-        referenceId2,
-        address,
-        qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
-        status: 'pending',
-        created_at: new Date(),
-        amount,
-        currency,
-        expires_at: dayjs().add(15, 'minutes').toDate(),
-      };
-      // Guardar payment_link
-      await userRef
-        .collection('address-history')
-        .add({ ...payment_link_credits, type });
-      await userRef.update({
-        payment_link_credits: {
-          [type]: payment_link_credits,
-        },
-      });
-      return {
-        address: address,
-        amount: payment_link_credits.amount,
-        currency: payment_link_credits.currency,
-        qr: payment_link_credits.qr,
-      };
     }
+    let exchange = 0;
+    let amount = 0;
+    let redirect_url = '';
+    let openpay = {};
+    if (currency == 'LTC') {
+      amount = await this.cryptoapisService.getLTCExchange(
+        CREDITS_PACKS_PRICE[type],
+      );
+    }
+    if (currency == 'MXN') {
+      exchange = await this.cryptoapisService.getUSDExchange();
+      amount = Number(Number(exchange * CREDITS_PACKS_PRICE[type]).toFixed(2));
+
+      const customer = {
+        name: userData.name,
+        last_name: '',
+        phone_number: userData.whatsapp,
+        email: userData.email,
+      };
+
+      const newCharge = {
+        method: 'card',
+        amount,
+        description: 'Compra de Creditos',
+        customer: customer,
+        send_email: false,
+        confirm: false,
+        redirect_url:
+          'https://backoffice.empowerittop.com/subscriptions?transaction=pending',
+        use_3d_secure: true,
+      };
+
+      const res = await this.createCharge(newCharge);
+
+      redirect_url = res.payment_method.url;
+      openpay = res;
+    }
+    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+    // Estructurar el campo payment_link
+    const payment_link_credits = {
+      referenceId,
+      referenceId2,
+      address,
+      qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+      status: 'pending',
+      created_at: new Date(),
+      amount,
+      currency,
+      expires_at: dayjs().add(15, 'minutes').toDate(),
+    };
+    // Guardar payment_link
+    await userRef
+      .collection('address-history')
+      .add({ ...payment_link_credits, type });
+    await userRef.update({
+      payment_link_credits: {
+        [type]: payment_link_credits,
+      },
+    });
+    return {
+      address: address,
+      amount: payment_link_credits.amount,
+      currency: payment_link_credits.currency,
+      qr: payment_link_credits.qr,
+    };
   }
 
   async createPaymentAddress(
@@ -432,7 +462,7 @@ export class SubscriptionsService {
     /* Ya no seran ciclos quitar o dejarlo */
     await admin.collection('users').doc(id_user).collection('cycles').add({
       type,
-      created_at: new Date()
+      created_at: new Date(),
       //expires_at: expiresAt,
     });
   }
@@ -528,7 +558,7 @@ export class SubscriptionsService {
     id_user: string,
     type: Franchises | 'founder-pack',
     currency: string | null,
-    activation_type: string
+    activation_type: string,
   ) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
@@ -538,10 +568,12 @@ export class SubscriptionsService {
 
     if (type == '3000-pack') {
       const currentDate = new Date();
-      const nextYearDate = new Date(currentDate.setFullYear(currentDate.getFullYear() + 1));
-      
+      const nextYearDate = new Date(
+        currentDate.setFullYear(currentDate.getFullYear() + 1),
+      );
+
       userDocRef.update({
-        academy_access_expires_at: nextYearDate
+        academy_access_expires_at: nextYearDate,
       });
     }
 
@@ -896,7 +928,7 @@ export class SubscriptionsService {
         });*/
       }
     }
-    return 'Puntos incrementados exitosamente'
+    return 'Puntos incrementados exitosamente';
   }
 
   async createShopifyPack(
