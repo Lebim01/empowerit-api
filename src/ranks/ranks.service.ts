@@ -16,6 +16,138 @@ type UserRank = {
 export class RanksService {
   constructor(private readonly googleTaskService: GoogletaskService) {}
 
+  async updateNewRanks() {
+    try {
+      const users = await admin
+        .collection('users')
+        .orderBy('created_at', 'desc')
+        .get();
+  
+      const promises = users.docs.map(async (doc) => {
+        const userRef = await admin
+        .collection("users")
+        .doc(doc.id)
+        const volumen = await this.getShortLeg(doc.id);
+        if (Number(volumen) >= 2300000) {
+          userRef.update({
+            rank: "top-legend"
+          })
+        }
+        else if (Number(volumen) >= 600000) {
+          userRef.update({
+            rank: "top_1"
+          })
+        }
+        else if (Number(volumen) >= 180000) {
+          userRef.update({
+            rank: "top_diamond"
+          })
+        }
+        else if (Number(volumen) >= 72000) {
+          userRef.update({
+            rank: "international_director"
+          })
+        }
+        else if (Number(volumen) >= 35000) {
+          userRef.update({
+            rank: "national_director"
+          })
+        }
+        else if (Number(volumen) >= 25000) {
+          userRef.update({
+            rank: "regional_director"
+          })
+        }
+        else if (Number(volumen) >= 16000) {
+          userRef.update({
+            rank: "master_3500"
+          })
+        }
+        else if (Number(volumen) >= 1200) {
+          userRef.update({
+            rank: "master_2500"
+          })
+        }
+        else if (Number(volumen) >= 8000) {
+          userRef.update({
+            rank: "master_2000"
+          })
+        }
+        else if (Number(volumen) >= 6000) {
+          userRef.update({
+            rank: "advance_builder"
+          })
+        }
+        else if (Number(volumen) >= 1500) {
+          userRef.update({
+            rank: "star_builder"
+          })  
+        }
+        else if (Number(volumen) >= 500) {
+          userRef.update({
+            rank: "initial_builder"
+          })
+        } else {
+          userRef.update({
+            rank: "none"
+          })
+        }
+      });
+  
+      await Promise.all(promises);
+  
+      return 'exito en la funcion de updateNewRanks';
+    } catch (error) {
+      console.log('Error en updateNewRanks: ', error);
+      return 'error en la funcion de updateNewRanks';
+    }
+  }
+
+  async getRankBySide() {
+    const sidesRef = admin
+    .collection("users")
+    .doc()
+  }
+  
+
+  async getShortLeg(user_id: string) {
+    const pointsRef = await admin
+      .collection('users')
+      .doc(user_id)
+      .collection('points');
+
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let leftPoints = 0;
+    let rightPoints = 0;
+
+    try {
+      const volumen = pointsRef
+        .where('created_at', '>=', firstDayOfMonth)
+        .get()
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (data.side == 'left') {
+              leftPoints += data.points;
+            }
+            if (data.side == 'right') {
+              rightPoints += data.points;
+            }
+          });
+          return rightPoints >= leftPoints ? leftPoints : rightPoints;
+        })
+        .catch((error) => {
+          console.log('Error getting documents: ', error);
+        });
+      return volumen;
+    } catch (error) {
+      console.log('Error en sacando los puntos de rango', error);
+      return null;
+    }
+  }
+
   async updateRank() {
     /* Obtener todos los usuraios */
     const users = await admin

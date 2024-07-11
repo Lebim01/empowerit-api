@@ -8,6 +8,10 @@ export class RanksController {
   upateRanks() {
     return this.ranksService.updateRank();
   }
+  @Post('updateNewRanks')
+  updateNewRanks(){
+    return this.ranksService.updateNewRanks();
+  }
 
   @Post('updateUserRank/:id')
   updateUserRank(@Param('id') id_user: string) {

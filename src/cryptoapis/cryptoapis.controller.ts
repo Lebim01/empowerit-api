@@ -179,12 +179,6 @@ export class CryptoapisController {
             currency,
           );
 
-          const userEmail = userDoc.get('email')
-          const userName = userDoc.get('name')
-          const userPosition = userDoc.get('position')
-          const userSponsorName = userDoc.get('sponsor')
-          const userUpline = userDoc.get('parent_binary_user_id')
-
           return 'transaccion correcta';
         }
 

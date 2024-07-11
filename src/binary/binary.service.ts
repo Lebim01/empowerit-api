@@ -74,6 +74,7 @@ export class BinaryService {
         const side =
           user.get('left_binary_user_id') == currentUser ? 'left' : 'right';
         currentUser = user.id;
+        console.log(currentUser)
         const countUnderlinePeople = user.get('count_underline_people');
 
         if (countUnderlinePeople) {
@@ -285,12 +286,13 @@ export class BinaryService {
     return notFound;
   }
 
-  async getPeopleTree(rootId: string, nodes: any = {}) {
+  async getPeopleTree( rootId: string, nodes: any = {}) {
     if (!rootId) return [];
 
     const rootDocId = rootId;
     const queue = [rootDocId];
     const people = [];
+    people.push(rootDocId)
 
     while (queue.length > 0) {
       const user_id = queue.shift();
@@ -308,7 +310,6 @@ export class BinaryService {
         queue.push(nodes[rightDocId].id);
       }
     }
-
     return people;
   }
   async fixDirectPeople() {

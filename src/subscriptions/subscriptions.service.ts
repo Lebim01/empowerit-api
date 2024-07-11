@@ -673,7 +673,13 @@ export class SubscriptionsService {
           });*/
       }
     }
-
+    
+    await this.addQueueBinaryPosition({
+      id_user,
+      sponsor_id: data.get('sponsor_id'),
+      position: data.get('position'),
+    });
+    
     const userRef = await admin.collection('users').doc(id_user).get();
     const userEmail = await userRef.get('email');
     const userName = await userRef.get('name');
@@ -693,11 +699,6 @@ export class SubscriptionsService {
       upline: userUpline,
       user_id: id_user,
       currency: currency || null,
-    });
-    await this.addQueueBinaryPosition({
-      id_user,
-      sponsor_id: data.get('sponsor_id'),
-      position: data.get('position'),
     });
   }
 
