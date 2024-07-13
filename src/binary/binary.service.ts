@@ -141,7 +141,9 @@ export class BinaryService {
           ),
         ),
       );
+      console.log('pasa')
       if (users.size > 0) {
+        console.log('pasa')
         const user = users.docs[0];
         const userData = user.data();
         const position =
@@ -149,12 +151,15 @@ export class BinaryService {
 
         currentUser = user.id;
 
+        console.log('xd',user.id)
+
         // solo se suman puntos si el usuario esta activo
         const isActive = await this.userService.isActiveUser(user.id);
 
         console.log(user.id, 'isActive', isActive);
 
         if (isActive) {
+          console.log('es activo')
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
             position == 'left' ? 'left-points' : 'right-points';

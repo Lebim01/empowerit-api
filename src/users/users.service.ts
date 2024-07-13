@@ -36,10 +36,14 @@ export class UsersService {
       '1000-pack',
       '2000-pack',
     ].includes(user.get('membership'));
+
+    console.log(user.get('membership'))
     if (is_new_pack) {
       const membership_cap_limit = user.get('membership_cap_limit');
       const membership_cap_current = user.get('membership_cap_current');
       return membership_cap_current < membership_cap_limit;
+    } else if (user.get('membership') == null){
+      return false
     } else {
       const expires_at = user.get('membership_expires_at');
       return dayjs(expires_at.seconds * 1000).isAfter(dayjs());

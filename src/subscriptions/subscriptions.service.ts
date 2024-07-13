@@ -673,13 +673,13 @@ export class SubscriptionsService {
           });*/
       }
     }
-    
+
     await this.addQueueBinaryPosition({
       id_user,
       sponsor_id: data.get('sponsor_id'),
       position: data.get('position'),
     });
-    
+
     const userRef = await admin.collection('users').doc(id_user).get();
     const userEmail = await userRef.get('email');
     const userName = await userRef.get('name');
@@ -911,14 +911,30 @@ export class SubscriptionsService {
      * aumenta los puntos del binario hacia arriba
      */
     if (volumen) {
+      console.log(user)
       try {
-        const membership_period = user.get('membership_period');
-        const points =
-          membership_period == 'yearly'
-            ? pack_points_yearly[user.get('membership')]
-            : pack_points[user.get('membership')];
+        /* Aqui */
+        const is_new_pack = [
+          '100-pack',
+          '300-pack',
+          '500-pack',
+          '1000-pack',
+          '2000-pack',
+        ].includes(user.get('membership'));
+        let points =0 ;
+        if (is_new_pack) {
+          points = pack_points[user.get('membership')];
+        } else {
+          const membership_period = user.get('membership_period');
+          points =
+            membership_period == 'yearly'
+              ? pack_points_yearly[user.get('membership')]
+              : pack_points[user.get('membership')];
+        }
         console.log('increaseBinaryPoints', user.id, points);
         await this.binaryService.increaseBinaryPoints(user.id, points);
+        console.log('todo bien')
+        return 'Puntos incrementados exitosamente';
       } catch (err) {
         console.log('Error increaseBinaryPoints');
         console.error(err);
@@ -929,7 +945,6 @@ export class SubscriptionsService {
         });*/
       }
     }
-    return 'Puntos incrementados exitosamente';
   }
 
   async createShopifyPack(
