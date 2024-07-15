@@ -209,6 +209,7 @@ export class SubscriptionsService {
       status: 'pending',
       created_at: new Date(),
       amount,
+      redirect_url,
       currency,
       expires_at: dayjs().add(15, 'minutes').toDate(),
     };
