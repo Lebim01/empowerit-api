@@ -22,80 +22,196 @@ export class RanksService {
         .collection('users')
         .orderBy('created_at', 'desc')
         .get();
-  
+
       const promises = users.docs.map(async (doc) => {
-        const userRef = await admin
-        .collection("users")
-        .doc(doc.id)
+        const userRef = await admin.collection('users').doc(doc.id);
         const volumen = await this.getShortLeg(doc.id);
+        console.log(doc.id)
         if (Number(volumen) >= 2300000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'top_1',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'top_1',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'top-legend',
+            });
+          }
+        } else if (Number(volumen) >= 600000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'top_diamond',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'top_diamond',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'top_1',
+            });
+          }
+        } else if (Number(volumen) >= 180000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'international_director',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'international_director',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'top_diamond',
+            });
+          }
+        } else if (Number(volumen) >= 72000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'national_director',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'national_director',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'international_director',
+            });
+          }
+        } else if (Number(volumen) >= 35000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'regional_director',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'regional_director',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'national_director',
+            });
+          }
+        } else if (Number(volumen) >= 25000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'master_3500',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'master_3500',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'regional_director',
+            });
+          }
+        } else if (Number(volumen) >= 16000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'master_2500',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'master_2500',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'master_3500',
+            });
+          }
+        } else if (Number(volumen) >= 1200) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'master_2000',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'master_2000',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'master_2500',
+            });
+          }
+        } else if (Number(volumen) >= 8000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'advance_builder',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'advance_builder',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'master_2000',
+            });
+          }
+        } else if (Number(volumen) >= 6000) {
+          const left_side = await this.getHasRankBySide(
+            doc.id,
+            'left',
+            'star_builder',
+          );
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'star_builder',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'advance_builder',
+            });
+          }
+        } else if (Number(volumen) >= 1500) {
+          const left_side = await this.getHasRankBySide(doc.id, 'left', 'none');
+          const right_side = await this.getHasRankBySide(
+            doc.id,
+            'right',
+            'none',
+          );
+          if (left_side && right_side) {
+            userRef.update({
+              rank: 'star_builder',
+            });
+          }
+        } else if (Number(volumen) >= 500) {
           userRef.update({
-            rank: "top-legend"
-          })
-        }
-        else if (Number(volumen) >= 600000) {
-          userRef.update({
-            rank: "top_1"
-          })
-        }
-        else if (Number(volumen) >= 180000) {
-          userRef.update({
-            rank: "top_diamond"
-          })
-        }
-        else if (Number(volumen) >= 72000) {
-          userRef.update({
-            rank: "international_director"
-          })
-        }
-        else if (Number(volumen) >= 35000) {
-          userRef.update({
-            rank: "national_director"
-          })
-        }
-        else if (Number(volumen) >= 25000) {
-          userRef.update({
-            rank: "regional_director"
-          })
-        }
-        else if (Number(volumen) >= 16000) {
-          userRef.update({
-            rank: "master_3500"
-          })
-        }
-        else if (Number(volumen) >= 1200) {
-          userRef.update({
-            rank: "master_2500"
-          })
-        }
-        else if (Number(volumen) >= 8000) {
-          userRef.update({
-            rank: "master_2000"
-          })
-        }
-        else if (Number(volumen) >= 6000) {
-          userRef.update({
-            rank: "advance_builder"
-          })
-        }
-        else if (Number(volumen) >= 1500) {
-          userRef.update({
-            rank: "star_builder"
-          })  
-        }
-        else if (Number(volumen) >= 500) {
-          userRef.update({
-            rank: "initial_builder"
-          })
+            rank: 'initial_builder',
+          });
         } else {
           userRef.update({
-            rank: "none"
-          })
+            rank: 'none',
+          });
         }
       });
-  
+
       await Promise.all(promises);
-  
+
       return 'exito en la funcion de updateNewRanks';
     } catch (error) {
       console.log('Error en updateNewRanks: ', error);
@@ -103,12 +219,23 @@ export class RanksService {
     }
   }
 
-  async getRankBySide() {
-    const sidesRef = admin
-    .collection("users")
-    .doc()
+  async getHasRankBySide(user_id: string, side: string, range: string) {
+    const sidesRef = await admin
+      .collection('users')
+      .doc(user_id)
+      .collection(`${side}-people`)
+      .get();
+
+    for (const doc of sidesRef.docs) {
+      const sidesRefUserId = doc.get('user_id');
+      const userRef = await admin.collection('users').doc(sidesRefUserId).get();
+      const userRank = userRef.get('rank');
+      if (userRank == range) {
+        return true;
+      }
+    }
+    return false;
   }
-  
 
   async getShortLeg(user_id: string) {
     const pointsRef = await admin

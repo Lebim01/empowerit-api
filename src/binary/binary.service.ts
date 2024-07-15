@@ -74,7 +74,7 @@ export class BinaryService {
         const side =
           user.get('left_binary_user_id') == currentUser ? 'left' : 'right';
         currentUser = user.id;
-        console.log(currentUser)
+        console.log(currentUser);
         const countUnderlinePeople = user.get('count_underline_people');
 
         if (countUnderlinePeople) {
@@ -141,9 +141,9 @@ export class BinaryService {
           ),
         ),
       );
-      console.log('pasa')
+      console.log('pasa');
       if (users.size > 0) {
-        console.log('pasa')
+        console.log('pasa');
         const user = users.docs[0];
         const userData = user.data();
         const position =
@@ -151,7 +151,7 @@ export class BinaryService {
 
         currentUser = user.id;
 
-        console.log('xd',user.id)
+        console.log('xd', user.id);
 
         // solo se suman puntos si el usuario esta activo
         const isActive = await this.userService.isActiveUser(user.id);
@@ -159,7 +159,7 @@ export class BinaryService {
         console.log(user.id, 'isActive', isActive);
 
         if (isActive) {
-          console.log('es activo')
+          console.log('es activo');
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
             position == 'left' ? 'left-points' : 'right-points';
@@ -291,13 +291,13 @@ export class BinaryService {
     return notFound;
   }
 
-  async getPeopleTree( rootId: string, nodes: any = {}) {
+  async getPeopleTree(rootId: string, nodes: any = {}) {
     if (!rootId) return [];
 
     const rootDocId = rootId;
     const queue = [rootDocId];
     const people = [];
-    people.push(rootDocId)
+    people.push(rootDocId);
 
     while (queue.length > 0) {
       const user_id = queue.shift();
@@ -340,5 +340,56 @@ export class BinaryService {
       });
     console.log('pasa por aca');
     return 'listo';
+  }
+  async fixBinaryPoints() {
+    const users = await admin.collection('users').get();
+    for (const doc of users.docs) {
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        try {
+          const rangePointsSnapshot = await admin
+            .collection('users')
+            .doc(doc.id)
+            .collection('points')
+            .where('created_at', '>=', firstDayOfMonth)
+            .get();
+
+          for (const pointsDoc of rangePointsSnapshot.docs) {
+            const prevPoints = pointsDoc.data().points;
+            const pointsDocId = pointsDoc.id;
+
+            const pointsDocRef = admin
+              .collection('users')
+              .doc(doc.id)
+              .collection('points')
+              .doc(pointsDocId);
+
+            const userRef = await admin
+              .collection('users')
+              .doc(pointsDoc.data().user_id)
+              .get();
+
+            const validPoints = [100, 300, 500, 1000, 2000];
+            if (userRef.exists && userRef.data().membership) {
+              if (!validPoints.includes(prevPoints)) {
+                try {
+                  await pointsDocRef.update({
+                    points: prevPoints * 2
+                  });
+                  console.log(pointsDocId);
+                  console.log('Este dio =>', prevPoints);
+                  console.log('Debió de haber dado', prevPoints * 2);
+                } catch (updateError) {
+                  console.log('Error updating document: ', updateError);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Error getting documents: ', error);
+      }
+    }
+    return 'desde la funcion fixBinaryPoints';
   }
 }

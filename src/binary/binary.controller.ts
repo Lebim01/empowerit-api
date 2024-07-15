@@ -25,6 +25,11 @@ export class BinaryController {
     );
   }
 
+  /* @Post('fixBinaryPoints')
+  async fixBinaryPoints(){
+    return this.binaryService.fixBinaryPoints()
+  } */
+
   /*
   volver a subir left-points y right-points
 
