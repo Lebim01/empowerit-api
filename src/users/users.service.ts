@@ -37,16 +37,35 @@ export class UsersService {
       '2000-pack',
     ].includes(user.get('membership'));
 
-    console.log(user.get('membership'))
+    console.log(user.get('membership'));
     if (is_new_pack) {
       const membership_cap_limit = user.get('membership_cap_limit');
       const membership_cap_current = user.get('membership_cap_current');
       return membership_cap_current < membership_cap_limit;
-    } else if (user.get('membership') == null){
-      return false
+    } else if (user.get('membership') == null) {
+      return false;
     } else {
       const expires_at = user.get('membership_expires_at');
       return dayjs(expires_at.seconds * 1000).isAfter(dayjs());
+    }
+  }
+
+  async getUserByPaymentAddressForParticipations(
+    address: string,
+    type: PackParticipations,
+  ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
+    try {
+      const snap = await admin
+        .collection('users')
+        .where(`payment_link_participations.${type}.address`, '==', address)
+        .get();
+
+      if (snap.empty) return null;
+
+      return snap.docs[0];
+    } catch (err) {
+      //Sentry.captureException(err);
+      return null;
     }
   }
 

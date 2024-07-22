@@ -91,6 +91,35 @@ export class CryptoapisController {
     return 'FAIL';
   }
 
+  @Post('callbackPaymentForParticipations/:type/queue')
+  async callbackPaymentQueueForParticipations(
+    @Body() body: CallbackNewConfirmedCoins,
+    @Param('type') type: PackParticipations,
+  ) {
+    if (this.isValidCryptoApis(body, true)) {
+      type Method = 'POST';
+      const task: google.cloud.tasks.v2.ITask = {
+        httpRequest: {
+          httpMethod: 'POST' as Method,
+          url: `${process.env.API_URL}/cryptoapis/callbackPaymentForParticipations/${type}`,
+          body: Buffer.from(JSON.stringify(body)),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      };
+
+      await this.googleTaskService.addToQueue(
+        task,
+        this.googleTaskService.getPathQueue('payment-participations'),
+      );
+
+      return 'OK';
+    }
+
+    return 'FAIL';
+  }
+
   @Post('callbackPayment/:type/queue')
   async callbackPaymentQueue(
     @Body() body: CallbackNewConfirmedCoins,
@@ -167,7 +196,12 @@ export class CryptoapisController {
         console.log({ is_complete });
 
         if (is_complete) {
-          await this.subscriptionService.onPaymentMembership(userDoc.id, type, currency, "Activada con Pago");
+          await this.subscriptionService.onPaymentMembership(
+            userDoc.id,
+            type,
+            currency,
+            'Activada con Pago',
+          );
 
           // Eliminar el evento que esta en el servicio de la wallet
           await this.cryptoapisService.removeCallbackEvent(
@@ -200,6 +234,7 @@ export class CryptoapisController {
             address,
             type,
             currency,
+            'callbackPayment',
           );
 
           // Actualizar QR
@@ -210,6 +245,136 @@ export class CryptoapisController {
           );
           await userDoc.ref.update({
             [`payment_link.${type}.qr`]: qr,
+          });
+
+          /*Sentry.captureException('Transaccion: Amount menor', {
+            extra: {
+              reference: body.referenceId,
+              address: body.data.item.address,
+            },
+          });*/
+          throw new HttpException(
+            'El monto pagado es menor al requerido. ',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      } else {
+        /*Sentry.captureException('Inscripción: usuario no encontrado', {
+          extra: {
+            reference: body.referenceId,
+            address: body.data.item.address,
+            payload: JSON.stringify(body),
+          },
+        });*/
+        throw new HttpException(
+          'No se encontro el usuario',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } else {
+      throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
+    }
+  }
+  @Post('callbackPaymentForParticipations/:type')
+  async callbackPaymentProMembershipForParticipations(
+    @Body() body: CallbackNewConfirmedCoins,
+    @Headers() headers,
+    @Param('type') type: PackParticipations,
+  ): Promise<any> {
+    await db.collection('cryptoapis-requests').add({
+      created_at: new Date(),
+      url: `cryptoapis/callbackPaymentForParticipations/${type}`,
+      body,
+      headers,
+    });
+
+    if (body.data.item.direction == 'outgoing') return;
+
+    if (this.isValidCryptoApis(body, true)) {
+      const { address } = body.data.item;
+      const userDoc =
+        await this.usersService.getUserByPaymentAddressForParticipations(
+          address,
+          type,
+        );
+      const referenceId = body.referenceId;
+      let referenceId2 = '';
+      if (userDoc && userDoc.get)
+        referenceId2 = userDoc.get(
+          `payment_link_participations.${type}.referenceId2`,
+        );
+
+      if (userDoc) {
+        // Agregar registro de la transaccion
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, {
+          ...body,
+          data: { ...body.data, event: 'ADDRESS_COINS_TRANSACTION_CONFIRMED' },
+        });
+
+        // Verificar si ya se pago todo o no
+        const { is_complete, pendingAmount, currency } =
+          await this.cryptoapisService.transactionIsCompletePaidForParticipations(
+            type,
+            userDoc.id,
+          );
+        console.log({ is_complete });
+
+        if (is_complete) {
+          await this.subscriptionService.onPaymentParticipations(
+            userDoc.id,
+            type,
+            currency,
+            'Activada con Pago',
+          );
+
+          // Eliminar el evento que esta en el servicio de la wallet
+          console.log(referenceId);
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
+            currency,
+          );
+
+          await db.collection('users').doc(userDoc.id).update({
+            payment_link_participations: {},
+          });
+
+          return 'transaccion correcta';
+        }
+
+        // Sí el pago esta incompleto
+        else {
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
+            currency,
+          );
+
+          // Crear nuevo evento
+          await this.cryptoapisService.createCallbackConfirmation(
+            userDoc.id,
+            address,
+            type,
+            currency,
+            'callbackPaymentForParticipations',
+          );
+
+          // Actualizar QR
+          const qr: string = this.cryptoapisService.generateQrUrl(
+            address,
+            pendingAmount.toFixed(8),
+            'litecoin',
+          );
+          await userDoc.ref.update({
+            [`payment_link_participations.${type}.qr`]: qr,
           });
 
           /*Sentry.captureException('Transaccion: Amount menor', {
@@ -298,12 +463,16 @@ export class CryptoapisController {
             console.log(error);
           }
           await db
-          .collection('users')
-          .doc(userDoc.id)
-          .update({
-            [`payment_link_credits.${type}`]: admin.firestore.FieldValue.delete(),
-          })
-          await this.binaryService.increaseBinaryPoints(userDoc.id, CREDITS_PACKS_BINARY_POINTS[type])
+            .collection('users')
+            .doc(userDoc.id)
+            .update({
+              [`payment_link_credits.${type}`]:
+                admin.firestore.FieldValue.delete(),
+            });
+          await this.binaryService.increaseBinaryPoints(
+            userDoc.id,
+            CREDITS_PACKS_BINARY_POINTS[type],
+          );
           return 'transaccion correcta';
         }
 
@@ -421,6 +590,7 @@ export class CryptoapisController {
             body.data.item.address,
             type,
             currency,
+            'callbackPayment',
           );
         }
 

@@ -25,6 +25,19 @@ import { pack_points, pack_points_yearly } from '../binary/binary_packs';
 import Openpay from 'openpay';
 import { EmailService } from 'src/email/email.service';
 
+export const PARTICIPATIONS_PRICES: Record<PackParticipations, number> = {
+  '3000-participation': 3000,
+};
+
+export const PARTICIPATIONS_CAP_LIMITS: Record<PackParticipations, number> = {
+  '3000-participation': 6000,
+};
+
+export const PARTICIPATIONS_BINARY_POINTS: Record<PackParticipations, number> =
+  {
+    '3000-participation': 300,
+  };
+
 export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   supreme: 199,
   pro: 99,
@@ -211,6 +224,8 @@ export class SubscriptionsService {
       amount,
       redirect_url,
       currency,
+      openpay,
+      credits: CREDITS_PACKS_PRICE[type],
       expires_at: dayjs().add(15, 'minutes').toDate(),
     };
     // Guardar payment_link
@@ -227,6 +242,141 @@ export class SubscriptionsService {
       amount: payment_link_credits.amount,
       currency: payment_link_credits.currency,
       qr: payment_link_credits.qr,
+    };
+  }
+
+  async createPaymentAddressForParticipations(
+    id_user: string,
+    type: PackParticipations,
+    currency: Coins,
+  ) {
+    const userRef = admin.collection('users').doc(id_user);
+    const userData = await userRef.get().then((r) => r.data());
+    let address = '';
+    let referenceId = '';
+    let referenceId2 = '';
+
+    if (
+      userData.payment_link_participations &&
+      userData.payment_link_participations[type] &&
+      userData.payment_link_participations[type].currency == currency
+    ) {
+      address = userData.payment_link_participations[type].address;
+      referenceId = userData.payment_link_participations[type].referenceId;
+    } else {
+      // Obtener un nuevo wallet para el pago
+      const newAddress = await this.cryptoapisService.createNewWalletAddress(
+        currency,
+      );
+      address = newAddress;
+
+      console.log('address:', newAddress);
+
+      // Crear primera confirmación de la transaccion
+
+      if (currency == 'LTC') {
+        try {
+          const resConfirmation =
+            await this.cryptoapisService.createFirstConfirmationTransaction(
+              id_user,
+              newAddress,
+              type,
+              currency,
+              'callbackPaymentForParticipations',
+            );
+          referenceId = resConfirmation.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
+
+        try {
+          const resConfirmation2 =
+            await this.cryptoapisService.createCallbackConfirmation(
+              id_user,
+              newAddress,
+              type,
+              currency,
+              'callbackPaymentForParticipations',
+            );
+          referenceId2 = resConfirmation2.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
+      } else if (currency == 'MXN') {
+      }
+      const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+    }
+
+    const amount_type = PARTICIPATIONS_PRICES;
+
+    let amount = 0;
+    let exchange = 0;
+    let redirect_url = '';
+    let openpay = {};
+
+    if (currency == 'LTC') {
+      amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
+    }
+    if (currency == 'MXN') {
+      exchange = await this.cryptoapisService.getUSDExchange();
+      amount = Number(Number(exchange * amount_type[type]).toFixed(2));
+
+      const customer = {
+        name: userData.name,
+        last_name: '',
+        phone_number: userData.whatsapp,
+        email: userData.email,
+      };
+
+      const newCharge = {
+        method: 'card',
+        amount,
+        description: 'Compra de paquete',
+        customer: customer,
+        send_email: false,
+        confirm: false,
+        redirect_url:
+          'https://backoffice.empowerittop.com/subscriptions?transaction=pending',
+        use_3d_secure: true,
+      };
+
+      const res = await this.createCharge(newCharge);
+
+      redirect_url = res.payment_method.url;
+      openpay = res;
+    }
+
+    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+
+    // Estructurar el campo payment_link
+    const payment_link = {
+      referenceId,
+      referenceId2,
+      address,
+      qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+      status: 'pending',
+      created_at: new Date(),
+      amount,
+      currency,
+      exchange,
+      expires_at: dayjs().add(15, 'minutes').toDate(),
+      redirect_url,
+      openpay,
+    };
+
+    // Guardar payment_link
+    await userRef.collection('address-history').add({ ...payment_link, type });
+    await userRef.update({
+      payment_link_participations: {
+        [type]: payment_link,
+      },
+    });
+
+    return {
+      address: address,
+      amount: payment_link.amount,
+      currency: payment_link.currency,
+      qr: payment_link.qr,
     };
   }
 
@@ -271,6 +421,7 @@ export class SubscriptionsService {
               newAddress,
               type,
               currency,
+              'callbackPayment',
             );
           referenceId = resConfirmation.data.item.referenceId;
         } catch (err) {
@@ -284,6 +435,7 @@ export class SubscriptionsService {
               newAddress,
               type,
               currency,
+              'callbackPayment',
             );
           referenceId2 = resConfirmation2.data.item.referenceId;
         } catch (err) {
@@ -434,6 +586,32 @@ export class SubscriptionsService {
     });
   }
 
+  async assingParticipation(id_user: string, type: PackParticipations) {
+    // Crear una nueva fecha
+    let currentDate = new Date();
+
+    // Pasar al siguiente mes
+    let nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+    // Sumar otros dos meses
+    nextMonthDate.setMonth(nextMonthDate.getMonth() + 2);
+    // Ajustar el día al 1
+    nextMonthDate.setDate(1);
+
+    await admin
+      .collection('users')
+      .doc(id_user)
+      .collection('participations')
+      .add({
+        participation_name: type,
+        starts_at: new Date(),
+        next_pay: nextMonthDate,
+        participation_cap_current: 0,
+        participation_cap_limit: PARTICIPATIONS_CAP_LIMITS[type],
+        created_at: new Date(),
+      });
+  }
+
   async assingMembership(id_user: string, type: Franchises) {
     // Obtener fechas
     /*const startAt: Date = await this.calculateStartDate(id_user);
@@ -553,6 +731,46 @@ export class SubscriptionsService {
         created_at: new Date(),
         concept: `Recarga de  ${CREDITS_PACKS_PRICE[pack_credits]} créditos`,
       });
+  }
+
+  async onPaymentParticipations(
+    id_user: string,
+    type: PackParticipations,
+    currency: string | null,
+    activation_type: string,
+  ) {
+    const userDocRef = admin.collection('users').doc(id_user);
+    const data = await userDocRef.get();
+
+    const pack_price = PARTICIPATIONS_PRICES[type];
+
+    /* 
+      Se activara la participacion
+     */
+    await this.assingParticipation(id_user, type);
+
+    /* Dar bir  */
+    try {
+      await this.bondService.execUserDirectBond(id_user, pack_price, true);
+    } catch (error) {
+      console.log('Error dando el bono Directo en participatciones', error);
+    }
+
+    /* Dar range points y binario */
+    try {
+      await this.binaryService.increaseBinaryPointsForParticipations(
+        id_user,
+        PARTICIPATIONS_BINARY_POINTS[type],
+        type,
+      );
+    } catch (error) {
+      console.log(
+        'Error incrementando los puntos de binario en participaciones',
+        error,
+      );
+    }
+
+    console.log('todo bienb');
   }
 
   async onPaymentMembership(
@@ -912,7 +1130,6 @@ export class SubscriptionsService {
      * aumenta los puntos del binario hacia arriba
      */
     if (volumen) {
-      console.log(user)
       try {
         /* Aqui */
         const is_new_pack = [
@@ -922,7 +1139,7 @@ export class SubscriptionsService {
           '1000-pack',
           '2000-pack',
         ].includes(user.get('membership'));
-        let points =0 ;
+        let points = 0;
         if (is_new_pack) {
           points = pack_points[user.get('membership')];
         } else {
@@ -934,7 +1151,7 @@ export class SubscriptionsService {
         }
         console.log('increaseBinaryPoints', user.id, points);
         await this.binaryService.increaseBinaryPoints(user.id, points);
-        console.log('todo bien')
+        console.log('todo bien');
         return 'Puntos incrementados exitosamente';
       } catch (err) {
         console.log('Error increaseBinaryPoints');

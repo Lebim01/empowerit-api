@@ -24,6 +24,10 @@ export const FRANCHISE_RANGE_POINTS: Record<Franchises, number> = {
   '3000-pack': 1000,
 };
 
+export const PARTICIPATION_RANGE_POINTS: Record<PackParticipations, number> = {
+  '3000-participation': 1000,
+};
+
 @Injectable()
 export class BinaryService {
   constructor(private readonly userService: UsersService) {}
@@ -180,6 +184,7 @@ export class BinaryService {
             user_id: registerUserId,
             name: registerUser.get('name') || '',
             created_at: new Date(),
+            starts_at: new Date()
           });
 
           /**
@@ -187,6 +192,110 @@ export class BinaryService {
            */
           batch.set(subCollectionPointsRef, {
             points: FRANCHISE_RANGE_POINTS[membership],
+            side: position || 'right',
+            user_id: registerUserId,
+            user_email: registerUser.get('email') || 'noemail',
+            user_name: registerUser.get('name') || '',
+            user_sponsor_id: registerUser.get('sponsor_id') || null,
+            user_sponsor: registerUser.get('sponsor') || '',
+            created_at: new Date(),
+            concept,
+            cartId: cartId || '',
+          });
+        }
+      } else {
+        currentUser = null;
+      }
+    } while (currentUser);
+
+    try {
+      // Commit the batch
+      const response = await batch.commit();
+      return response;
+    } catch (err) {
+      await admin.collection('failed-binary-points').add({
+        registerUserId,
+      });
+      throw err;
+    }
+  }
+
+  async increaseBinaryPointsForParticipations(
+    registerUserId: string,
+    points: number,
+    participation: PackParticipations,
+    concept = 'Participacion',
+    cartId?: string,
+  ) {
+    const batch = writeBatch(db);
+
+    console.log('Repartir', points, 'puntos');
+
+    const registerUser = await admin
+      .collection('users')
+      .doc(registerUserId)
+      .get();
+
+    const membership = registerUser.get('membership');
+    let currentUser = registerUserId;
+
+    do {
+      const users = await getDocs(
+        query(
+          collection(db, 'users'),
+          or(
+            where('left_binary_user_id', '==', currentUser),
+            where('right_binary_user_id', '==', currentUser),
+          ),
+        ),
+      );
+      console.log('pasa');
+      if (users.size > 0) {
+        console.log('pasa');
+        const user = users.docs[0];
+        const userData = user.data();
+        const position =
+          userData.left_binary_user_id == currentUser ? 'left' : 'right';
+
+        currentUser = user.id;
+
+        console.log('xd', user.id);
+
+        // solo se suman puntos si el usuario esta activo
+        const isActive = await this.userService.isActiveUser(user.id);
+
+        console.log(user.id, 'isActive', isActive);
+
+        if (isActive) {
+          console.log('es activo');
+          //se determina a que subcoleccion que se va a enfocar
+          const positionCollection =
+            position == 'left' ? 'left-points' : 'right-points';
+
+          const subCollectionRef = doc(
+            collection(db, `users/${user.id}/${positionCollection}`),
+          );
+
+          const subCollectionPointsRef = doc(
+            collection(db, `users/${user.id}/points`),
+          );
+
+          /**
+           * add (left | right) points
+           */
+          batch.set(subCollectionRef, {
+            points,
+            user_id: registerUserId,
+            name: registerUser.get('name') || '',
+            created_at: new Date(),
+            starts_at: new Date()
+          });
+
+          /**
+           * (add points)
+           */
+          batch.set(subCollectionPointsRef, {
+            points: PARTICIPATION_RANGE_POINTS[participation],
             side: position || 'right',
             user_id: registerUserId,
             user_email: registerUser.get('email') || 'noemail',

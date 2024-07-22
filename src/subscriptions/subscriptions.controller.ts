@@ -35,6 +35,23 @@ export class SubscriptionsController {
     }
   }
 
+  @Post('createPaymentAddressForParticipations/:type')
+  async createPaymentAddressForParticipations(
+    @Body() body,
+    @Param('type') type: PackParticipations,
+  ) {
+    try {
+      return await this.subscriptionService.createPaymentAddressForParticipations(
+        body.userId,
+        type,
+        body.coin,
+      );
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  }
+
   @Post('statusToExpired')
   statusToExpired() {
     return this.subscriptionService.statusToExpired();

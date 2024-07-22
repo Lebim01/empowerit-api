@@ -179,8 +179,9 @@ export class CryptoapisService {
   async createFirstConfirmationTransaction(
     userId: string,
     address: string,
-    type: Memberships | PackCredits,
+    type: Memberships | PackCredits | PackParticipations,
     currency: Coins,
+    callback: string
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
     try {
@@ -198,11 +199,10 @@ export class CryptoapisService {
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
             /* Agrega este callbackpayment en la queue en cloud functions */
-            callbackUrl: `${this.hostapi}/cryptoapis/callbackPayment/${type}/queue`,
+            callbackUrl: `${this.hostapi}/cryptoapis/${callback}/${type}/queue`,
           },
         },
       };
-      console.log(payload);
       const res =
         await cryptoapisRequest<ResponseNewUnconfirmedCoinsTransactions>(
           options,
@@ -258,8 +258,9 @@ export class CryptoapisService {
   async createCallbackConfirmation(
     id_user: string,
     address: string,
-    type: Memberships,
+    type: Memberships | PackParticipations,
     currency: Coins,
+    callback: string
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
     const options = {
@@ -276,7 +277,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${this.hostapi}/cryptoapis/callbackPayment/${type}/queue`,
+            callbackUrl: `${this.hostapi}/cryptoapis/${callback}/${type}/queue`,
             receiveCallbackOn: 2,
           },
         },
@@ -675,6 +676,28 @@ export class CryptoapisService {
     const tolerance = required_amount * 0.003;
     const address = userDoc.get(`payment_link.${type}.address`);
     const currency = userDoc.get(`payment_link.${type}.currency`);
+    const pendingAmount: number = await this.calculatePendingAmount(
+      userDoc.id,
+      address,
+      required_amount,
+    );
+    return {
+      is_complete: pendingAmount - tolerance <= 0,
+      pendingAmount,
+      currency,
+    };
+  }
+
+  async transactionIsCompletePaidForParticipations(
+    type: PackParticipations,
+    id_user: string,
+  ) {
+    const userDoc = await db.collection('users').doc(id_user).get();
+    // Verificar si el pago se completo
+    const required_amount = Number(userDoc.get(`payment_link_participations.${type}.amount`));
+    const tolerance = required_amount * 0.003;
+    const address = userDoc.get(`payment_link_participations.${type}.address`);
+    const currency = userDoc.get(`payment_link_participations.${type}.currency`);
     const pendingAmount: number = await this.calculatePendingAmount(
       userDoc.id,
       address,

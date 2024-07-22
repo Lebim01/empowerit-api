@@ -29,7 +29,11 @@ export class BondsService {
   /**
    * solo se reparte este bono a los usuarios activos
    */
-  async execUserDirectBond(registerUserId: string, membership_price: number) {
+  async execUserDirectBond(
+    registerUserId: string,
+    membership_price: number,
+    isParticipation = false,
+  ) {
     console.log('execUserDirectBond', { registerUserId }, { membership_price });
     const user = await admin.collection('users').doc(registerUserId).get();
 
@@ -46,16 +50,20 @@ export class BondsService {
       '3000-pack',
     ].includes(sponsor.membership);
     console.log(sponsor.membership, { is_new_pack });
-    if (is_new_pack) {
-      if (user.get('membership') == '3000-pack') {
-        percent = 10 / 100;
-      } else {
-        const sponsor_membership = sponsor.membership as Memberships;
-        percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
-      }
+    if (isParticipation) {
+      percent = 5 / 100;
     } else {
-      const sponsor_rank = sponsor.rank as Ranks;
-      percent = quick_start_percent[sponsor_rank] / 100;
+      if (is_new_pack) {
+        if (user.get('membership') == '3000-pack') {
+          percent = 10 / 100;
+        } else {
+          const sponsor_membership = sponsor.membership as Memberships;
+          percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
+        }
+      } else {
+        const sponsor_rank = sponsor.rank as Ranks;
+        percent = quick_start_percent[sponsor_rank] / 100;
+      }
     }
 
     // primer nivel
