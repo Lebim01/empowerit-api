@@ -610,6 +610,13 @@ export class SubscriptionsService {
         participation_cap_limit: PARTICIPATIONS_CAP_LIMITS[type],
         created_at: new Date(),
       });
+
+      await admin
+      .collection("users")
+      .doc(id_user)
+      .update({
+        has_participations: true
+      })
   }
 
   async assingMembership(id_user: string, type: Franchises) {
