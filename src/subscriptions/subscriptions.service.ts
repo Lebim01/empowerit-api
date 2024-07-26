@@ -33,6 +33,13 @@ export const PARTICIPATIONS_CAP_LIMITS: Record<PackParticipations, number> = {
   '3000-participation': 6000,
 };
 
+export const PARTICIPATIONS_PRINCIPAL_CAP_LIMIT: Record<
+  PackParticipations,
+  number
+> = {
+  '3000-participation': 15000,
+};
+
 export const PARTICIPATIONS_BINARY_POINTS: Record<PackParticipations, number> =
   {
     '3000-participation': 300,
@@ -598,6 +605,10 @@ export class SubscriptionsService {
     // Ajustar el día al 1
     nextMonthDate.setDate(1);
 
+    const userRef = await admin.collection("users").doc(id_user).get()
+    const email = userRef.get('email')
+    const userName = userRef.get('name')
+
     await admin
       .collection('users')
       .doc(id_user)
@@ -609,14 +620,14 @@ export class SubscriptionsService {
         participation_cap_current: 0,
         participation_cap_limit: PARTICIPATIONS_CAP_LIMITS[type],
         created_at: new Date(),
+        email,
+        userName
       });
 
-      await admin
-      .collection("users")
-      .doc(id_user)
-      .update({
-        has_participations: true
-      })
+    await admin.collection('users').doc(id_user).update({
+      has_participations: true,
+      membership_cap_limit: PARTICIPATIONS_PRINCIPAL_CAP_LIMIT[type],
+    });
   }
 
   async assingMembership(id_user: string, type: Franchises) {

@@ -28,6 +28,9 @@ import { EmailModule } from './email/email.module';
 import { CartModule } from './cart/cart.module';
 import { OpenpayModule } from './openpay/openpay.module';
 import { AlgorithmMrRangeModule } from './algorithm-mr-range/algorithm-mr-range.module';
+import { ParticipationsController } from './participations/participations.controller';
+import { ParticipationsService } from './participations/participations.service';
+import { ParticipationsModule } from './participations/participations.module';
 
 @Module({
   imports: [
@@ -58,14 +61,16 @@ import { AlgorithmMrRangeModule } from './algorithm-mr-range/algorithm-mr-range.
     CartModule,
     OpenpayModule,
     AlgorithmMrRangeModule,
+    ParticipationsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, ParticipationsController],
   providers: [
     AppService,
     BinaryService,
     UsersService,
     RanksService,
     GoogletaskService,
+    ParticipationsService,
   ],
 })
 export class AppModule {}

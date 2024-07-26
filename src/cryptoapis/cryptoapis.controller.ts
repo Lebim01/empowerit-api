@@ -340,7 +340,7 @@ export class CryptoapisController {
           );
 
           await db.collection('users').doc(userDoc.id).update({
-            payment_link_participations: {},
+            payment_link_participations: {}
           });
 
           return 'transaccion correcta';
