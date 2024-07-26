@@ -37,9 +37,24 @@ export class ParticipationsService {
       participation_name: form.participation_name,
     });
 
+    await admin.collection('admin-participations-activations').add({
+      next_pay,
+      created_at: new Date(),
+      participation_cap_current: form.participation_cap_current,
+      participation_cap_limit:
+        PARTICIPATIONS_CAP_LIMITS[form.participation_name],
+      email: form.email,
+      userName,
+      starts_at: startDate,
+      participation_name: form.participation_name,
+    });
+
     userRef.update({
       has_participations: true,
       membership_cap_limit: MEMBERSHIP_CAP_LIMIT[form.participation_name],
     });
+  }
+  async activateWithVolumen(body) {
+    console.log('holi')
   }
 }

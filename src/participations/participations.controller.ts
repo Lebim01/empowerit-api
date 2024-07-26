@@ -10,4 +10,9 @@ export class ParticipationsController {
           return await this.participationsService.activateWithoutVolumen(body)
      }
 
+     @Post('activateWithVolumen')
+     async activateParticipationWithVolumen(@Body() body){
+          return await this.participationsService.activateWithVolumen(body)
+     }
+
 }
