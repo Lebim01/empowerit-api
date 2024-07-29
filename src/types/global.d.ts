@@ -22,6 +22,11 @@ type Franchises =
 
 type Blockchains = 'bitcoin' | 'litecoin';
 
-type PackCredits = '100-credits' | '500-credits' | '1000-credits';
+type PackCredits =
+  | '30-credits'
+  | '50-credits'
+  | '100-credits'
+  | '500-credits'
+  | '1000-credits';
 
 type PackParticipations = '3000-participation';

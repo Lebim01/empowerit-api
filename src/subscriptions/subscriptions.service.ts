@@ -103,6 +103,8 @@ export const FRANCHISE_FIRMS: Record<Franchises, number> = {
 };
 
 export const CREDITS_PACKS_PRICE: Record<PackCredits, number> = {
+  '30-credits': 30,
+  '50-credits': 50,
   '100-credits': 100,
   '500-credits': 500,
   '1000-credits': 1000,

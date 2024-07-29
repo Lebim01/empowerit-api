@@ -24,6 +24,8 @@ import { BinaryService } from 'src/binary/binary.service';
 import * as admin from 'firebase-admin';
 
 export const CREDITS_PACKS_BINARY_POINTS: Record<PackCredits, number> = {
+  '30-credits':15,
+  '50-credits': 25,
   '100-credits': 50,
   '500-credits': 250,
   '1000-credits': 500,
