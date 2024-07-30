@@ -31,6 +31,7 @@ import { AlgorithmMrRangeModule } from './algorithm-mr-range/algorithm-mr-range.
 import { ParticipationsController } from './participations/participations.controller';
 import { ParticipationsService } from './participations/participations.service';
 import { ParticipationsModule } from './participations/participations.module';
+import { BondsService } from './bonds/bonds.service';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { ParticipationsModule } from './participations/participations.module';
     RanksService,
     GoogletaskService,
     ParticipationsService,
+    BondsService
   ],
 })
 export class AppModule {}
