@@ -46,4 +46,10 @@ export class AdminController {
   getUsersJson() {
     return this.adminService.usersJson();
   }
+
+  @Post('pay-participations')
+  async payParticipations(@Body() body) {
+    if (!body.amount) throw new Error('amount is required');
+    return this.adminService.execParticipationsBonus(body.amount);
+  }
 }
