@@ -166,7 +166,7 @@ export class CryptoapisService {
           `/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-unconfirmed`,
           payload,
         );
-        return response
+        return response;
       } catch (error) {
         console.log(error);
       }
@@ -181,7 +181,7 @@ export class CryptoapisService {
     address: string,
     type: Memberships | PackCredits | PackParticipations,
     currency: Coins,
-    callback: string
+    callback: string,
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
     try {
@@ -260,7 +260,7 @@ export class CryptoapisService {
     address: string,
     type: Memberships | PackParticipations,
     currency: Coins,
-    callback: string
+    callback: string,
   ) {
     const blockchain = this.getBlockchainFromCurrency(currency);
     const options = {
@@ -288,6 +288,7 @@ export class CryptoapisService {
   sendRequestTransaction = async (
     recipients: { address: string; amount: string }[],
     blockchain: 'bitcoin' | 'litecoin',
+    note = 'yourAdditionalInformationhere',
   ) => {
     const options = {
       ...default_options,
@@ -301,7 +302,7 @@ export class CryptoapisService {
           callbackSecretKey: 'a12k*?_1ds',
           callbackUrl: `${this.hostapi}/callbackSendedCoins`,
           feePriority: 'standard',
-          note: 'yourAdditionalInformationhere',
+          note,
           prepareStrategy: 'minimize-dust',
           recipients,
         },
@@ -694,10 +695,14 @@ export class CryptoapisService {
   ) {
     const userDoc = await db.collection('users').doc(id_user).get();
     // Verificar si el pago se completo
-    const required_amount = Number(userDoc.get(`payment_link_participations.${type}.amount`));
+    const required_amount = Number(
+      userDoc.get(`payment_link_participations.${type}.amount`),
+    );
     const tolerance = required_amount * 0.003;
     const address = userDoc.get(`payment_link_participations.${type}.address`);
-    const currency = userDoc.get(`payment_link_participations.${type}.currency`);
+    const currency = userDoc.get(
+      `payment_link_participations.${type}.currency`,
+    );
     const pendingAmount: number = await this.calculatePendingAmount(
       userDoc.id,
       address,

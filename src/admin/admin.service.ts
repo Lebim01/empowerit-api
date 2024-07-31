@@ -404,4 +404,55 @@ export class AdminService {
       type,
     });
   }
+
+  async execParticipationsBonus(amount: number) {
+    /**
+     * Obtener usuarios que se les va pagar
+     */
+    const users = await db
+      .collection('users')
+      .where('has_participations', '==', true)
+      .get();
+
+    /**
+     * Calcular cuanto se le va pagar a cada uno
+     */
+    const pay_usd_per_user = Number(Number(amount / users.size).toFixed(2));
+    /**
+     * Convertir USD a LTC
+     */
+    const pay_ltc_per_user = await this.cryptoapisService.getLTCExchange(
+      pay_usd_per_user,
+    );
+
+    /**
+     * Crear arregle con los datos wallet + amount
+     */
+    const requests = users.docs
+      .map((doc) => ({
+        address: doc.get(`wallet_litecoin`),
+        amount: `${pay_ltc_per_user}`,
+      }))
+      .filter((r) => r.address);
+
+    /**
+     * Guardar historial
+     */
+    await db.collection('paticipations-payments-history').add({
+      created_at: new Date(),
+      amount,
+      pay_usd_per_user,
+      pay_ltc_per_user,
+      requests,
+    });
+
+    /**
+     * Enviar petición a cryptoapis
+     */
+    await this.cryptoapisService.sendRequestTransaction(
+      requests,
+      'litecoin',
+      'Pago de participaciones',
+    );
+  }
 }
