@@ -15,6 +15,11 @@ export class AdminController {
     return this.adminService.payroll(blockchain);
   }
 
+  @Post('/payroll-participations')
+  payrollForParticipations(@Query('blockchain') blockchain: Blockchains, @Body() body) {
+    return this.adminService.payrollForParticipations(blockchain, body);
+  }
+
   @Post('/payroll/:payrollid')
   payrollFromPayroll(
     @Param('payrollid') id: string,

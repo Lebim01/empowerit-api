@@ -271,6 +271,11 @@ export class AdminService {
     return clean_payroll_data;
   }
 
+  async payrollForParticipations(blockchain: Blockchains, body) {
+    console.log('desde la funcion de payrollForParticipations');
+    console.log(body)
+  }
+
   /**
    * Enviar transacción a cryptoapis usando un registro de payroll
    */
