@@ -33,9 +33,9 @@ export class ParticipationsService {
     await userRef.collection('participations').add({
       next_pay,
       created_at: new Date(),
-      participation_cap_current: form.participation_cap_current,
+      participation_cap_current: Number(form.participation_cap_current),
       participation_cap_limit:
-        PARTICIPATIONS_CAP_LIMITS[form.participation_name],
+        Number(PARTICIPATIONS_CAP_LIMITS[form.participation_name]),
       email: form.email,
       userName,
       starts_at: startDate,
@@ -45,9 +45,9 @@ export class ParticipationsService {
     await admin.collection('admin-participations-activations').add({
       next_pay,
       created_at: new Date(),
-      participation_cap_current: form.participation_cap_current,
+      participation_cap_current: Number(form.participation_cap_current),
       participation_cap_limit:
-        PARTICIPATIONS_CAP_LIMITS[form.participation_name],
+      Number(form.participation_cap_current),
       email: form.email,
       userName,
       starts_at: startDate,
@@ -57,7 +57,7 @@ export class ParticipationsService {
 
     userRef.update({
       has_participations: true,
-      membership_cap_limit: MEMBERSHIP_CAP_LIMIT[form.participation_name],
+      membership_cap_limit: Number(MEMBERSHIP_CAP_LIMIT[form.participation_name]),
     });
   }
   async activateWithVolumen(body) {
@@ -78,9 +78,9 @@ export class ParticipationsService {
       .collection('admin-participations-activations-with-volumen')
       .add({
         next_pay,
-        participation_cap_current: form.participation_cap_current,
+        participation_cap_current: Number(form.participation_cap_current),
         participation_cap_limit:
-          PARTICIPATIONS_CAP_LIMITS[form.participation_name],
+          Number(PARTICIPATIONS_CAP_LIMITS[form.participation_name]),
         email: form.email,
         userName,
         starts_at: startDate,
@@ -93,9 +93,9 @@ export class ParticipationsService {
     await userRef.collection('participations').add({
       next_pay,
       created_at: new Date(),
-      participation_cap_current: form.participation_cap_current,
+      participation_cap_current: Number(form.participation_cap_current),
       participation_cap_limit:
-        PARTICIPATIONS_CAP_LIMITS[form.participation_name],
+        Number(PARTICIPATIONS_CAP_LIMITS[form.participation_name]),
       email: form.email,
       userName,
       starts_at: startDate,

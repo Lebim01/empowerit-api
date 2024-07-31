@@ -271,11 +271,6 @@ export class AdminService {
     return clean_payroll_data;
   }
 
-  async payrollForParticipations(blockchain: Blockchains, body) {
-    console.log('desde la funcion de payrollForParticipations');
-    console.log(body)
-  }
-
   /**
    * Enviar transacción a cryptoapis usando un registro de payroll
    */
@@ -414,31 +409,54 @@ export class AdminService {
     /**
      * Obtener usuarios que se les va pagar
      */
-    const users = await db
-      .collection('users')
-      .where('has_participations', '==', true)
+    const participations = await db
+      .collectionGroup('participations')
+      .where('next_pay', '<=', new Date())
       .get();
+
+    let wallets = [];
+
+    for (const part of participations.docs) {
+      //console.log(part.data().email)
+      const userQuery = await db
+        .collection('users')
+        .where('email', '==', part.data().email)
+        .get();
+
+      if (!userQuery.empty) {
+        const userDoc = userQuery.docs[0];
+        const wallet = userDoc.data().wallet_litecoin;
+
+        if (wallet) {
+          wallets.push({ wallet });
+        }
+      }
+    }
 
     /**
      * Calcular cuanto se le va pagar a cada uno
      */
-    const pay_usd_per_user = Number(Number(amount / users.size).toFixed(2));
+    const pay_usd_per_user = Number(
+      Number(amount / participations.size).toFixed(2),
+    );
+
     /**
      * Convertir USD a LTC
      */
     const pay_ltc_per_user = await this.cryptoapisService.getLTCExchange(
       pay_usd_per_user,
     );
-
     /**
      * Crear arregle con los datos wallet + amount
      */
-    const requests = users.docs
+    const requests = wallets
       .map((doc) => ({
-        address: doc.get(`wallet_litecoin`),
+        address: doc.wallet,
         amount: `${pay_ltc_per_user}`,
       }))
       .filter((r) => r.address);
+
+    console.log(requests);
 
     /**
      * Guardar historial
@@ -450,6 +468,23 @@ export class AdminService {
       pay_ltc_per_user,
       requests,
     });
+
+    const batch = db.batch();
+
+    //Cambiar el next_pay de cada uno
+
+    let next_pay = new Date();
+    next_pay.setMonth(next_pay.getMonth() + 2);
+
+    participations.forEach((doc) => {
+      batch.update(doc.ref, {
+        next_pay,
+        participation_cap_current:
+          firestore.FieldValue.increment(pay_usd_per_user),
+      });
+    });
+
+    await batch.commit();
 
     /**
      * Enviar petición a cryptoapis
