@@ -728,51 +728,57 @@ export class SubscriptionsService {
   }
 
   async addCreditsManual(id_user: string, credits: number) {
-    const userDocRef = admin.collection('users').doc(id_user);
+    const userDocRef = await admin.collection('users').doc(id_user).get();
+    const email = await userDocRef.get('email')
     try {
-      await userDocRef.update({
+      await userDocRef.ref.update({
         credits: firestore.FieldValue.increment(
           credits
         ),
       });
-      await this.createAddCreditsManualDoc(id_user, credits);
+      await this.createAddCreditsManualDoc(id_user, credits, email);
     } catch (error) {
       console.log(error);
     }
   }
 
   async addCredits(id_user: string, pack_credits: PackCredits, currency: any) {
-    const userDocRef = admin.collection('users').doc(id_user);
+    const userDocRef = await admin.collection('users').doc(id_user).get();
+    const email = await userDocRef.get('email')
     try {
-      await userDocRef.update({
+      await userDocRef.ref.update({
         credits: firestore.FieldValue.increment(
           CREDITS_PACKS_PRICE[pack_credits],
         ),
       });
-      await this.createAddCreditsDoc(id_user, pack_credits, currency);
+      await this.createAddCreditsDoc(id_user, pack_credits, currency,email);
     } catch (error) {
       console.log(error);
     }
   }
 
-  async createAddCreditsManualDoc(id_user: string, credits: number) {
+  async createAddCreditsManualDoc(id_user: string, credits: number, email: string) {
     await admin
       .collection('users')
       .doc(id_user)
       .collection('credits-history')
       .add({
+        id_user,
+        email,
         total: credits,
         created_at: new Date(),
         concept: `Recarga manual de creditos`,
       });
   }
 
-  async createAddCreditsDoc(id_user: string, pack_credits: PackCredits, currency: any) {
+  async createAddCreditsDoc(id_user: string, pack_credits: PackCredits, currency: any, email:string) {
     await admin
       .collection('users')
       .doc(id_user)
       .collection('credits-history')
       .add({
+        id_user,
+        email,
         total: CREDITS_PACKS_PRICE[pack_credits],
         created_at: new Date(),
         concept: `Recarga de ${CREDITS_PACKS_PRICE[pack_credits]} créditos con ${currency}`,
