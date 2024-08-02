@@ -727,7 +727,21 @@ export class SubscriptionsService {
     return isNew;
   }
 
-  async addCredits(id_user: string, pack_credits: PackCredits) {
+  async addCreditsManual(id_user: string, credits: number) {
+    const userDocRef = admin.collection('users').doc(id_user);
+    try {
+      await userDocRef.update({
+        credits: firestore.FieldValue.increment(
+          credits
+        ),
+      });
+      await this.createAddCreditsManualDoc(id_user, credits);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async addCredits(id_user: string, pack_credits: PackCredits, currency: any) {
     const userDocRef = admin.collection('users').doc(id_user);
     try {
       await userDocRef.update({
@@ -735,13 +749,25 @@ export class SubscriptionsService {
           CREDITS_PACKS_PRICE[pack_credits],
         ),
       });
-      await this.createAddCreditsDoc(id_user, pack_credits);
+      await this.createAddCreditsDoc(id_user, pack_credits, currency);
     } catch (error) {
       console.log(error);
     }
   }
 
-  async createAddCreditsDoc(id_user: string, pack_credits: PackCredits) {
+  async createAddCreditsManualDoc(id_user: string, credits: number) {
+    await admin
+      .collection('users')
+      .doc(id_user)
+      .collection('credits-history')
+      .add({
+        total: credits,
+        created_at: new Date(),
+        concept: `Recarga manual de creditos`,
+      });
+  }
+
+  async createAddCreditsDoc(id_user: string, pack_credits: PackCredits, currency: any) {
     await admin
       .collection('users')
       .doc(id_user)
@@ -749,7 +775,7 @@ export class SubscriptionsService {
       .add({
         total: CREDITS_PACKS_PRICE[pack_credits],
         created_at: new Date(),
-        concept: `Recarga de  ${CREDITS_PACKS_PRICE[pack_credits]} créditos`,
+        concept: `Recarga de ${CREDITS_PACKS_PRICE[pack_credits]} créditos con ${currency}`,
       });
   }
 

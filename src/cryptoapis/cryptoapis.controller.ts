@@ -451,7 +451,7 @@ export class CryptoapisController {
 
         if (is_complete) {
           try {
-            await this.subscriptionService.addCredits(userDoc.id, type);
+            await this.subscriptionService.addCredits(userDoc.id, type, currency);
             // Eliminar el evento que esta en el servicio de la wallet
             await this.cryptoapisService.removeCallbackEvent(
               referenceId,

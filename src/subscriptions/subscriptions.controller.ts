@@ -128,7 +128,7 @@ export class SubscriptionsController {
     if (!body.side) throw new Error('side: left or right required');
     if (!body.membership) throw new Error('membership required');
 
-    console.log(body)
+    console.log(body);
 
     if (!MEMBERSHIP_CAP[body.membership])
       throw new Error('el type esta mal: ' + body.membership);
@@ -162,7 +162,7 @@ export class SubscriptionsController {
           sponsor_id: body.sponsor_id,
           position: body.side,
           created_at: new Date(),
-          count_underline_people:0
+          count_underline_people: 0,
         });
     } else {
       user_id = res.docs[0].id;
@@ -199,7 +199,6 @@ export class SubscriptionsController {
     const userNew = await db.collection('users').doc(user_id).get();
     const uplineId = await userNew.get('parent_binary_user_id');
 
-
     await db.collection('memberships-history').add({
       activated: 'Activada Sin Volumen',
       created_at: new Date(),
@@ -232,12 +231,17 @@ export class SubscriptionsController {
       body.user_id,
       body.membership,
       null,
-      "Activacion con volumen"
+      'Activacion con volumen',
     );
   }
 
   @Post('sendPack')
   sendPack(@Body() body) {
     return this.subscriptionService.createShopifyPack(body.user_id, body.pack);
+  }
+
+  @Post('addCredits/:id')
+  addCredits(@Body() body, @Param('id') id: string) {
+    return this.subscriptionService.addCreditsManual(id, body.credits);
   }
 }
