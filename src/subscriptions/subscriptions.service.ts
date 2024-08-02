@@ -730,13 +730,14 @@ export class SubscriptionsService {
   async addCreditsManual(id_user: string, credits: number) {
     const userDocRef = await admin.collection('users').doc(id_user).get();
     const email = await userDocRef.get('email')
+    const name = await userDocRef.get('name')
     try {
       await userDocRef.ref.update({
         credits: firestore.FieldValue.increment(
           credits
         ),
       });
-      await this.createAddCreditsManualDoc(id_user, credits, email);
+      await this.createAddCreditsManualDoc(id_user, credits, email, name);
     } catch (error) {
       console.log(error);
     }
@@ -745,19 +746,20 @@ export class SubscriptionsService {
   async addCredits(id_user: string, pack_credits: PackCredits, currency: any) {
     const userDocRef = await admin.collection('users').doc(id_user).get();
     const email = await userDocRef.get('email')
+    const name = await userDocRef.get('name')
     try {
       await userDocRef.ref.update({
         credits: firestore.FieldValue.increment(
           CREDITS_PACKS_PRICE[pack_credits],
         ),
       });
-      await this.createAddCreditsDoc(id_user, pack_credits, currency,email);
+      await this.createAddCreditsDoc(id_user, pack_credits, currency,email,name);
     } catch (error) {
       console.log(error);
     }
   }
 
-  async createAddCreditsManualDoc(id_user: string, credits: number, email: string) {
+  async createAddCreditsManualDoc(id_user: string, credits: number, email: string, name: string) {
     await admin
       .collection('users')
       .doc(id_user)
@@ -765,13 +767,14 @@ export class SubscriptionsService {
       .add({
         id_user,
         email,
+        name,
         total: credits,
         created_at: new Date(),
         concept: `Recarga manual de creditos`,
       });
   }
 
-  async createAddCreditsDoc(id_user: string, pack_credits: PackCredits, currency: any, email:string) {
+  async createAddCreditsDoc(id_user: string, pack_credits: PackCredits, currency: any, email:string, name: string) {
     await admin
       .collection('users')
       .doc(id_user)
@@ -779,6 +782,7 @@ export class SubscriptionsService {
       .add({
         id_user,
         email,
+        name,
         total: CREDITS_PACKS_PRICE[pack_credits],
         created_at: new Date(),
         concept: `Recarga de ${CREDITS_PACKS_PRICE[pack_credits]} créditos con ${currency}`,
