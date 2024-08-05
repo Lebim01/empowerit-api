@@ -16,6 +16,7 @@ import { UsersService } from '../users/users.service';
 import { firestore } from 'firebase-admin';
 
 export const FRANCHISE_RANGE_POINTS: Record<Franchises, number> = {
+  '49-pack': 0,
   '100-pack': 100,
   '300-pack': 300,
   '500-pack': 500,

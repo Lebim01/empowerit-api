@@ -33,6 +33,7 @@ export const quick_start_percent: Record<Ranks, number> = {
  * Porcentaje de ganancia bono inicio rapido de las neuvas Franquicias
  */
 export const quick_start_percent_by_Franchise: Record<Franchises, number> = {
+  '49-pack': 0,
   '100-pack': 15,
   '300-pack': 15,
   '500-pack': 20,
@@ -64,6 +65,7 @@ export const menthor_percent: Record<Ranks, number> = {
  * Porcentaje de ganancia bono mentor ahora con las Franquicias
  */
 export const menthor_percent_by_Franchise: Record<Franchises, number> = {
+  '49-pack': 0,
   '100-pack': 10,
   '300-pack': 15,
   '500-pack': 15,

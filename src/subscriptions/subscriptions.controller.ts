@@ -130,7 +130,7 @@ export class SubscriptionsController {
 
     console.log(body);
 
-    if (!MEMBERSHIP_CAP[body.membership])
+    if (body.membership != '49-pack' && !MEMBERSHIP_CAP[body.membership])
       throw new Error('el type esta mal: ' + body.membership);
 
     await db

@@ -13,6 +13,7 @@ type Memberships =
 type Coins = 'BTC' | 'LTC' | 'MXN';
 
 type Franchises =
+  | '49-pack'
   | '100-pack'
   | '300-pack'
   | '500-pack'

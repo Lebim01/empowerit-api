@@ -54,6 +54,7 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   'vip-pack': 228,
   'elite-pack': 678,
   'founder-pack': 3000,
+  '49-pack': 49,
   '100-pack': 100,
   '300-pack': 300,
   '500-pack': 500,
@@ -71,6 +72,7 @@ export const MEMBERSHIP_CREDITS: Record<Memberships, number> = {
   'vip-pack': 228,
   'elite-pack': 678,
   'founder-pack': 3000,
+  '49-pack': 0,
   '100-pack': 100,
   '300-pack': 300,
   '500-pack': 500,
@@ -80,6 +82,7 @@ export const MEMBERSHIP_CREDITS: Record<Memberships, number> = {
 };
 
 export const MEMBERSHIP_CAP: Record<Franchises, number> = {
+  '49-pack': 0,
   '100-pack': 300,
   '300-pack': 1000,
   '500-pack': 2000,
@@ -94,6 +97,7 @@ export const MEMBERSHIP_PRICES_YEARLY = {
 };
 
 export const FRANCHISE_FIRMS: Record<Franchises, number> = {
+  '49-pack': 1,
   '100-pack': 1,
   '300-pack': 3,
   '500-pack': 5,
@@ -872,7 +876,7 @@ export class SubscriptionsService {
       return;
     }*/
 
-    if (isNew) {
+    if (isNew && type != '49-pack') {
       await this.bondService.execBondPresenter(
         pack_price,
         id_user,
@@ -936,7 +940,7 @@ export class SubscriptionsService {
      * aumentar puntos de bono directo 2 niveles
      */
     /* A partir de aqui modificare */
-    if (isNew) {
+    if (isNew && type != '49-pack') {
       try {
         await this.bondService.execUserDirectBond(id_user, pack_price);
       } catch (err) {
@@ -1189,6 +1193,7 @@ export class SubscriptionsService {
       try {
         /* Aqui */
         const is_new_pack = [
+          '49-pack',
           '100-pack',
           '300-pack',
           '500-pack',
@@ -1206,7 +1211,9 @@ export class SubscriptionsService {
               : pack_points[user.get('membership')];
         }
         console.log('increaseBinaryPoints', user.id, points);
-        await this.binaryService.increaseBinaryPoints(user.id, points);
+        if(user.get('membership') != '49-pack') {
+          await this.binaryService.increaseBinaryPoints(user.id, points);
+        }
         console.log('todo bien');
         return 'Puntos incrementados exitosamente';
       } catch (err) {
