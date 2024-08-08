@@ -81,8 +81,8 @@ export class BondsService {
           await sponsorRef.update({
             [Bonds.QUICK_START]:
               firestore.FieldValue.increment(availableAmount),
-            membership_cap_current:
-              firestore.FieldValue.increment(availableAmount),
+            /* membership_cap_current:
+              firestore.FieldValue.increment(availableAmount), */
           });
         } else {
           await sponsorRef.update({
@@ -180,8 +180,8 @@ export class BondsService {
         if (is_new_pack) {
           await u_presenter_1.ref.update({
             [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-            membership_cap_current:
-              firestore.FieldValue.increment(availableAmount),
+            /* membership_cap_current:
+              firestore.FieldValue.increment(availableAmount), */
           });
         } else {
           await u_presenter_1.ref.update({
@@ -219,8 +219,8 @@ export class BondsService {
         if (is_new_pack) {
           await u_presenter_2.ref.update({
             [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-            membership_cap_current:
-              firestore.FieldValue.increment(availableAmount),
+            /* membership_cap_current:
+              firestore.FieldValue.increment(availableAmount), */
           });
         } else {
           await u_presenter_2.ref.update({
@@ -265,8 +265,8 @@ export class BondsService {
         .doc(userId)
         .update({
           bond_presenter: firestore.FieldValue.increment(availableAmount),
-          membership_cap_current:
-            firestore.FieldValue.increment(availableAmount),
+          /* membership_cap_current:
+            firestore.FieldValue.increment(availableAmount), */
         });
     } else {
       await admin
