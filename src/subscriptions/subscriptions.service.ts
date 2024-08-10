@@ -657,7 +657,7 @@ export class SubscriptionsService {
       //membership_expires_at: expiresAt,
       payment_link: {},
       is_new: false,
-      credits: MEMBERSHIP_CREDITS[type],
+      credits: firestore.FieldValue.increment(MEMBERSHIP_CREDITS[type]),
       membership_cap_limit: MEMBERSHIP_CAP[type],
       membership_cap_current: 0,
     });
@@ -940,7 +940,7 @@ export class SubscriptionsService {
      * aumentar puntos de bono directo 2 niveles
      */
     /* A partir de aqui modificare */
-    if (isNew && type != '49-pack') {
+    if (type != '49-pack') {
       try {
         await this.bondService.execUserDirectBond(id_user, pack_price);
       } catch (err) {
