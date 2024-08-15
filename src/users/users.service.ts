@@ -533,4 +533,84 @@ export class UsersService {
     });
     return response;
   }
+
+  async fixAllSanguineUsers() {
+    console.log('inicio de la funcion de fixAllSanguineUsers')
+    const usersRef = await admin.collection("users").get()
+    for (const docu of usersRef.docs){
+      console.log(docu.id)
+    }
+    return 'fin de la funcion fixAllSanguineUsers'
+  }
+
+  async verifySanguineUser() {
+    const user = await admin
+      .collection('users')
+      .doc('14ymEw5YJ6hWaKANDoRTQvbWup33')
+      .get();
+    let user_id = user.id;
+    console.log(user_id);
+    let sponsor_id = user.get('sponsor_id');
+    while (sponsor_id) {
+      sponsor_id = await this.getSponsorId(user_id);
+      const position = await this.getPosition(user_id)
+      if (sponsor_id) {
+        console.log(user_id, ' tiene de sponsor a =>', sponsor_id);
+        const res = await this.existsInSubcollection(
+          user_id,
+          sponsor_id,
+          'sanguine_users',
+          position
+        );
+        user_id = sponsor_id;
+      }
+    }
+  }
+
+  async getSponsorId(id_user: string) {
+    const user = await admin.collection('users').doc(id_user).get();
+    const sponsor_id = user.get('sponsor_id');
+    if (sponsor_id) {
+      return sponsor_id;
+    } else {
+      return null;
+    }
+  }
+
+  async getPosition(id_user: string) {
+    const user = await admin.collection('users').doc(id_user).get();
+    const position = user.get('position');
+    if (position) {
+      return position;
+    } else {
+      return null;
+    }
+  }
+
+  async existsInSubcollection(
+    id_user: string,
+    sponsor_id: string,
+    collection: string,
+    position: string
+  ) {
+    const sponsorRef = await admin
+      .collection('users')
+      .doc(sponsor_id)
+      .collection(collection)
+      .where('id_user', '==', id_user)
+      .get();
+
+      if(sponsorRef.size == 0){
+        await admin.collection("users").doc(sponsor_id).collection(collection).add({
+          created_at: new Date(),
+          id_user,
+          is_active: true,
+          position,
+          sponsor_id,
+        })
+      } else {
+        console.log('si lo contiene')
+      }
+
+  }
 }

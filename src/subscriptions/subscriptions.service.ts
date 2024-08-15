@@ -855,11 +855,13 @@ export class SubscriptionsService {
         academy_access_expires_at: nextYearDate,
       });
     }
+    console.log('despues de la comprobacion si no es un paquete 3000')
 
     if (type == 'founder-pack') {
       await this.execFounderPack(id_user);
       return;
     }
+    console.log('despues de la comprobacion si no es un founder pack')
 
     /**
      * Reconsumo pagado antes de tiempo
@@ -884,21 +886,25 @@ export class SubscriptionsService {
         data.get('presenter_2'),
       );
     }
+    console.log('despues de la comprobacion si no es nueva y si no es una de type 49')
 
     /**
      * Se activa la membresia
      */
     await this.assingMembership(id_user, type);
+    console.log('despues de asignar la membresia')
 
     if (isNew) {
       await this.emailService.sendEmailNewUser(id_user);
     }
+    console.log('despues de mandar el email si es un usuario nuevo')
 
     if (isNew) {
       await userDocRef.update({
         first_cycle_started_at: new Date(),
       });
     }
+    console.log('despues del first cycle_started_At')
 
     /**
      * se crea un registro en la subcoleccion users/{id}/sanguine_users
@@ -918,6 +924,7 @@ export class SubscriptionsService {
         });*/
       }
     }
+    console.log('despues del insertsanguineusers')
 
     const sponsorRef = await admin
       .collection('users')
@@ -936,6 +943,8 @@ export class SubscriptionsService {
       });
     }
 
+    console.log('despues del contador de gente directa')
+
     /**
      * aumentar puntos de bono directo 2 niveles
      */
@@ -952,12 +961,14 @@ export class SubscriptionsService {
           });*/
       }
     }
+    console.log('despues de ejecutar el bono directo')
 
     await this.addQueueBinaryPosition({
       id_user,
       sponsor_id: data.get('sponsor_id'),
       position: data.get('position'),
     });
+    console.log('despues de la funcion addQueueBinaryPosition')
 
     const userRef = await admin.collection('users').doc(id_user).get();
     const userEmail = await userRef.get('email');
@@ -979,6 +990,7 @@ export class SubscriptionsService {
       user_id: id_user,
       currency: currency || null,
     });
+    console.log('despues del a;adir a memberships-history')
   }
 
   async addQueueBinaryPosition(body: PayloadAssignBinaryPosition) {
@@ -1001,6 +1013,7 @@ export class SubscriptionsService {
   }
 
   async insertSanguineUsers(id_user: string) {
+    //Se trae la referencia del usuario
     const userRef = await admin.collection('users').doc(id_user).get();
 
     const current_user = {
@@ -1011,6 +1024,7 @@ export class SubscriptionsService {
       position: userRef.get('position'),
     };
 
+    //Setea en el sponsor_id el usuario que se esta registrando en la subcoleccion de sanguine_users
     await admin
       .collection('users')
       .doc(current_user.sponsor_id)
@@ -1029,6 +1043,7 @@ export class SubscriptionsService {
         },
       );
 
+      //Busca en todos los usuarios los que tengan el sponsor_id en la subcoleecion de sanguine_users
     const sanguine_sponsors = await admin
       .collectionGroup('sanguine_users')
       .where('id_user', '==', current_user.sponsor_id)
@@ -1199,10 +1214,15 @@ export class SubscriptionsService {
           '500-pack',
           '1000-pack',
           '2000-pack',
+          '3000-pack'
         ].includes(user.get('membership'));
         let points = 0;
         if (is_new_pack) {
-          points = pack_points[user.get('membership')];
+          if(user.get('is_new')){
+            points = pack_points[user.get('membership')];
+          } else {
+            points = pack_points[user.get('membership')] / 2;
+          }
         } else {
           const membership_period = user.get('membership_period');
           points =

@@ -40,6 +40,7 @@ export class BondsService {
     const sponsor_id = user.get('sponsor_id');
     const sponsorRef = admin.collection('users').doc(sponsor_id);
     const sponsor = await sponsorRef.get().then((r) => r.data());
+    const is_new = user.get('is_new');
     let percent = 0;
     const is_new_pack = [
       '100-pack',
@@ -55,10 +56,20 @@ export class BondsService {
     } else {
       if (is_new_pack) {
         if (user.get('membership') == '3000-pack') {
-          percent = 10 / 100;
+          if (!is_new) {
+            percent = 5 / 100;
+          } else {
+            percent = 10 / 100;
+          }
         } else {
           const sponsor_membership = sponsor.membership as Memberships;
-          percent = quick_start_percent_by_Franchise[sponsor_membership] / 100;
+          if (!is_new) {
+            percent =
+              quick_start_percent_by_Franchise[sponsor_membership] / 2 / 100;
+          } else {
+            percent =
+              quick_start_percent_by_Franchise[sponsor_membership] / 100;
+          }
         }
       } else {
         const sponsor_rank = sponsor.rank as Ranks;

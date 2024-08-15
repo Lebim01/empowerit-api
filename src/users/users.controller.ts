@@ -94,4 +94,9 @@ export class UsersController {
       .doc('BPhiz2FmzMZuiAwMZ2bgCIPTEBf2')
       .set(user.data());
   }
+
+  @Get('verifySanguineUsersParentId')
+  async verifySanguineUsersParentId(){
+    return this.usersService.verifySanguineUser()
+  }
 }
