@@ -190,6 +190,7 @@ export class SubscriptionsController {
           id_user: user_id,
           position: body.side,
           sponsor_id: body.sponsor_id,
+          is_new: false,
         },
         false,
       );

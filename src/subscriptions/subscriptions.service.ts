@@ -611,9 +611,9 @@ export class SubscriptionsService {
     // Ajustar el día al 1
     nextMonthDate.setDate(1);
 
-    const userRef = await admin.collection("users").doc(id_user).get()
-    const email = userRef.get('email')
-    const userName = userRef.get('name')
+    const userRef = await admin.collection('users').doc(id_user).get();
+    const email = userRef.get('email');
+    const userName = userRef.get('name');
 
     await admin
       .collection('users')
@@ -627,7 +627,7 @@ export class SubscriptionsService {
         participation_cap_limit: PARTICIPATIONS_CAP_LIMITS[type],
         created_at: new Date(),
         email,
-        userName
+        userName,
       });
 
     await admin.collection('users').doc(id_user).update({
@@ -648,19 +648,22 @@ export class SubscriptionsService {
     /* Aqui va la parte para ver cuantos creditos le tocan dependiendo la membresia */
 
     // Registrar cambios
-    await admin.collection('users').doc(id_user).update({
-      count_direct_people_this_cycle: 0,
-      count_scholarship_people: 0,
-      membership: type,
-      membership_started_at: new Date(),
-      membership_status: 'paid',
-      //membership_expires_at: expiresAt,
-      payment_link: {},
-      is_new: false,
-      credits: firestore.FieldValue.increment(MEMBERSHIP_CREDITS[type]),
-      membership_cap_limit: MEMBERSHIP_CAP[type],
-      membership_cap_current: 0,
-    });
+    await admin
+      .collection('users')
+      .doc(id_user)
+      .update({
+        count_direct_people_this_cycle: 0,
+        count_scholarship_people: 0,
+        membership: type,
+        membership_started_at: new Date(),
+        membership_status: 'paid',
+        //membership_expires_at: expiresAt,
+        payment_link: {},
+        is_new: false,
+        credits: firestore.FieldValue.increment(MEMBERSHIP_CREDITS[type]),
+        membership_cap_limit: MEMBERSHIP_CAP[type],
+        membership_cap_current: 0,
+      });
 
     /* Ya no seran ciclos quitar o dejarlo */
     await admin.collection('users').doc(id_user).collection('cycles').add({
@@ -733,13 +736,11 @@ export class SubscriptionsService {
 
   async addCreditsManual(id_user: string, credits: number) {
     const userDocRef = await admin.collection('users').doc(id_user).get();
-    const email = await userDocRef.get('email')
-    const name = await userDocRef.get('name')
+    const email = await userDocRef.get('email');
+    const name = await userDocRef.get('name');
     try {
       await userDocRef.ref.update({
-        credits: firestore.FieldValue.increment(
-          credits
-        ),
+        credits: firestore.FieldValue.increment(credits),
       });
       await this.createAddCreditsManualDoc(id_user, credits, email, name);
     } catch (error) {
@@ -749,21 +750,32 @@ export class SubscriptionsService {
 
   async addCredits(id_user: string, pack_credits: PackCredits, currency: any) {
     const userDocRef = await admin.collection('users').doc(id_user).get();
-    const email = await userDocRef.get('email')
-    const name = await userDocRef.get('name')
+    const email = await userDocRef.get('email');
+    const name = await userDocRef.get('name');
     try {
       await userDocRef.ref.update({
         credits: firestore.FieldValue.increment(
           CREDITS_PACKS_PRICE[pack_credits],
         ),
       });
-      await this.createAddCreditsDoc(id_user, pack_credits, currency,email,name);
+      await this.createAddCreditsDoc(
+        id_user,
+        pack_credits,
+        currency,
+        email,
+        name,
+      );
     } catch (error) {
       console.log(error);
     }
   }
 
-  async createAddCreditsManualDoc(id_user: string, credits: number, email: string, name: string) {
+  async createAddCreditsManualDoc(
+    id_user: string,
+    credits: number,
+    email: string,
+    name: string,
+  ) {
     await admin
       .collection('users')
       .doc(id_user)
@@ -778,7 +790,13 @@ export class SubscriptionsService {
       });
   }
 
-  async createAddCreditsDoc(id_user: string, pack_credits: PackCredits, currency: any, email:string, name: string) {
+  async createAddCreditsDoc(
+    id_user: string,
+    pack_credits: PackCredits,
+    currency: any,
+    email: string,
+    name: string,
+  ) {
     await admin
       .collection('users')
       .doc(id_user)
@@ -811,7 +829,12 @@ export class SubscriptionsService {
 
     /* Dar bir  */
     try {
-      await this.bondService.execUserDirectBond(id_user, pack_price, true);
+      await this.bondService.execUserDirectBond(
+        id_user,
+        pack_price,
+        true,
+        true,
+      );
     } catch (error) {
       console.log('Error dando el bono Directo en participatciones', error);
     }
@@ -855,13 +878,13 @@ export class SubscriptionsService {
         academy_access_expires_at: nextYearDate,
       });
     }
-    console.log('despues de la comprobacion si no es un paquete 3000')
+    console.log('despues de la comprobacion si no es un paquete 3000');
 
     if (type == 'founder-pack') {
       await this.execFounderPack(id_user);
       return;
     }
-    console.log('despues de la comprobacion si no es un founder pack')
+    console.log('despues de la comprobacion si no es un founder pack');
 
     /**
      * Reconsumo pagado antes de tiempo
@@ -886,25 +909,27 @@ export class SubscriptionsService {
         data.get('presenter_2'),
       );
     }
-    console.log('despues de la comprobacion si no es nueva y si no es una de type 49')
+    console.log(
+      'despues de la comprobacion si no es nueva y si no es una de type 49',
+    );
 
     /**
      * Se activa la membresia
      */
     await this.assingMembership(id_user, type);
-    console.log('despues de asignar la membresia')
+    console.log('despues de asignar la membresia');
 
     if (isNew) {
       await this.emailService.sendEmailNewUser(id_user);
     }
-    console.log('despues de mandar el email si es un usuario nuevo')
+    console.log('despues de mandar el email si es un usuario nuevo');
 
     if (isNew) {
       await userDocRef.update({
         first_cycle_started_at: new Date(),
       });
     }
-    console.log('despues del first cycle_started_At')
+    console.log('despues del first cycle_started_At');
 
     /**
      * se crea un registro en la subcoleccion users/{id}/sanguine_users
@@ -924,7 +949,7 @@ export class SubscriptionsService {
         });*/
       }
     }
-    console.log('despues del insertsanguineusers')
+    console.log('despues del insertsanguineusers');
 
     const sponsorRef = await admin
       .collection('users')
@@ -943,7 +968,7 @@ export class SubscriptionsService {
       });
     }
 
-    console.log('despues del contador de gente directa')
+    console.log('despues del contador de gente directa');
 
     /**
      * aumentar puntos de bono directo 2 niveles
@@ -951,7 +976,7 @@ export class SubscriptionsService {
     /* A partir de aqui modificare */
     if (type != '49-pack') {
       try {
-        await this.bondService.execUserDirectBond(id_user, pack_price);
+        await this.bondService.execUserDirectBond(id_user, pack_price, isNew);
       } catch (err) {
         console.error(err);
         /*Sentry.configureScope((scope) => {
@@ -961,14 +986,15 @@ export class SubscriptionsService {
           });*/
       }
     }
-    console.log('despues de ejecutar el bono directo')
+    console.log('despues de ejecutar el bono directo');
 
     await this.addQueueBinaryPosition({
       id_user,
       sponsor_id: data.get('sponsor_id'),
       position: data.get('position'),
+      is_new: isNew,
     });
-    console.log('despues de la funcion addQueueBinaryPosition')
+    console.log('despues de la funcion addQueueBinaryPosition');
 
     const userRef = await admin.collection('users').doc(id_user).get();
     const userEmail = await userRef.get('email');
@@ -990,7 +1016,7 @@ export class SubscriptionsService {
       user_id: id_user,
       currency: currency || null,
     });
-    console.log('despues del a;adir a memberships-history')
+    console.log('despues del a;adir a memberships-history');
   }
 
   async addQueueBinaryPosition(body: PayloadAssignBinaryPosition) {
@@ -1043,7 +1069,7 @@ export class SubscriptionsService {
         },
       );
 
-      //Busca en todos los usuarios los que tengan el sponsor_id en la subcoleecion de sanguine_users
+    //Busca en todos los usuarios los que tengan el sponsor_id en la subcoleecion de sanguine_users
     const sanguine_sponsors = await admin
       .collectionGroup('sanguine_users')
       .where('id_user', '==', current_user.sponsor_id)
@@ -1214,15 +1240,16 @@ export class SubscriptionsService {
           '500-pack',
           '1000-pack',
           '2000-pack',
-          '3000-pack'
+          '3000-pack',
         ].includes(user.get('membership'));
         let points = 0;
         if (is_new_pack) {
-          if(user.get('is_new')){
+          if (payload.is_new) {
             points = pack_points[user.get('membership')];
           } else {
             points = pack_points[user.get('membership')] / 2;
           }
+          console.log('points =>', points);
         } else {
           const membership_period = user.get('membership_period');
           points =
@@ -1231,7 +1258,7 @@ export class SubscriptionsService {
               : pack_points[user.get('membership')];
         }
         console.log('increaseBinaryPoints', user.id, points);
-        if(user.get('membership') != '49-pack') {
+        if (user.get('membership') != '49-pack') {
           await this.binaryService.increaseBinaryPoints(user.id, points);
         }
         console.log('todo bien');

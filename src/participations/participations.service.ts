@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { db as admin } from '../firebase/admin';
 import { BinaryService } from 'src/binary/binary.service';
-import { PARTICIPATIONS_BINARY_POINTS, PARTICIPATIONS_PRICES } from 'src/subscriptions/subscriptions.service';
+import {
+  PARTICIPATIONS_BINARY_POINTS,
+  PARTICIPATIONS_PRICES,
+} from 'src/subscriptions/subscriptions.service';
 import { BondsService } from 'src/bonds/bonds.service';
 
 const PARTICIPATIONS_CAP_LIMITS = {
@@ -34,8 +37,9 @@ export class ParticipationsService {
       next_pay,
       created_at: new Date(),
       participation_cap_current: Number(form.participation_cap_current),
-      participation_cap_limit:
-        Number(PARTICIPATIONS_CAP_LIMITS[form.participation_name]),
+      participation_cap_limit: Number(
+        PARTICIPATIONS_CAP_LIMITS[form.participation_name],
+      ),
       email: form.email,
       userName,
       starts_at: startDate,
@@ -46,18 +50,19 @@ export class ParticipationsService {
       next_pay,
       created_at: new Date(),
       participation_cap_current: Number(form.participation_cap_current),
-      participation_cap_limit:
-      Number(form.participation_cap_current),
+      participation_cap_limit: Number(form.participation_cap_current),
       email: form.email,
       userName,
       starts_at: startDate,
       participation_name: form.participation_name,
-      user_id
+      user_id,
     });
 
     userRef.update({
       has_participations: true,
-      membership_cap_limit: Number(MEMBERSHIP_CAP_LIMIT[form.participation_name]),
+      membership_cap_limit: Number(
+        MEMBERSHIP_CAP_LIMIT[form.participation_name],
+      ),
     });
   }
   async activateWithVolumen(body) {
@@ -79,8 +84,9 @@ export class ParticipationsService {
       .add({
         next_pay,
         participation_cap_current: Number(form.participation_cap_current),
-        participation_cap_limit:
-          Number(PARTICIPATIONS_CAP_LIMITS[form.participation_name]),
+        participation_cap_limit: Number(
+          PARTICIPATIONS_CAP_LIMITS[form.participation_name],
+        ),
         email: form.email,
         userName,
         starts_at: startDate,
@@ -94,8 +100,9 @@ export class ParticipationsService {
       next_pay,
       created_at: new Date(),
       participation_cap_current: Number(form.participation_cap_current),
-      participation_cap_limit:
-        Number(PARTICIPATIONS_CAP_LIMITS[form.participation_name]),
+      participation_cap_limit: Number(
+        PARTICIPATIONS_CAP_LIMITS[form.participation_name],
+      ),
       email: form.email,
       userName,
       starts_at: startDate,
@@ -118,7 +125,12 @@ export class ParticipationsService {
 
     //Repartir bono de inicio rapido
     try {
-      await this.bondService.execUserDirectBond(user_id, PARTICIPATIONS_PRICES[form.participation_name], true);
+      await this.bondService.execUserDirectBond(
+        user_id,
+        PARTICIPATIONS_PRICES[form.participation_name],
+        true,
+        true,
+      );
     } catch (error) {
       console.log(
         'Error repartiendo bono de inicio rapido cuando se activa con volumen',

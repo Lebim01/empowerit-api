@@ -10,6 +10,7 @@ export class BondsController {
     return this.bondsService.execUserDirectBond(
       body.registerUserId,
       body.membership_price,
+      true,
     );
   }
 
