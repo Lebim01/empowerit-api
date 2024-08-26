@@ -60,6 +60,25 @@ export class BinaryController {
     }
   }*/
 
+  /* @Post('fixBinaryPointsById')
+  async fixBinaryPointsById() {
+    try {
+      const users = await db
+        .collectionGroup('right-points')
+        .where('user_id', '==', 'Dbjd7br2BWaGhj9fFNI08MUaLrm2')
+        .get();
+      for (const docu of users.docs) {
+        console.log(docu.data());
+        docu.ref.update({
+          points: 50,
+        });
+      }
+      return 'funcion completada exitosamente';
+    } catch (error) {
+      console.log('Error en la funcion fixBinaryPointsById', error);
+    }
+  } */
+
   @Post('/fixUnderlinePeople')
   async fixUnderlinePeople() {
     const users = await db
@@ -113,10 +132,10 @@ export class BinaryController {
       }
       await batch.commit();
     }
-    return 'miembros de organizacion actualizado'
+    return 'miembros de organizacion actualizado';
   }
   @Post('fixDirectMembers')
-  fixDirectMembers(){
+  fixDirectMembers() {
     return this.binaryService.fixDirectPeople();
   }
   @Get('checkNotFound')

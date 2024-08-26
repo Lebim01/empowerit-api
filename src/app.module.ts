@@ -32,6 +32,7 @@ import { ParticipationsController } from './participations/participations.contro
 import { ParticipationsService } from './participations/participations.service';
 import { ParticipationsModule } from './participations/participations.module';
 import { BondsService } from './bonds/bonds.service';
+import { SevenLevelsModule } from './seven-levels/seven-levels.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { BondsService } from './bonds/bonds.service';
     OpenpayModule,
     AlgorithmMrRangeModule,
     ParticipationsModule,
+    SevenLevelsModule,
   ],
   controllers: [AppController, ParticipationsController],
   providers: [
