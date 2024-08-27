@@ -64,7 +64,7 @@ export class BinaryController {
   async fixBinaryPointsById() {
     try {
       const users = await db
-        .collectionGroup('right-points')
+        .collectionGroup('left-points')
         .where('user_id', '==', 'Dbjd7br2BWaGhj9fFNI08MUaLrm2')
         .get();
       for (const docu of users.docs) {
@@ -78,6 +78,54 @@ export class BinaryController {
       console.log('Error en la funcion fixBinaryPointsById', error);
     }
   } */
+
+  @Post('addMissingProps')
+  async addMissingProps() {
+    //Recorrer todos los usuarios
+    const usersRef = await db.collection('users').get();
+    let i = 1;
+    for (const docu of usersRef.docs) {
+      const user_id = docu.id;
+      if (user_id != '9CXMbcJt2sNWG40zqWwQSxH8iki2') {
+        const email = await docu.get('email');
+        const sponsor = (await docu.get('sponsor')) ?? '';
+        const sponsor_id = (await docu.get('sponsor_id')) ?? '';
+        console.log(user_id, `${i}/${usersRef.size}`);
+        //Checar si ese id existe en la coleccion de left-points
+        const leftPoints = await db
+          .collectionGroup('left-points')
+          .where('user_id', '==', user_id)
+          .get();
+        if (leftPoints.size > 0) {
+          for (const leftDocu of leftPoints.docs) {
+            //Aca tendre que hacer el update
+            leftDocu.ref.update({
+              user_email: email,
+              user_sponsor: sponsor,
+              user_sponsor_id: sponsor_id,
+            });
+          }
+        }
+        //Checar si ese id existe en la coleccion de right-points
+        const rightPoints = await db
+          .collectionGroup('right-points')
+          .where('user_id', '==', user_id)
+          .get();
+        if (rightPoints.size > 0) {
+          for (const rightDocu of rightPoints.docs) {
+            //Aca tendre que hacer el update
+            rightDocu.ref.update({
+              user_email: email,
+              user_sponsor: sponsor,
+              user_sponsor_id: sponsor_id,
+            });
+          }
+        }
+      }
+      i++;
+    }
+    return 'desde la funcion de addMissingProps';
+  }
 
   @Post('/fixUnderlinePeople')
   async fixUnderlinePeople() {

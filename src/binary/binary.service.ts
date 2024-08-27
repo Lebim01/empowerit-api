@@ -185,7 +185,10 @@ export class BinaryService {
             user_id: registerUserId,
             name: registerUser.get('name') || '',
             created_at: new Date(),
-            starts_at: new Date()
+            starts_at: new Date(),
+            user_sponsor_id: registerUser.get('sponsor_id') || null,
+            user_sponsor: registerUser.get('sponsor') || '',
+            user_email: registerUser.get('email') || 'noemail',
           });
 
           /**
@@ -289,7 +292,7 @@ export class BinaryService {
             user_id: registerUserId,
             name: registerUser.get('name') || '',
             created_at: new Date(),
-            starts_at: new Date()
+            starts_at: new Date(),
           });
 
           /**
@@ -454,50 +457,50 @@ export class BinaryService {
   async fixBinaryPoints() {
     const users = await admin.collection('users').get();
     for (const doc of users.docs) {
-        const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        try {
-          const rangePointsSnapshot = await admin
+      try {
+        const rangePointsSnapshot = await admin
+          .collection('users')
+          .doc(doc.id)
+          .collection('points')
+          .where('created_at', '>=', firstDayOfMonth)
+          .get();
+
+        for (const pointsDoc of rangePointsSnapshot.docs) {
+          const prevPoints = pointsDoc.data().points;
+          const pointsDocId = pointsDoc.id;
+
+          const pointsDocRef = admin
             .collection('users')
             .doc(doc.id)
             .collection('points')
-            .where('created_at', '>=', firstDayOfMonth)
+            .doc(pointsDocId);
+
+          const userRef = await admin
+            .collection('users')
+            .doc(pointsDoc.data().user_id)
             .get();
 
-          for (const pointsDoc of rangePointsSnapshot.docs) {
-            const prevPoints = pointsDoc.data().points;
-            const pointsDocId = pointsDoc.id;
-
-            const pointsDocRef = admin
-              .collection('users')
-              .doc(doc.id)
-              .collection('points')
-              .doc(pointsDocId);
-
-            const userRef = await admin
-              .collection('users')
-              .doc(pointsDoc.data().user_id)
-              .get();
-
-            const validPoints = [100, 300, 500, 1000, 2000];
-            if (userRef.exists && userRef.data().membership) {
-              if (!validPoints.includes(prevPoints)) {
-                try {
-                  await pointsDocRef.update({
-                    points: prevPoints * 2
-                  });
-                  console.log(pointsDocId);
-                  console.log('Este dio =>', prevPoints);
-                  console.log('Debió de haber dado', prevPoints * 2);
-                } catch (updateError) {
-                  console.log('Error updating document: ', updateError);
-                }
+          const validPoints = [100, 300, 500, 1000, 2000];
+          if (userRef.exists && userRef.data().membership) {
+            if (!validPoints.includes(prevPoints)) {
+              try {
+                await pointsDocRef.update({
+                  points: prevPoints * 2,
+                });
+                console.log(pointsDocId);
+                console.log('Este dio =>', prevPoints);
+                console.log('Debió de haber dado', prevPoints * 2);
+              } catch (updateError) {
+                console.log('Error updating document: ', updateError);
               }
             }
           }
-        } catch (error) {
-          console.log('Error getting documents: ', error);
+        }
+      } catch (error) {
+        console.log('Error getting documents: ', error);
       }
     }
     return 'desde la funcion fixBinaryPoints';
