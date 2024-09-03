@@ -2,6 +2,14 @@ type PhisicMembership = 'alive-pack' | 'freedom-pack' | 'business-pack';
 
 type HibridMembership = 'elite-pack' | 'vip-pack';
 
+type AutomaticFranchises =
+  | 'FA500'
+  | 'FA1000'
+  | 'FA2000'
+  | 'FA5000'
+  | 'FA10000'
+  | 'FA20000';
+
 type Memberships =
   | 'pro'
   | 'supreme'

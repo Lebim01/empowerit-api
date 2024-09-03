@@ -16,7 +16,10 @@ import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
 import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 import { firestore } from 'firebase-admin';
-import { PayloadAssignBinaryPosition } from './types';
+import {
+  PayloadAssignBinaryPosition,
+  PayloadAssignBinaryPositionForAutomaticFranchises,
+} from './types';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 import { GoogletaskService } from 'src/googletask/googletask.service';
 import { ShopifyService } from 'src/shopify/shopify.service';
@@ -63,6 +66,37 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   '3000-pack': 3000,
 };
 
+export const FRANCHISES_AUTOMATIC_PRICES: Record<AutomaticFranchises, number> =
+  {
+    FA500: 500,
+    FA1000: 1000,
+    FA2000: 2000,
+    FA5000: 5000,
+    FA10000: 10000,
+    FA20000: 20000,
+  };
+
+export const AUTOMATIC_FRANCHISES_CAP_LIMITS: Record<
+  AutomaticFranchises,
+  number
+> = {
+  FA500: 1000,
+  FA1000: 2000,
+  FA2000: 4000,
+  FA5000: 10000,
+  FA10000: 20000,
+  FA20000: 40000,
+};
+
+export const AUTOMATIC_FRANCHISES_FIRMS: Record<AutomaticFranchises, number> = {
+  FA500: 5,
+  FA1000: 10,
+  FA2000: 20,
+  FA5000: 50,
+  FA10000: 100,
+  FA20000: 200,
+};
+
 export const MEMBERSHIP_CREDITS: Record<Memberships, number> = {
   supreme: 199,
   pro: 99,
@@ -79,6 +113,30 @@ export const MEMBERSHIP_CREDITS: Record<Memberships, number> = {
   '1000-pack': 1000,
   '2000-pack': 2000,
   '3000-pack': 0,
+};
+
+export const AUTOMATIC_FRANCHISES_BINARY_POINTS: Record<
+  AutomaticFranchises,
+  number
+> = {
+  FA500: 50,
+  FA1000: 100,
+  FA2000: 200,
+  FA5000: 500,
+  FA10000: 1000,
+  FA20000: 2000,
+};
+
+export const AUTOMATIC_FRANCHISES_RANGE_POINTS: Record<
+  AutomaticFranchises,
+  number
+> = {
+  FA500: 100,
+  FA1000: 200,
+  FA2000: 400,
+  FA5000: 1000,
+  FA10000: 2000,
+  FA20000: 4000,
 };
 
 export const MEMBERSHIP_CAP: Record<Franchises, number> = {
@@ -393,6 +451,149 @@ export class SubscriptionsService {
     };
   }
 
+  async createPaymentAddressForAutomaticFranchises(
+    id_user: string,
+    type: AutomaticFranchises,
+    currency: Coins,
+    period: 'monthly' | 'yearly' = 'monthly',
+  ) {
+    console.log(id_user);
+    // Obtener datos del usuario
+    const userRef = admin.collection('users').doc(id_user);
+    const userData = await userRef.get().then((r) => r.data());
+    let address = '';
+    let referenceId = '';
+    let referenceId2 = '';
+
+    // Si no existe registro de la informacion de pago...
+    if (
+      userData.payment_link_automatic_franchises &&
+      userData.payment_link_automatic_franchises[type] &&
+      userData.payment_link_automatic_franchises[type].currency == currency
+    ) {
+      address = userData.payment_link_automatic_franchises[type].address;
+      referenceId =
+        userData.payment_link_automatic_franchises[type].referenceId;
+    } else {
+      // Obtener un nuevo wallet para el pago
+      const newAddress = await this.cryptoapisService.createNewWalletAddress(
+        currency,
+      );
+      address = newAddress;
+
+      console.log('address:', newAddress);
+
+      // Crear primera confirmación de la transaccion
+
+      if (currency == 'LTC') {
+        try {
+          const resConfirmation =
+            await this.cryptoapisService.createFirstConfirmationTransaction(
+              id_user,
+              newAddress,
+              type,
+              currency,
+              'callbackPaymentForAutomaticFranchises',
+            );
+          referenceId = resConfirmation.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
+
+        try {
+          const resConfirmation2 =
+            await this.cryptoapisService.createCallbackConfirmation(
+              id_user,
+              newAddress,
+              type,
+              currency,
+              'callbackPaymentForAutomaticFranchises',
+            );
+          referenceId2 = resConfirmation2.data.item.referenceId;
+        } catch (err) {
+          console.error(err);
+        }
+      } else if (currency == 'MXN') {
+      }
+      const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+    }
+
+    const amount_type = FRANCHISES_AUTOMATIC_PRICES;
+
+    let amount = 0;
+    let exchange = 0;
+    let redirect_url = '';
+    let openpay = {};
+
+    if (currency == 'LTC') {
+      amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
+    }
+    if (currency == 'MXN') {
+      exchange = await this.cryptoapisService.getUSDExchange();
+      amount = Number(Number(exchange * amount_type[type]).toFixed(2));
+
+      const customer = {
+        name: userData.name,
+        last_name: '',
+        phone_number: userData.whatsapp,
+        email: userData.email,
+      };
+
+      const newCharge = {
+        method: 'card',
+        amount,
+        description: 'Compra de Franquicia Automatica',
+        customer: customer,
+        send_email: false,
+        confirm: false,
+        redirect_url:
+          'https://backoffice.empowerittop.com/subscriptions?transaction=pending',
+        use_3d_secure: true,
+      };
+
+      const res = await this.createCharge(newCharge);
+
+      redirect_url = res.payment_method.url;
+      openpay = res;
+    }
+
+    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+
+    // Estructurar el campo payment_link_automatic_franchises
+    const payment_link_automatic_franchises = {
+      referenceId,
+      referenceId2,
+      address,
+      qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+      status: 'pending',
+      created_at: new Date(),
+      amount,
+      currency,
+      exchange,
+      expires_at: dayjs().add(15, 'minutes').toDate(),
+      membership_period: period,
+      redirect_url,
+      openpay,
+    };
+
+    // Guardar payment_link_automatic_franchises
+    await userRef
+      .collection('address-history')
+      .add({ ...payment_link_automatic_franchises, type });
+    await userRef.update({
+      payment_link_automatic_franchises: {
+        [type]: payment_link_automatic_franchises,
+      },
+    });
+
+    return {
+      address: address,
+      amount: payment_link_automatic_franchises.amount,
+      currency: payment_link_automatic_franchises.currency,
+      qr: payment_link_automatic_franchises.qr,
+    };
+  }
+
   async createPaymentAddress(
     id_user: string,
     type: Memberships,
@@ -601,10 +802,10 @@ export class SubscriptionsService {
 
   async assingParticipation(id_user: string, type: PackParticipations) {
     // Crear una nueva fecha
-    let currentDate = new Date();
+    const currentDate = new Date();
 
     // Pasar al siguiente mes
-    let nextMonthDate = new Date(currentDate);
+    const nextMonthDate = new Date(currentDate);
     nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
     // Sumar otros dos meses
     nextMonthDate.setMonth(nextMonthDate.getMonth() + 2);
@@ -856,6 +1057,84 @@ export class SubscriptionsService {
     console.log('todo bienb');
   }
 
+  async onPaymentAutomaticFranchises(
+    user_id: string,
+    type: AutomaticFranchises,
+    currency: string | null,
+    activation_type: string,
+  ) {
+    //Sacar la referencia del usuario
+    const userRef = await admin.collection('users').doc(user_id).get();
+    //Sacar si el usuario es nuevo
+    const isNew = await userRef.get('is_new');
+    const startsAt = new Date();
+    const availablePayDate = new Date(startsAt);
+    availablePayDate.setDate(availablePayDate.getDate() + 90);
+    //Activar la Franquicia automatica
+    userRef.ref.collection('automatic_franchises').add({
+      user_id,
+      type,
+      starts_at: startsAt,
+      created_at: startsAt,
+      automatic_franchise_cap_current: 0,
+      automatic_franchise_cap_limit: AUTOMATIC_FRANCHISES_CAP_LIMITS[type],
+      available_pay_date: availablePayDate,
+    });
+    userRef.ref.update({
+      has_automatic_franchises: true,
+    });
+    //Si es nuevo que se mande el email
+    if (isNew) {
+      await this.emailService.sendEmailNewUser(user_id);
+    }
+    //Si es nuevo que se cree en la colecccion de sanguine_users
+    if (isNew) {
+      try {
+        await this.insertSanguineUsers(user_id);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    //Si es nuevo que aumente el contador de gente directa
+    const sponsorRef = await admin
+      .collection('users')
+      .doc(userRef.get('sponsor_id'))
+      .get();
+    if (isNew) {
+      await sponsorRef.ref.update({
+        count_direct_people: firestore.FieldValue.increment(1),
+        count_direct_people_this_month: firestore.FieldValue.increment(
+          AUTOMATIC_FRANCHISES_FIRMS[type],
+        ),
+      });
+    }
+    //Dar bono de inicio rapido
+    try {
+      await this.bondService.execUserDirectBond(
+        user_id,
+        FRANCHISES_AUTOMATIC_PRICES[type],
+        isNew,
+        false,
+        true,
+      );
+    } catch (error) {
+      console.log(
+        'Error repartiendo binario en las franquicias automaticas',
+        error,
+      );
+    }
+    //Dar binario
+    //Aqui me quede y lo tengo que modificar
+    await this.addQueueBinaryPositionForAutomaticFranchises({
+      id_user: user_id,
+      sponsor_id: userRef.get('sponsor_id'),
+      position: userRef.get('position'),
+      is_new: isNew,
+      binary_points: AUTOMATIC_FRANCHISES_BINARY_POINTS[type],
+      range_points: AUTOMATIC_FRANCHISES_RANGE_POINTS[type],
+    });
+  }
+
   async onPaymentMembership(
     id_user: string,
     type: Franchises | 'founder-pack',
@@ -976,7 +1255,12 @@ export class SubscriptionsService {
     /* A partir de aqui modificare */
     if (type != '49-pack') {
       try {
-        await this.bondService.execUserDirectBond(id_user, pack_price, isNew);
+        await this.bondService.execUserDirectBond(
+          id_user,
+          pack_price,
+          isNew,
+          false,
+        );
       } catch (err) {
         console.error(err);
         /*Sentry.configureScope((scope) => {
@@ -1012,7 +1296,7 @@ export class SubscriptionsService {
       name: userName,
       position: userPosition,
       sponsor: sponsorName,
-      upline: userUpline,
+      upline: userUpline || '',
       user_id: id_user,
       currency: currency || null,
     });
@@ -1035,6 +1319,29 @@ export class SubscriptionsService {
     await this.googleTaskService.addToQueue(
       task,
       this.googleTaskService.getPathQueue('assign-binary-position'),
+    );
+  }
+
+  async addQueueBinaryPositionForAutomaticFranchises(
+    body: PayloadAssignBinaryPositionForAutomaticFranchises,
+  ) {
+    type Method = 'POST';
+    const task: google.cloud.tasks.v2.ITask = {
+      httpRequest: {
+        httpMethod: 'POST' as Method,
+        url: `${process.env.API_URL}/subscriptions/assignBinaryPositionForAutomaticFranchises`,
+        body: Buffer.from(JSON.stringify(body)),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    };
+
+    await this.googleTaskService.addToQueue(
+      task,
+      this.googleTaskService.getPathQueue(
+        'assign-binary-position-for-automatic-franchises',
+      ),
     );
   }
 
@@ -1262,6 +1569,122 @@ export class SubscriptionsService {
           await this.binaryService.increaseBinaryPoints(user.id, points);
         }
         console.log('todo bien');
+        return 'Puntos incrementados exitosamente';
+      } catch (err) {
+        console.log('Error increaseBinaryPoints');
+        console.error(err);
+        /*Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', user.id);
+          scope.setExtra('message', 'no se repartio el bono binario');
+          Sentry.captureException(err);
+        });*/
+      }
+    }
+  }
+
+  async assignBinaryPositionForAutomaticFranchises(
+    payload: PayloadAssignBinaryPositionForAutomaticFranchises,
+    volumen = true,
+  ) {
+    const user = await admin.collection('users').doc(payload.id_user).get();
+
+    /**
+     * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
+     */
+    const hasBinaryPosition = !!user.get('parent_binary_user_id'); //false
+    console.log(hasBinaryPosition);
+    if (!hasBinaryPosition) {
+      const finish_position = user.get('position');
+
+      /**
+       * Las dos primeras personas de cada ciclo van al lado del derrame
+       */
+      const sponsorRef = admin.collection('users').doc(user.get('sponsor_id'));
+
+      let binaryPosition = {
+        parent_id: null,
+      };
+
+      console.log('sponsor_id', user.get('sponsor_id'));
+
+      while (!binaryPosition?.parent_id) {
+        binaryPosition = await this.binaryService.calculatePositionOfBinary(
+          user.get('sponsor_id'),
+          finish_position,
+        );
+      }
+
+      /**
+       * se setea el valor del usuario padre en el usuario que se registro
+       */
+      if (!binaryPosition?.parent_id) {
+        throw new Error('Error al posicionar el binario');
+      }
+
+      try {
+        await user.ref.update({
+          parent_binary_user_id: binaryPosition.parent_id,
+        });
+      } catch (error) {
+        console.log(
+          'Error dentro de hacer un update en parent_binary_user_id',
+          error,
+        );
+      }
+
+      await sponsorRef.update({
+        count_direct_people_this_cycle: firestore.FieldValue.increment(1),
+      });
+
+      try {
+        /**
+         * se setea el valor del hijo al usuario ascendente en el binario
+         */
+        await admin
+          .collection('users')
+          .doc(binaryPosition.parent_id)
+          .update(
+            finish_position == 'left'
+              ? { left_binary_user_id: user.id }
+              : { right_binary_user_id: user.id },
+          );
+      } catch (err) {
+        console.error(err);
+        /*Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', user.id);
+          scope.setExtra('message', 'no se pudo setear al hijo');
+          Sentry.captureException(err);
+        });*/
+      }
+
+      try {
+        await this.binaryService.increaseUnderlinePeople(user.id);
+      } catch (err) {
+        console.log('Error increaseUnderlinePeople');
+        console.error(err);
+        /*Sentry.configureScope((scope) => {
+          scope.setExtra('id_user', user.id);
+          scope.setExtra(
+            'message',
+            'no se pudo incrementar count_underline_people',
+          );
+          Sentry.captureException(err);
+        });*/
+      }
+      console.log('despues del segundo trychat');
+    }
+
+    /**
+     * aumenta los puntos del binario hacia arriba
+     */
+    if (volumen) {
+      try {
+        await this.binaryService.increaseBinaryPointsForAutomaticFranchises(
+          user.id,
+          payload.binary_points,
+          payload.range_points,
+        );
+
         return 'Puntos incrementados exitosamente';
       } catch (err) {
         console.log('Error increaseBinaryPoints');

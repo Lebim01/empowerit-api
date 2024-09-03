@@ -11,6 +11,7 @@ export class BondsController {
       body.registerUserId,
       body.membership_price,
       true,
+      false,
     );
   }
 

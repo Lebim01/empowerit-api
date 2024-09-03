@@ -24,7 +24,7 @@ import { BinaryService } from 'src/binary/binary.service';
 import * as admin from 'firebase-admin';
 
 export const CREDITS_PACKS_BINARY_POINTS: Record<PackCredits, number> = {
-  '30-credits':15,
+  '30-credits': 15,
   '50-credits': 25,
   '100-credits': 50,
   '500-credits': 250,
@@ -114,6 +114,35 @@ export class CryptoapisController {
       await this.googleTaskService.addToQueue(
         task,
         this.googleTaskService.getPathQueue('payment-participations'),
+      );
+
+      return 'OK';
+    }
+
+    return 'FAIL';
+  }
+
+  @Post('callbackPaymentForAutomaticFranchises/:type/queue')
+  async callbackPaymentQueueForAutomaticFranchises(
+    @Body() body: CallbackNewConfirmedCoins,
+    @Param('type') type: AutomaticFranchises,
+  ) {
+    if (this.isValidCryptoApis(body, true)) {
+      type Method = 'POST';
+      const task: google.cloud.tasks.v2.ITask = {
+        httpRequest: {
+          httpMethod: 'POST' as Method,
+          url: `${process.env.API_URL}/cryptoapis/callbackPaymentForAutomaticFranchises/${type}`,
+          body: Buffer.from(JSON.stringify(body)),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      };
+
+      await this.googleTaskService.addToQueue(
+        task,
+        this.googleTaskService.getPathQueue('payment-automatic-franchises'),
       );
 
       return 'OK';
@@ -342,7 +371,7 @@ export class CryptoapisController {
           );
 
           await db.collection('users').doc(userDoc.id).update({
-            payment_link_participations: {}
+            payment_link_participations: {},
           });
 
           return 'transaccion correcta';
@@ -451,7 +480,11 @@ export class CryptoapisController {
 
         if (is_complete) {
           try {
-            await this.subscriptionService.addCredits(userDoc.id, type, currency);
+            await this.subscriptionService.addCredits(
+              userDoc.id,
+              type,
+              currency,
+            );
             // Eliminar el evento que esta en el servicio de la wallet
             await this.cryptoapisService.removeCallbackEvent(
               referenceId,
@@ -506,6 +539,126 @@ export class CryptoapisController {
           );
           await userDoc.ref.update({
             [`payment_link_credits.${type}.qr`]: qr,
+          });
+          throw new HttpException(
+            'El monto pagado es menor al requerido. ',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      } else {
+        throw new HttpException(
+          'No se encontro el usuario',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } else {
+      throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /* CallbackPayment de Automatic Franchises */
+  @Post('callbackPaymentForAutomaticFranchises/:type')
+  async callbackPaymentForAutomaticFranchises(
+    @Body() body: CallbackNewConfirmedCoins,
+    @Headers() headers,
+    @Param('type') type: AutomaticFranchises,
+  ): Promise<any> {
+    await db.collection('cryptoapis-requests').add({
+      created_at: new Date(),
+      url: `cryptoapis/callbackPaymentForAutomaticFranchises/${type}`,
+      body,
+      headers,
+    });
+
+    if (body.data.item.direction == 'outgoing') return;
+
+    if (this.isValidCryptoApis(body, true)) {
+      const { address } = body.data.item;
+      const userDoc =
+        await this.usersService.getUserByPaymentAddressForAutomaticFranchises(
+          address,
+          type,
+        );
+      const referenceId = body.referenceId;
+      let referenceId2 = '';
+      if (userDoc && userDoc.get)
+        referenceId2 = userDoc.get(
+          `payment_link_automatic_franchises.${type}.referenceId2`,
+        );
+      if (userDoc) {
+        // Agregar registro de la transaccion
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, body);
+        await this.cryptoapisService.addTransactionToUser(userDoc.id, {
+          ...body,
+          data: { ...body.data, event: 'ADDRESS_COINS_TRANSACTION_CONFIRMED' },
+        });
+
+        // Verificar si ya se pago todo o no
+        const { is_complete, pendingAmount, currency } =
+          await this.cryptoapisService.transactionIsCompletePaidForAutomaticFranchises(
+            type,
+            userDoc.id,
+          );
+        console.log({ is_complete });
+
+        if (is_complete) {
+          try {
+            await this.subscriptionService.onPaymentAutomaticFranchises(
+              userDoc.id,
+              type,
+              currency,
+              'Compra de Franquicia Automatica con Pago',
+            );
+            // Eliminar el evento que esta en el servicio de la wallet
+            await this.cryptoapisService.removeCallbackEvent(
+              referenceId,
+              currency,
+            );
+            await this.cryptoapisService.removeCallbackEvent(
+              referenceId2,
+              currency,
+            );
+          } catch (error) {
+            console.log(error);
+          }
+          await db
+            .collection('users')
+            .doc(userDoc.id)
+            .update({
+              [`payment_link_automatic_franchises.${type}`]:
+                admin.firestore.FieldValue.delete(),
+            });
+          return 'transaccion correcta';
+        }
+
+        // Sí el pago esta incompleto
+        else {
+          // Eliminar el evento que esta en el servicio de la wallet
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId,
+            currency,
+          );
+          await this.cryptoapisService.removeCallbackEvent(
+            referenceId2,
+            currency,
+          );
+
+          // Crear nuevo evento
+          await this.cryptoapisService.createCallbackConfirmationForAutomaticFranchises(
+            userDoc.id,
+            address,
+            type,
+            currency,
+          );
+
+          // Actualizar QR
+          const qr: string = this.cryptoapisService.generateQrUrl(
+            address,
+            pendingAmount.toFixed(8),
+            'litecoin',
+          );
+          await userDoc.ref.update({
+            [`payment_link_automatic_franchises.${type}.qr`]: qr,
           });
           throw new HttpException(
             'El monto pagado es menor al requerido. ',

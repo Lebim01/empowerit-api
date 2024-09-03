@@ -34,6 +34,7 @@ export class BondsService {
     membership_price: number,
     is_new: boolean,
     isParticipation = false,
+    registerFranchiseIsAutomatic = false,
   ) {
     console.log('execUserDirectBond', { registerUserId }, { membership_price });
     const user = await admin.collection('users').doc(registerUserId).get();
@@ -41,6 +42,7 @@ export class BondsService {
     const sponsor_id = user.get('sponsor_id');
     const sponsorRef = admin.collection('users').doc(sponsor_id);
     const sponsor = await sponsorRef.get().then((r) => r.data());
+    const hasAutomaticFranchises = sponsor?.has_automatic_franchises ?? false;
     console.log(is_new ? 'El usuario es nuevo' : 'El usuario no es nuevo');
     let percent = 0;
     const is_new_pack = [
@@ -71,6 +73,12 @@ export class BondsService {
             percent =
               quick_start_percent_by_Franchise[sponsor_membership] / 100 / 2;
           }
+        }
+      } else if (!sponsor.membership && hasAutomaticFranchises) {
+        if (registerFranchiseIsAutomatic) {
+          percent = 5 / 100;
+        } else {
+          percent = 10 / 100;
         }
       } else {
         const sponsor_rank = sponsor.rank as Ranks;

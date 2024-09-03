@@ -20,6 +20,7 @@ export class ParticipationsService {
     private readonly bondService: BondsService,
   ) {}
   async activateWithoutVolumen(body) {
+    console.log('desde la funcion de activateWithoutVolumen');
     const { form, user_id } = body;
 
     const userRef = admin.collection('users').doc(user_id);
@@ -27,7 +28,7 @@ export class ParticipationsService {
 
     const startDate = new Date(form.starts_at);
 
-    let next_pay = new Date(startDate);
+    const next_pay = new Date(startDate);
     next_pay.setMonth(next_pay.getMonth() + 3);
     next_pay.setDate(1);
 
@@ -66,13 +67,14 @@ export class ParticipationsService {
     });
   }
   async activateWithVolumen(body) {
+    console.log('desde la funcion de activateWithVolumen');
     const { form, user_id } = body;
     const userRef = admin.collection('users').doc(user_id);
     const user = await admin.collection('users').doc(user_id).get();
 
     const startDate = new Date(form.starts_at);
 
-    let next_pay = new Date(startDate);
+    const next_pay = new Date(startDate);
     next_pay.setMonth(next_pay.getMonth() + 3);
     next_pay.setDate(1);
 

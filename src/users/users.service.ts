@@ -106,6 +106,29 @@ export class UsersService {
     }
   }
 
+  async getUserByPaymentAddressForAutomaticFranchises(
+    address: string,
+    type: AutomaticFranchises,
+  ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
+    try {
+      const snap = await admin
+        .collection('users')
+        .where(
+          `payment_link_automatic_franchises.${type}.address`,
+          '==',
+          address,
+        )
+        .get();
+
+      if (snap.empty) return null;
+
+      return snap.docs[0];
+    } catch (err) {
+      //Sentry.captureException(err);
+      return null;
+    }
+  }
+
   async getTopUsersByProfit() {
     const snap = await getDocs(
       query(collection(db, 'users'), orderBy('profits', 'desc'), limit(100)),
@@ -535,12 +558,12 @@ export class UsersService {
   }
 
   async fixAllSanguineUsers() {
-    console.log('inicio de la funcion de fixAllSanguineUsers')
-    const usersRef = await admin.collection("users").get()
-    for (const docu of usersRef.docs){
-      console.log(docu.id)
+    console.log('inicio de la funcion de fixAllSanguineUsers');
+    const usersRef = await admin.collection('users').get();
+    for (const docu of usersRef.docs) {
+      console.log(docu.id);
     }
-    return 'fin de la funcion fixAllSanguineUsers'
+    return 'fin de la funcion fixAllSanguineUsers';
   }
 
   async verifySanguineUser() {
@@ -553,14 +576,14 @@ export class UsersService {
     let sponsor_id = user.get('sponsor_id');
     while (sponsor_id) {
       sponsor_id = await this.getSponsorId(user_id);
-      const position = await this.getPosition(user_id)
+      const position = await this.getPosition(user_id);
       if (sponsor_id) {
         console.log(user_id, ' tiene de sponsor a =>', sponsor_id);
         const res = await this.existsInSubcollection(
           user_id,
           sponsor_id,
           'sanguine_users',
-          position
+          position,
         );
         user_id = sponsor_id;
       }
@@ -591,7 +614,7 @@ export class UsersService {
     id_user: string,
     sponsor_id: string,
     collection: string,
-    position: string
+    position: string,
   ) {
     const sponsorRef = await admin
       .collection('users')
@@ -600,17 +623,20 @@ export class UsersService {
       .where('id_user', '==', id_user)
       .get();
 
-      if(sponsorRef.size == 0){
-        await admin.collection("users").doc(sponsor_id).collection(collection).add({
+    if (sponsorRef.size == 0) {
+      await admin
+        .collection('users')
+        .doc(sponsor_id)
+        .collection(collection)
+        .add({
           created_at: new Date(),
           id_user,
           is_active: true,
           position,
           sponsor_id,
-        })
-      } else {
-        console.log('si lo contiene')
-      }
-
+        });
+    } else {
+      console.log('si lo contiene');
+    }
   }
 }

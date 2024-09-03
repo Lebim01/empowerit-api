@@ -179,7 +179,7 @@ export class CryptoapisService {
   async createFirstConfirmationTransaction(
     userId: string,
     address: string,
-    type: Memberships | PackCredits | PackParticipations,
+    type: Memberships | PackCredits | PackParticipations | AutomaticFranchises,
     currency: Coins,
     callback: string,
   ) {
@@ -255,10 +255,39 @@ export class CryptoapisService {
     );
   }
 
+  async createCallbackConfirmationForAutomaticFranchises(
+    id_user: string,
+    address: string,
+    type: AutomaticFranchises,
+    currency: Coins,
+  ) {
+    const blockchain = this.getBlockchainFromCurrency(currency);
+    const options = {
+      ...default_options,
+      method: 'POST',
+      path: `/v2/blockchain-events/${blockchain}/${this.network}/subscriptions/address-coins-transactions-confirmed`,
+    };
+    return await cryptoapisRequest<ResponseNewConfirmedCoinsTransactions>(
+      options,
+      {
+        context: id_user,
+        data: {
+          item: {
+            address: address,
+            allowDuplicates: true,
+            callbackSecretKey: 'a12k*?_1ds',
+            callbackUrl: `${this.hostapi}/cryptoapis/callbackPaymentForAutomaticFranchises/${type}/queue`,
+            receiveCallbackOn: 2,
+          },
+        },
+      },
+    );
+  }
+
   async createCallbackConfirmation(
     id_user: string,
     address: string,
-    type: Memberships | PackParticipations,
+    type: Memberships | PackParticipations | AutomaticFranchises,
     currency: Coins,
     callback: string,
   ) {
@@ -655,6 +684,34 @@ export class CryptoapisService {
     const tolerance = required_amount * 0.003;
     const address = userDoc.get(`payment_link_credits.${type}.address`);
     const currency = userDoc.get(`payment_link_credits.${type}.currency`);
+    const pendingAmount: number = await this.calculatePendingAmount(
+      userDoc.id,
+      address,
+      required_amount,
+    );
+    return {
+      is_complete: pendingAmount - tolerance <= 0,
+      pendingAmount,
+      currency,
+    };
+  }
+
+  async transactionIsCompletePaidForAutomaticFranchises(
+    type: AutomaticFranchises,
+    id_user: string,
+  ) {
+    const userDoc = await db.collection('users').doc(id_user).get();
+    // Verificar si el pago se completo
+    const required_amount = Number(
+      userDoc.get(`payment_link_automatic_franchises.${type}.amount`),
+    );
+    const tolerance = required_amount * 0.003;
+    const address = userDoc.get(
+      `payment_link_automatic_franchises.${type}.address`,
+    );
+    const currency = userDoc.get(
+      `payment_link_automatic_franchises.${type}.currency`,
+    );
     const pendingAmount: number = await this.calculatePendingAmount(
       userDoc.id,
       address,

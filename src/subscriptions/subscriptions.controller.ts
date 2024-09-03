@@ -1,6 +1,9 @@
 import { Controller, Get, Query, Body, Post, Param } from '@nestjs/common';
 import { MEMBERSHIP_CAP, SubscriptionsService } from './subscriptions.service';
-import { PayloadAssignBinaryPosition } from './types';
+import {
+  PayloadAssignBinaryPosition,
+  PayloadAssignBinaryPositionForAutomaticFranchises,
+} from './types';
 import { auth, db } from 'src/firebase/admin';
 import { firestore } from 'firebase-admin';
 import dayjs from 'dayjs';
@@ -57,6 +60,24 @@ export class SubscriptionsController {
     return this.subscriptionService.statusToExpired();
   }
 
+  @Post('createPaymentAddressForAutomaticFranchises/:type')
+  async createPaymentAddressForAutomaticFranchises(
+    @Body() body,
+    @Param('type') type: AutomaticFranchises,
+  ) {
+    try {
+      return await this.subscriptionService.createPaymentAddressForAutomaticFranchises(
+        body.userId,
+        type,
+        body.coin,
+        body.period,
+      );
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  }
+
   @Post('createPaymentAddress/:type')
   async createPaymentAddressPro(
     @Body() body,
@@ -81,6 +102,17 @@ export class SubscriptionsController {
     body: PayloadAssignBinaryPosition,
   ) {
     return this.subscriptionService.assignBinaryPosition(body, true);
+  }
+
+  @Post('assignBinaryPositionForAutomaticFranchises')
+  async assignBinaryPositionForAutomaticFranchises(
+    @Body()
+    body: PayloadAssignBinaryPositionForAutomaticFranchises,
+  ) {
+    return this.subscriptionService.assignBinaryPositionForAutomaticFranchises(
+      body,
+      true,
+    );
   }
 
   @Post('assignSanguine')
