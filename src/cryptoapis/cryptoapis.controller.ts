@@ -436,7 +436,6 @@ export class CryptoapisController {
       throw new HttpException('Petición invalida', HttpStatus.BAD_REQUEST);
     }
   }
-  /* aqui */
   @Post('callbackPaymentForCredits/:type')
   async callbackPaymentProMembershipForCredits(
     @Body() body: CallbackNewConfirmedCoins,

@@ -54,7 +54,7 @@ export class BondsService {
       '3000-pack',
     ].includes(sponsor.membership);
     console.log(sponsor.membership, { is_new_pack });
-    if (isParticipation) {
+    if (isParticipation || registerFranchiseIsAutomatic) {
       percent = 5 / 100;
     } else {
       if (is_new_pack) {

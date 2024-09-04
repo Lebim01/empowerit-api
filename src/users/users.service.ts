@@ -125,6 +125,10 @@ export class UsersService {
       return snap.docs[0];
     } catch (err) {
       //Sentry.captureException(err);
+      console.log(
+        'Error en la funcion de getUserByPaymentAddressForAutomaticFranchises',
+        err,
+      );
       return null;
     }
   }

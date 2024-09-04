@@ -1063,6 +1063,7 @@ export class SubscriptionsService {
     currency: string | null,
     activation_type: string,
   ) {
+    console.log('desde la funcion de onpaymenautomaticFranchises');
     //Sacar la referencia del usuario
     const userRef = await admin.collection('users').doc(user_id).get();
     //Sacar si el usuario es nuevo
@@ -1071,18 +1072,32 @@ export class SubscriptionsService {
     const availablePayDate = new Date(startsAt);
     availablePayDate.setDate(availablePayDate.getDate() + 90);
     //Activar la Franquicia automatica
-    userRef.ref.collection('automatic_franchises').add({
-      user_id,
-      type,
-      starts_at: startsAt,
-      created_at: startsAt,
-      automatic_franchise_cap_current: 0,
-      automatic_franchise_cap_limit: AUTOMATIC_FRANCHISES_CAP_LIMITS[type],
-      available_pay_date: availablePayDate,
-    });
-    userRef.ref.update({
-      has_automatic_franchises: true,
-    });
+    try {
+      await userRef.ref.collection('automatic-franchises').add({
+        user_id,
+        type,
+        starts_at: startsAt,
+        created_at: startsAt,
+        automatic_franchise_cap_current: 0,
+        automatic_franchise_cap_limit: AUTOMATIC_FRANCHISES_CAP_LIMITS[type],
+        available_pay_date: availablePayDate,
+      });
+    } catch (error) {
+      console.log(
+        'Error a la hora de de crear el documento dentro de automatic-franchises',
+        error,
+      );
+    }
+    try {
+      await userRef.ref.update({
+        has_automatic_franchises: true,
+      });
+    } catch (error) {
+      console.log(
+        'Error a la hora de hace un update en has_atomatic_franchises',
+        error,
+      );
+    }
     //Si es nuevo que se mande el email
     if (isNew) {
       await this.emailService.sendEmailNewUser(user_id);
@@ -1096,6 +1111,7 @@ export class SubscriptionsService {
       }
     }
     //Si es nuevo que aumente el contador de gente directa
+    //poner que user sea diferente a los dos que son admin
     const sponsorRef = await admin
       .collection('users')
       .doc(userRef.get('sponsor_id'))
@@ -1123,6 +1139,14 @@ export class SubscriptionsService {
         error,
       );
     }
+    console.log({
+      id_user: user_id,
+      sponsor_id: userRef.get('sponsor_id'),
+      position: userRef.get('position'),
+      is_new: isNew,
+      binary_points: AUTOMATIC_FRANCHISES_BINARY_POINTS[type],
+      range_points: AUTOMATIC_FRANCHISES_RANGE_POINTS[type],
+    });
     //Dar binario
     try {
       await this.addQueueBinaryPositionForAutomaticFranchises({
@@ -1592,6 +1616,9 @@ export class SubscriptionsService {
     payload: PayloadAssignBinaryPositionForAutomaticFranchises,
     volumen = true,
   ) {
+    console.log(
+      'desde la funcion de assignBinaryPositionForAutomaticFranchises',
+    );
     const user = await admin.collection('users').doc(payload.id_user).get();
 
     /**

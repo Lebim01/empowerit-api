@@ -28,7 +28,6 @@ export const quick_start_percent: Record<Ranks, number> = {
   none: 20,
 };
 
-
 /**
  * Porcentaje de ganancia bono inicio rapido de las neuvas Franquicias
  */
