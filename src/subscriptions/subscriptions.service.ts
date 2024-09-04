@@ -1124,15 +1124,21 @@ export class SubscriptionsService {
       );
     }
     //Dar binario
-    //Aqui me quede y lo tengo que modificar
-    await this.addQueueBinaryPositionForAutomaticFranchises({
-      id_user: user_id,
-      sponsor_id: userRef.get('sponsor_id'),
-      position: userRef.get('position'),
-      is_new: isNew,
-      binary_points: AUTOMATIC_FRANCHISES_BINARY_POINTS[type],
-      range_points: AUTOMATIC_FRANCHISES_RANGE_POINTS[type],
-    });
+    try {
+      await this.addQueueBinaryPositionForAutomaticFranchises({
+        id_user: user_id,
+        sponsor_id: userRef.get('sponsor_id'),
+        position: userRef.get('position'),
+        is_new: isNew,
+        binary_points: AUTOMATIC_FRANCHISES_BINARY_POINTS[type],
+        range_points: AUTOMATIC_FRANCHISES_RANGE_POINTS[type],
+      });
+    } catch (error) {
+      console.log(
+        'Error dando binario en la funcion de onpaymentAutomaticFranchises',
+        error,
+      );
+    }
   }
 
   async onPaymentMembership(
