@@ -1920,17 +1920,6 @@ export class SubscriptionsService {
           created_at: new Date(),
           doc_id: docu.id,
         });
-        //Hare un update del automatic_franchise_cap_current
-        await admin
-          .collection('users')
-          .doc(user_id)
-          .collection('automatic-franchises')
-          .doc(docu.id)
-          .update({
-            automatic_franchise_cap_current:
-              firestore.FieldValue.increment(result),
-          });
-        console.log(docu.data());
       }
     }
     return 'Funcion de payAutomaticFranchisePerformance ejecutada exitosamente';
@@ -1982,15 +1971,6 @@ export class SubscriptionsService {
           created_at: new Date(),
           doc_id: automaticFranchisesDocu.id,
         });
-        await admin
-          .collection('users')
-          .doc(user_id)
-          .collection('automatic-franchises')
-          .doc(automaticFranchisesDocu.id)
-          .update({
-            automatic_franchise_cap_current:
-              firestore.FieldValue.increment(result),
-          });
       }
     } catch (error) {
       console.log(error);
