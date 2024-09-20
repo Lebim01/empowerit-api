@@ -277,4 +277,36 @@ export class SubscriptionsController {
   addCredits(@Body() body, @Param('id') id: string) {
     return this.subscriptionService.addCreditsManual(id, body.credits);
   }
+
+  @Post('payAutomaticFranchisePerformance')
+  payAutomaticFranchisePerformance() {
+    return this.subscriptionService.payAutomaticFranchisePerformance();
+  }
+
+  @Post('payAutomaticFranchiseCapitalPerformance')
+  payAutomaticFranchiseCapitalPerformance() {
+    return this.subscriptionService.payAutomaticFranchiseCapitalPerformance();
+  }
+
+  @Post('quickPayForAutomaticFranchisePerformance')
+  quickPayForAutomaticFranchisePerformance(@Body() body) {
+    if (!body.doc_id) throw new Error('doc_id is required');
+    if (!body.user_id) throw new Error('user_id is required');
+    return this.subscriptionService.quickPayForAutomaticFranchisePerformance(
+      body.doc_id,
+      body.user_id,
+      body.is_capital,
+    );
+  }
+
+  @Post('normalPayForAutomaticFranchisePerformance')
+  normalPayForAutomaticFranchisePerformance(@Body() body) {
+    if (!body.doc_id) throw new Error('doc_id is required');
+    if (!body.user_id) throw new Error('user_id is required');
+    return this.subscriptionService.normalPayForAutomaticFranchisePerformance(
+      body.doc_id,
+      body.user_id,
+      body.is_capital,
+    );
+  }
 }

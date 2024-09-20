@@ -66,14 +66,26 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   '3000-pack': 3000,
 };
 
+export const FRANCHISES_AUTOMATIC_CAPITALS: Record<
+  AutomaticFranchises,
+  number
+> = {
+  FA500: 500,
+  FA1000: 1000,
+  FA2000: 2000,
+  FA5000: 5000,
+  FA10000: 10000,
+  FA20000: 20000,
+};
+
 export const FRANCHISES_AUTOMATIC_PRICES: Record<AutomaticFranchises, number> =
   {
-    FA500: 500,
-    FA1000: 1000,
-    FA2000: 2000,
-    FA5000: 5000,
-    FA10000: 10000,
-    FA20000: 20000,
+    FA500: 599,
+    FA1000: 1099,
+    FA2000: 2199,
+    FA5000: 5199,
+    FA10000: 10299,
+    FA20000: 20299,
   };
 
 export const AUTOMATIC_FRANCHISES_CAP_LIMITS: Record<
@@ -1068,19 +1080,38 @@ export class SubscriptionsService {
     const userRef = await admin.collection('users').doc(user_id).get();
     //Sacar si el usuario es nuevo
     const isNew = await userRef.get('is_new');
+    const email = await userRef.get('email');
     const startsAt = new Date();
+    /* 90 dias para que comience el rendimiento */
     const availablePayDate = new Date(startsAt);
+    /* 30 dias para el rendimiento de capital y retiro rapido(creditos) */
+    const availablePayDateForCapital = new Date(startsAt);
+    /* 365 dias para el retiro de capital*/
+    const availablePayDateForCapitalPay = new Date(startsAt);
+
     availablePayDate.setDate(availablePayDate.getDate() + 90);
+
+    availablePayDateForCapital.setDate(
+      availablePayDateForCapital.getDate() + 30,
+    );
+
+    availablePayDateForCapitalPay.setDate(
+      availablePayDateForCapitalPay.getDate() + 365,
+    );
     //Activar la Franquicia automatica
     try {
       await userRef.ref.collection('automatic-franchises').add({
         user_id,
         type,
+        email,
         starts_at: startsAt,
         created_at: startsAt,
         automatic_franchise_cap_current: 0,
         automatic_franchise_cap_limit: AUTOMATIC_FRANCHISES_CAP_LIMITS[type],
-        available_pay_date: availablePayDate,
+        available_pay_date_for_franchise_performance: availablePayDate,
+        available_pay_date_for_capital_performance: availablePayDateForCapital,
+        available_pay_date_for_capital_pay: availablePayDateForCapitalPay,
+        capital: FRANCHISES_AUTOMATIC_CAPITALS[type],
       });
     } catch (error) {
       console.log(
@@ -1128,7 +1159,7 @@ export class SubscriptionsService {
     try {
       await this.bondService.execUserDirectBond(
         user_id,
-        FRANCHISES_AUTOMATIC_PRICES[type],
+        FRANCHISES_AUTOMATIC_CAPITALS[type],
         isNew,
         false,
         true,
@@ -1210,7 +1241,7 @@ export class SubscriptionsService {
       return;
     }*/
 
-    if (isNew && type != '49-pack') {
+    /* if (isNew && type != '49-pack') {
       await this.bondService.execBondPresenter(
         pack_price,
         id_user,
@@ -1220,7 +1251,7 @@ export class SubscriptionsService {
     }
     console.log(
       'despues de la comprobacion si no es nueva y si no es una de type 49',
-    );
+    ); */
 
     /**
      * Se activa la membresia
@@ -1839,5 +1870,412 @@ export class SubscriptionsService {
       .update({
         bond_founder: firestore.FieldValue.increment(bond),
       });
+  }
+  //Funcion para pagar el rendimiento diario
+  async payAutomaticFranchisePerformance() {
+    //Establecer el porcentaje global para el rendimiento general
+    const performancePercentage = 3;
+    const actualDate = new Date();
+    const daysInThisMonth = new Date(
+      actualDate.getFullYear(),
+      actualDate.getMonth() + 1,
+      0,
+    ).getDate();
+    //Verificar las personas que son available para su rendimiento diario available_pay_date_for_franchise_performance
+    const automaticFranchises = await admin
+      .collectionGroup('automatic-franchises')
+      .where('available_pay_date_for_franchise_performance', '<=', new Date())
+      .get();
+    if (!automaticFranchises.empty) {
+      for (const docu of automaticFranchises.docs) {
+        const user_id = docu.data().user_id;
+        const capital = docu.data().capital;
+        //Primero verificare cuanto es la ganancia que le toca dependiendo de la franquicia que tiene (costo_franquicia/percentaje) / daysinthismonth
+        const performance = Number(
+          ((capital * (performancePercentage / 100)) / daysInThisMonth).toFixed(
+            2,
+          ),
+        );
+        const current_cap = Number(docu.data().automatic_franchise_cap_current);
+        const cap_limit = Number(docu.data().automatic_franchise_cap_limit);
+
+        console.log(`a ${user_id} le toca que le paguen ${performance}`);
+        //Despues verificare cuanto es el cap limit y ver cuanto es el disponible
+        const result = await this.availableProfit(
+          performance,
+          current_cap,
+          cap_limit,
+        );
+        console.log('esto le tocaria a cada uno', result);
+        //Sacare la referencia de la subcollecion de automatic-franchises-pending-profits de cada uno
+        const pendingProfitsRef = admin
+          .collection('users')
+          .doc(docu.data().user_id)
+          .collection('automatic-franchises-performance-pending-profits');
+        //A cada uno le agregare un documento donde ahi le pondre el profit y las ganancias del resultado anterior
+        await pendingProfitsRef.add({
+          user_id,
+          daily_performance: result,
+          type: docu.data().type,
+          created_at: new Date(),
+          doc_id: docu.id,
+        });
+        //Hare un update del automatic_franchise_cap_current
+        await admin
+          .collection('users')
+          .doc(user_id)
+          .collection('automatic-franchises')
+          .doc(docu.id)
+          .update({
+            automatic_franchise_cap_current:
+              firestore.FieldValue.increment(result),
+          });
+        console.log(docu.data());
+      }
+    }
+    return 'Funcion de payAutomaticFranchisePerformance ejecutada exitosamente';
+  }
+  //Funcion para pagar el rendimiendo de capital de 30 dias
+  async payAutomaticFranchiseCapitalPerformance() {
+    const performanceCapitalPercentage = 5;
+    const actualDate = new Date();
+    const daysInThisMonth = new Date(
+      actualDate.getFullYear(),
+      actualDate.getMonth() + 1,
+      0,
+    ).getDate();
+    try {
+      const automaticFranchises = await admin
+        .collectionGroup('automatic-franchises')
+        .where('available_pay_date_for_capital_performance', '<=', new Date())
+        .get();
+      if (automaticFranchises.empty)
+        return 'actualmente no hay franquicias aptas para el redimiento con capital';
+
+      for (const automaticFranchisesDocu of automaticFranchises.docs) {
+        const docuData = automaticFranchisesDocu.data();
+        const user_id = docuData.user_id;
+        const capital = docuData.capital;
+        const performance = Number(
+          (
+            (capital * (performanceCapitalPercentage / 100)) /
+            daysInThisMonth
+          ).toFixed(2),
+        );
+        const current_cap = Number(docuData.automatic_franchise_cap_current);
+        const cap_limit = Number(docuData.automatic_franchise_cap_limit);
+        const result = await this.availableProfit(
+          performance,
+          current_cap,
+          cap_limit,
+        );
+        const pendingCapitalProfitsRef = admin
+          .collection('users')
+          .doc(user_id)
+          .collection(
+            'automatic-franchises-capital-performance-pending-profits',
+          );
+        await pendingCapitalProfitsRef.add({
+          user_id,
+          daily_performance: result,
+          type: docuData.type,
+          created_at: new Date(),
+          doc_id: automaticFranchisesDocu.id,
+        });
+        await admin
+          .collection('users')
+          .doc(user_id)
+          .collection('automatic-franchises')
+          .doc(automaticFranchisesDocu.id)
+          .update({
+            automatic_franchise_cap_current:
+              firestore.FieldValue.increment(result),
+          });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return 'rendimiento de capital repartido exitosamente';
+  }
+  async availableProfit(
+    profit: number,
+    current_cap: number,
+    cap_limit: number,
+  ) {
+    if (current_cap + profit > cap_limit) {
+      return cap_limit - current_cap;
+    } else {
+      return profit;
+    }
+  }
+  async quickPayForAutomaticFranchisePerformance(
+    doc_id: string,
+    user_id: string,
+    is_capital: boolean,
+  ) {
+    //Obtener todos los documentos dentro de automatic-franchises-performance-pending-profits el doc_id de el parametro doc_id
+    const batch = admin.batch();
+    if (is_capital) {
+      try {
+        const pendingProfits = await admin
+          .collectionGroup(
+            'automatic-franchises-capital-performance-pending-profits',
+          )
+          .where('doc_id', '==', doc_id)
+          .get();
+
+        let total = 0;
+        for (const pendingProfitsDocu of pendingProfits.docs) {
+          const profitData = pendingProfitsDocu.data();
+          const profit = pendingProfitsDocu.data().daily_performance;
+          total = total + Number(profit);
+
+          const paidProfitRef = await admin
+            .collection('users')
+            .doc(user_id)
+            .collection('paid-franchises-capital-performance-profits');
+
+          await paidProfitRef.add({
+            ...profitData,
+            created_at: new Date(),
+            paid_at: new Date(),
+          });
+
+          batch.delete(pendingProfitsDocu.ref);
+        }
+        Math.floor(total);
+        const userRef = await admin.collection('users').doc(user_id).get();
+        const email = userRef.get('email');
+
+        const automaticFranchiseRef = await admin
+          .collection('users')
+          .doc(user_id)
+          .collection('automatic-franchises')
+          .doc(doc_id)
+          .get();
+
+        const automaticFranchiseCapCurrent = automaticFranchiseRef.get(
+          'automatic_franchise_cap_current',
+        );
+        const automaticFranchiseCapLimit = automaticFranchiseRef.get(
+          'automatic_franchise_cap_limit',
+        );
+
+        const capital = await automaticFranchiseRef.get('capital');
+
+        const availableAmount = await this.availableAmountForCapital(
+          total,
+          automaticFranchiseCapCurrent,
+          automaticFranchiseCapLimit,
+          capital,
+        );
+
+        await userRef.ref.update({
+          credits: firestore.FieldValue.increment(availableAmount),
+        });
+
+        await automaticFranchiseRef.ref.update({
+          automatic_franchise_cap_current:
+            firestore.FieldValue.increment(availableAmount),
+          capital: firestore.FieldValue.increment(-availableAmount),
+        });
+
+        const payrollAutomaticFranchisesRef = admin
+          .collection('users')
+          .doc(user_id)
+          .collection('payroll-capital-automatic-franchises');
+
+        await payrollAutomaticFranchisesRef.add({
+          user_id,
+          email,
+          created_at: new Date(),
+          total: availableAmount,
+          type_payroll: 'Retiro Rapido',
+          doc_id,
+        });
+      } catch (error) {
+        console.log(
+          'Error en la en la parte de repartir el capital en el retiro rapido',
+          error,
+        );
+      }
+    } else {
+      try {
+        const pendingProfits = await admin
+          .collectionGroup('automatic-franchises-performance-pending-profits')
+          .where('doc_id', '==', doc_id)
+          .get();
+
+        let total = 0;
+        for (const pendingProfitsDocu of pendingProfits.docs) {
+          const profitData = pendingProfitsDocu.data();
+          const profit = pendingProfitsDocu.data().daily_performance;
+          total = total + Number(profit);
+
+          const paidProfitRef = await admin
+            .collection('users')
+            .doc(user_id)
+            .collection('paid-franchises-performance-profits');
+
+          await paidProfitRef.add({
+            ...profitData,
+            created_at: new Date(),
+            paid_at: new Date(),
+          });
+
+          batch.delete(pendingProfitsDocu.ref);
+        }
+        Math.floor(total);
+        const userRef = await admin.collection('users').doc(user_id).get();
+        const email = userRef.get('email');
+
+        const automaticFranchiseRef = await admin
+          .collection('users')
+          .doc(user_id)
+          .collection('automatic-franchises')
+          .doc(doc_id)
+          .get();
+
+        const automaticFranchiseCapCurrent = automaticFranchiseRef.get(
+          'automatic_franchise_cap_current',
+        );
+        const automaticFranchiseCapLimit = automaticFranchiseRef.get(
+          'automatic_franchise_cap_limit',
+        );
+
+        const availableAmount = await this.availableAmount(
+          total,
+          automaticFranchiseCapCurrent,
+          automaticFranchiseCapLimit,
+        );
+
+        await userRef.ref.update({
+          credits: firestore.FieldValue.increment(availableAmount),
+        });
+
+        await automaticFranchiseRef.ref.update({
+          automatic_franchise_cap_current:
+            firestore.FieldValue.increment(availableAmount),
+        });
+
+        const payrollAutomaticFranchisesRef = admin
+          .collection('users')
+          .doc(user_id)
+          .collection('payroll-automatic-franchises');
+
+        await payrollAutomaticFranchisesRef.add({
+          user_id,
+          email,
+          created_at: new Date(),
+          total: availableAmount,
+          type_payroll: 'Retiro Rapido',
+          doc_id,
+        });
+      } catch (error) {
+        console.log(
+          'Error a la hora de hacer el retiro rapido con el rendimiento por cobrar',
+          error,
+        );
+      }
+    }
+
+    await batch.commit();
+  }
+  async availableAmount(
+    amount: number,
+    cap_current: number,
+    cap_limit: number,
+  ) {
+    if (amount + cap_current > cap_limit) {
+      return Math.floor(cap_limit - cap_current);
+    } else {
+      return Math.floor(amount);
+    }
+  }
+  async availableAmountForCapital(
+    amount: number,
+    cap_current: number,
+    cap_limit: number,
+    capital: number,
+  ) {
+    const remainingCap = cap_limit - cap_current;
+    const cappedAmount = Math.min(amount, remainingCap);
+
+    return Math.floor(Math.min(capital, cappedAmount));
+  }
+  async normalPayForAutomaticFranchisePerformance(
+    doc_id: string,
+    user_id: string,
+    is_capital: boolean,
+  ) {
+    const pendingProfits = await admin
+      .collectionGroup('automatic-franchises-performance-pending-profits')
+      .where('doc_id', '==', doc_id)
+      .get();
+
+    const batch = admin.batch();
+    let total = 0;
+    for (const pendingProfitsDocu of pendingProfits.docs) {
+      const profitData = pendingProfitsDocu.data();
+      const profit = pendingProfitsDocu.data().daily_performance;
+      total = total + Number(profit);
+
+      const paidProfitRef = await admin
+        .collection('users')
+        .doc(user_id)
+        .collection('paid-franchises-performance-profits');
+
+      await paidProfitRef.add({
+        ...profitData,
+        created_at: new Date(),
+        paid_at: new Date(),
+      });
+
+      batch.delete(pendingProfitsDocu.ref);
+    }
+    const userRef = await admin.collection('users').doc(user_id).get();
+    const email = userRef.get('email');
+
+    const automaticFranchiseRef = await admin
+      .collection('users')
+      .doc(user_id)
+      .collection('automatic-franchises')
+      .doc(doc_id)
+      .get();
+
+    const automaticFranchiseCapCurrent = automaticFranchiseRef.get(
+      'automatic_franchise_cap_current',
+    );
+    const automaticFranchiseCapLimit = automaticFranchiseRef.get(
+      'automatic_franchise_cap_limit',
+    );
+
+    const availableAmount = await this.availableAmount(
+      total,
+      automaticFranchiseCapCurrent,
+      automaticFranchiseCapLimit,
+    );
+
+    await automaticFranchiseRef.ref.update({
+      automatic_franchise_cap_current:
+        firestore.FieldValue.increment(availableAmount),
+    });
+
+    const payrollAutomaticFranchisesRef = admin
+      .collection('users')
+      .doc(user_id)
+      .collection('payroll-automatic-franchises');
+
+    await payrollAutomaticFranchisesRef.add({
+      user_id,
+      email,
+      created_at: new Date(),
+      total: availableAmount,
+      type_payroll: 'Pago solicitado con Litecoin',
+      doc_id,
+    });
+
+    await batch.commit();
+    return 'conexion exitosa desde la funcion de normalPayForAutomaticFranchisePerformance';
   }
 }
