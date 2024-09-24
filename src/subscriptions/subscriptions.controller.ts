@@ -309,4 +309,17 @@ export class SubscriptionsController {
       body.is_capital,
     );
   }
+
+  @Post('activateAutomaticFranchiseWithoutVolumenForFranchises/:type')
+  activateAutomaticFranchiseWithoutVolumenForFranchises(
+    @Body() body,
+    @Param('type') type: AutomaticFranchises,
+  ) {
+    if (!body.email) throw new Error('email is required');
+    if (!type) throw new Error('type is required');
+    return this.subscriptionService.activateAutomaticFranchiseWithoutVolumenForFranchises(
+      body.email,
+      type,
+    );
+  }
 }

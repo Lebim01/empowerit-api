@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import {
   collection,
@@ -2257,5 +2257,60 @@ export class SubscriptionsService {
 
     await batch.commit();
     return 'conexion exitosa desde la funcion de normalPayForAutomaticFranchisePerformance';
+  }
+  async activateAutomaticFranchiseWithoutVolumenForFranchises(
+    email: string,
+    type: AutomaticFranchises,
+  ) {
+    try {
+      const usersRef = admin.collection('users');
+      const q = await usersRef.where('email', '==', email).get();
+
+      if (!q.empty) {
+        const user = q.docs[0];
+        const user_id = user.id;
+        try {
+          await user.ref.collection('automatic-franchises').add({
+            user_id,
+            type,
+            email,
+            starts_at: new Date(),
+            created_at: new Date(),
+            automatic_franchise_cap_current: 0,
+            automatic_franchise_cap_limit:
+              AUTOMATIC_FRANCHISES_CAP_LIMITS[type],
+            available_pay_date_for_franchise_performance: new Date(),
+            available_pay_date_for_capital_performance: new Date(),
+            available_pay_date_for_capital_pay: new Date(),
+            capital: FRANCHISES_AUTOMATIC_CAPITALS[type],
+            is_marketing_franchise: true,
+          });
+        } catch (error) {
+          console.log(
+            'Error a la hora de crear el documento dentro de automatic-franchises en la activacion sin volumen para las cuentas de marketing',
+            error,
+          );
+        }
+        try {
+          await user.ref.update({
+            has_automatic_franchises: true,
+          });
+        } catch (error) {
+          console.log(
+            'Error a la hora de hace un update en has_atomatic_franchises',
+            error,
+          );
+        }
+      } else {
+        throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
+      }
+      return 'activacion de cuenta de marketing activada exitosamente';
+    } catch (error) {
+      console.log(
+        'Error en la funcion activateAutomaticFranchiseWithoutVolumenForFranchises',
+        error,
+      );
+      throw error; // Lanza el error para que sea manejado en otro lugar si es necesario
+    }
   }
 }
