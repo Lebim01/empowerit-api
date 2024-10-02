@@ -84,7 +84,7 @@ export class UsersController {
   }
 
   @Post('copy')
-  async copy(){
+  async copy() {
     const user = await db
       .collection('users')
       .doc('uxDEwMSoTOeviAXL6wmpTcE0rkx2')
@@ -96,7 +96,12 @@ export class UsersController {
   }
 
   @Get('verifySanguineUsersParentId')
-  async verifySanguineUsersParentId(){
-    return this.usersService.verifySanguineUser()
+  async verifySanguineUsersParentId() {
+    return this.usersService.verifySanguineUser();
+  }
+
+  @Post('restartCreditsSpent')
+  async restartCreditsSpent() {
+    return this.usersService.restartCreditsSpent();
   }
 }

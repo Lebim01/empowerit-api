@@ -643,4 +643,14 @@ export class UsersService {
       console.log('si lo contiene');
     }
   }
+  async restartCreditsSpent() {
+    const usersRef = await admin.collection('users').get();
+
+    for (const usersDocu of usersRef.docs) {
+      usersDocu.ref.update({
+        credits_spent_this_month: 0,
+      });
+    }
+    return 'desde la funcion restartCreditsSpent';
+  }
 }
