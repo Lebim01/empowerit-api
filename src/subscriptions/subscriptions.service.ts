@@ -838,6 +838,7 @@ export class SubscriptionsService {
         next_pay: nextMonthDate,
         participation_cap_current: 0,
         participation_cap_limit: PARTICIPATIONS_CAP_LIMITS[type],
+        pending_amount: 0,
         created_at: new Date(),
         email,
         userName,
