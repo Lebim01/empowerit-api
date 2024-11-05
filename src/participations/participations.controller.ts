@@ -14,4 +14,8 @@ export class ParticipationsController {
   async activateParticipationWithVolumen(@Body() body) {
     return await this.participationsService.activateWithVolumen(body);
   }
+  @Post('payrollRequest')
+  async payrollRequest() {
+    return await this.participationsService.payrollRequest();
+  }
 }

@@ -15,7 +15,10 @@ import { db as admin } from '../firebase/admin';
 import { UsersService } from '../users/users.service';
 import { firestore } from 'firebase-admin';
 
-export const FRANCHISE_RANGE_POINTS: Record<Franchises, number> = {
+export const FRANCHISE_RANGE_POINTS: Record<
+  Franchises | MembershipsProductsNames | DigitalFranchises,
+  number
+> = {
   '49-pack': 0,
   '100-pack': 100,
   '300-pack': 300,
@@ -23,6 +26,12 @@ export const FRANCHISE_RANGE_POINTS: Record<Franchises, number> = {
   '1000-pack': 1000,
   '2000-pack': 2000,
   '3000-pack': 1000,
+  FP200: 200,
+  FP300: 300,
+  FP500: 500,
+  FD200: 200,
+  FD300: 300,
+  FD500: 500,
 };
 
 export const PARTICIPATION_RANGE_POINTS: Record<PackParticipations, number> = {

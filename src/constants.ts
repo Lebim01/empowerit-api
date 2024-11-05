@@ -5,3 +5,22 @@ export const delay = (ms: number) => {
     setTimeout(resolve, ms);
   });
 };
+
+export const MEMBERSHIPS_PRICES = {
+  FA500: 599,
+  FA1000: 1099,
+  FA2000: 2199,
+  FA5000: 5199,
+  FA10000: 10299,
+  FA20000: 20299,
+  FP200: 200,
+  FP300: 300,
+  FP500: 500,
+  '49-pack': 49,
+  '100-pack': 100,
+  '300-pack': 300,
+  '500-pack': 500,
+  '1000-pack': 1000,
+  '2000-pack': 2000,
+  '3000-pack': 3000,
+};

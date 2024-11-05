@@ -48,7 +48,10 @@ export const PARTICIPATIONS_BINARY_POINTS: Record<PackParticipations, number> =
     '3000-participation': 300,
   };
 
-export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
+export const MEMBERSHIP_PRICES_MONTHLY: Record<
+  Memberships | MembershipsProductsNames,
+  number
+> = {
   supreme: 199,
   pro: 99,
   'alive-pack': 129,
@@ -64,6 +67,12 @@ export const MEMBERSHIP_PRICES_MONTHLY: Record<Memberships, number> = {
   '1000-pack': 1000,
   '2000-pack': 2000,
   '3000-pack': 3000,
+  FP200: 200,
+  FP300: 300,
+  FP500: 500,
+  FD200: 200,
+  FD300: 300,
+  FD500: 500,
 };
 
 export const FRANCHISES_AUTOMATIC_CAPITALS: Record<
@@ -109,7 +118,10 @@ export const AUTOMATIC_FRANCHISES_FIRMS: Record<AutomaticFranchises, number> = {
   FA20000: 200,
 };
 
-export const MEMBERSHIP_CREDITS: Record<Memberships, number> = {
+export const MEMBERSHIP_CREDITS: Record<
+  Memberships | MembershipsProductsNames | DigitalFranchises,
+  number
+> = {
   supreme: 199,
   pro: 99,
   'alive-pack': 129,
@@ -125,6 +137,12 @@ export const MEMBERSHIP_CREDITS: Record<Memberships, number> = {
   '1000-pack': 1000,
   '2000-pack': 2000,
   '3000-pack': 0,
+  FP200: 0,
+  FP300: 0,
+  FP500: 0,
+  FD200: 0,
+  FD300: 0,
+  FD500: 0,
 };
 
 export const AUTOMATIC_FRANCHISES_BINARY_POINTS: Record<
@@ -151,7 +169,10 @@ export const AUTOMATIC_FRANCHISES_RANGE_POINTS: Record<
   FA20000: 4000,
 };
 
-export const MEMBERSHIP_CAP: Record<Franchises, number> = {
+export const MEMBERSHIP_CAP: Record<
+  Franchises | MembershipsProductsNames | DigitalFranchises,
+  number
+> = {
   '49-pack': 0,
   '100-pack': 300,
   '300-pack': 1000,
@@ -159,6 +180,12 @@ export const MEMBERSHIP_CAP: Record<Franchises, number> = {
   '1000-pack': 5000,
   '2000-pack': 10000,
   '3000-pack': 15000,
+  FP200: 500,
+  FP300: 1000,
+  FP500: 2000,
+  FD200: 600,
+  FD300: 1000,
+  FD500: 2000,
 };
 
 export const MEMBERSHIP_PRICES_YEARLY = {
@@ -166,7 +193,10 @@ export const MEMBERSHIP_PRICES_YEARLY = {
   pro: 999,
 };
 
-export const FRANCHISE_FIRMS: Record<Franchises, number> = {
+export const FRANCHISE_FIRMS: Record<
+  Franchises | MembershipsProductsNames | DigitalFranchises,
+  number
+> = {
   '49-pack': 1,
   '100-pack': 1,
   '300-pack': 3,
@@ -174,6 +204,12 @@ export const FRANCHISE_FIRMS: Record<Franchises, number> = {
   '1000-pack': 10,
   '2000-pack': 20,
   '3000-pack': 30,
+  FP200: 2,
+  FP300: 3,
+  FP500: 5,
+  FD200: 2,
+  FD300: 3,
+  FD500: 5,
 };
 
 export const CREDITS_PACKS_PRICE: Record<PackCredits, number> = {
@@ -850,7 +886,10 @@ export class SubscriptionsService {
     });
   }
 
-  async assingMembership(id_user: string, type: Franchises) {
+  async assingMembership(
+    id_user: string,
+    type: Franchises | MembershipsProductsNames | DigitalFranchises,
+  ) {
     // Obtener fechas
     /*const startAt: Date = await this.calculateStartDate(id_user);
     const expiresAt: Date = await this.calculateExpirationDate(
@@ -1199,7 +1238,11 @@ export class SubscriptionsService {
 
   async onPaymentMembership(
     id_user: string,
-    type: Franchises | 'founder-pack',
+    type:
+      | Franchises
+      | 'founder-pack'
+      | MembershipsProductsNames
+      | DigitalFranchises,
     currency: string | null,
     activation_type: string,
   ) {
@@ -1315,14 +1358,16 @@ export class SubscriptionsService {
      * aumentar puntos de bono directo 2 niveles
      */
     /* A partir de aqui modificare */
+
     if (type != '49-pack') {
       try {
-        await this.bondService.execUserDirectBond(
+        /*  await this.bondService.execUserDirectBond(
           id_user,
           pack_price,
           isNew,
           false,
-        );
+        ); */
+        console.log('esta pendiente bono directo');
       } catch (err) {
         console.error(err);
         /*Sentry.configureScope((scope) => {
@@ -1332,6 +1377,7 @@ export class SubscriptionsService {
           });*/
       }
     }
+
     console.log('despues de ejecutar el bono directo');
 
     await this.addQueueBinaryPosition({
@@ -1610,6 +1656,12 @@ export class SubscriptionsService {
           '1000-pack',
           '2000-pack',
           '3000-pack',
+          'FP200',
+          'FP300',
+          'FP500',
+          'FD200',
+          'FD300',
+          'FD500',
         ].includes(user.get('membership'));
         let points = 0;
         if (is_new_pack) {

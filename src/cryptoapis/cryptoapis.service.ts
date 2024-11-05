@@ -179,7 +179,12 @@ export class CryptoapisService {
   async createFirstConfirmationTransaction(
     userId: string,
     address: string,
-    type: Memberships | PackCredits | PackParticipations | AutomaticFranchises,
+    type:
+      | Memberships
+      | PackCredits
+      | PackParticipations
+      | AutomaticFranchises
+      | MembershipsProductsNames,
     currency: Coins,
     callback: string,
   ) {
@@ -199,7 +204,7 @@ export class CryptoapisService {
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
             /* Agrega este callbackpayment en la queue en cloud functions */
-            callbackUrl: `${this.hostapi}/cryptoapis/${callback}/${type}/queue`,
+            callbackUrl: `https://empowerit-api-7iqymuyxsa-uc.a.run.app/cryptoapis/${callback}/${type}/queue`,
           },
         },
       };
@@ -247,7 +252,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${this.hostapi}/cryptoapis/callbackPaymentForCredits/${type}/queue`,
+            callbackUrl: `https://empowerit-api-7iqymuyxsa-uc.a.run.app/cryptoapis/callbackPaymentForCredits/${type}/queue`,
             receiveCallbackOn: 2,
           },
         },
@@ -276,7 +281,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${this.hostapi}/cryptoapis/callbackPaymentForAutomaticFranchises/${type}/queue`,
+            callbackUrl: `https://empowerit-api-7iqymuyxsa-uc.a.run.app/cryptoapis/callbackPaymentForAutomaticFranchises/${type}/queue`,
             receiveCallbackOn: 2,
           },
         },
@@ -287,7 +292,11 @@ export class CryptoapisService {
   async createCallbackConfirmation(
     id_user: string,
     address: string,
-    type: Memberships | PackParticipations | AutomaticFranchises,
+    type:
+      | Memberships
+      | PackParticipations
+      | AutomaticFranchises
+      | MembershipsProductsNames,
     currency: Coins,
     callback: string,
   ) {
@@ -306,7 +315,7 @@ export class CryptoapisService {
             address: address,
             allowDuplicates: true,
             callbackSecretKey: 'a12k*?_1ds',
-            callbackUrl: `${this.hostapi}/cryptoapis/${callback}/${type}/queue`,
+            callbackUrl: `https://empowerit-api-7iqymuyxsa-uc.a.run.app/cryptoapis/${callback}/${type}/queue`,
             receiveCallbackOn: 2,
           },
         },
@@ -725,7 +734,7 @@ export class CryptoapisService {
   }
 
   async transactionIsCompletePaid(
-    type: Memberships | PackCredits,
+    type: Memberships | PackCredits | MembershipsProductsNames,
     id_user: string,
   ) {
     const userDoc = await db.collection('users').doc(id_user).get();

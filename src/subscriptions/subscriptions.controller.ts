@@ -84,6 +84,7 @@ export class SubscriptionsController {
     @Param('type') type: Memberships,
   ) {
     try {
+      console.log(type);
       return await this.subscriptionService.createPaymentAddress(
         body.userId,
         type,

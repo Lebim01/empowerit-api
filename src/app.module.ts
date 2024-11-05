@@ -33,6 +33,13 @@ import { ParticipationsService } from './participations/participations.service';
 import { ParticipationsModule } from './participations/participations.module';
 import { BondsService } from './bonds/bonds.service';
 import { SevenLevelsModule } from './seven-levels/seven-levels.module';
+import { CoinpaymentsController } from './coinpayments/coinpayments.controller';
+import { CoinpaymentsService } from './coinpayments/coinpayments.service';
+import { CoinpaymentsModule } from './coinpayments/coinpayments.module';
+import { SubscriptionsService } from './subscriptions/subscriptions.service';
+import { CryptoapisService } from './cryptoapis/cryptoapis.service';
+import { ShopifyService } from './shopify/shopify.service';
+import { EmailService } from './email/email.service';
 
 @Module({
   imports: [
@@ -65,8 +72,13 @@ import { SevenLevelsModule } from './seven-levels/seven-levels.module';
     AlgorithmMrRangeModule,
     ParticipationsModule,
     SevenLevelsModule,
+    CoinpaymentsModule,
   ],
-  controllers: [AppController, ParticipationsController],
+  controllers: [
+    AppController,
+    ParticipationsController,
+    CoinpaymentsController,
+  ],
   providers: [
     AppService,
     BinaryService,
@@ -74,7 +86,12 @@ import { SevenLevelsModule } from './seven-levels/seven-levels.module';
     RanksService,
     GoogletaskService,
     ParticipationsService,
-    BondsService
+    SubscriptionsService,
+    BondsService,
+    CoinpaymentsService,
+    CryptoapisService,
+    ShopifyService,
+    EmailService,
   ],
 })
 export class AppModule {}

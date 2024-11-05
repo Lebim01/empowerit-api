@@ -16,7 +16,13 @@ type Memberships =
   | 'founder-pack'
   | HibridMembership
   | PhisicMembership
-  | Franchises;
+  | Franchises
+  | MembershipsProductsNames
+  | DigitalFranchises;
+
+type MembershipsProductsNames = 'FP200' | 'FP300' | 'FP500';
+
+type DigitalFranchises = 'FD200' | 'FD300' | 'FD500';
 
 type Coins = 'BTC' | 'LTC' | 'MXN';
 

@@ -4,7 +4,10 @@ import { ADMIN_USERS } from '../constants';
 /**
  * Puntos que ganas al inscribir un paquete
  */
-export const pack_points: Record<Memberships, number> = {
+export const pack_points: Record<
+  Memberships | MembershipsProductsNames,
+  number
+> = {
   'alive-pack': 65,
   'freedom-pack': 240,
   pro: 50,
@@ -20,6 +23,12 @@ export const pack_points: Record<Memberships, number> = {
   '1000-pack': 500,
   '2000-pack': 1000,
   '3000-pack': 300,
+  FP200: 100,
+  FP300: 150,
+  FP500: 250,
+  FD200: 100,
+  FD300: 150,
+  FD500: 250,
 };
 
 export const pack_points_yearly: Record<'pro' | 'supreme', number> = {
@@ -43,6 +52,12 @@ export const pack_binary: Record<Memberships, number> = {
   '2000-pack': 15 / 100,
   'founder-pack': 0,
   '3000-pack': 15 / 100,
+  FP200: 10 / 100,
+  FP300: 10 / 100,
+  FP500: 10 / 100,
+  FD200: 10 / 100,
+  FD300: 10 / 100,
+  FD500: 10 / 100,
 };
 
 export const getBinaryPercent = (user_id: string, membership: string) => {

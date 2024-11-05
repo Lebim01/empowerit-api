@@ -154,7 +154,7 @@ export class CryptoapisController {
   @Post('callbackPayment/:type/queue')
   async callbackPaymentQueue(
     @Body() body: CallbackNewConfirmedCoins,
-    @Param('type') type: Memberships,
+    @Param('type') type: Memberships | MembershipsProductsNames,
   ) {
     if (this.isValidCryptoApis(body, true)) {
       type Method = 'POST';
@@ -188,7 +188,8 @@ export class CryptoapisController {
   async callbackPaymentProMembership(
     @Body() body: CallbackNewConfirmedCoins,
     @Headers() headers,
-    @Param('type') type: Franchises,
+    @Param('type')
+    type: Franchises | MembershipsProductsNames | DigitalFranchises,
   ): Promise<any> {
     await db.collection('cryptoapis-requests').add({
       created_at: new Date(),

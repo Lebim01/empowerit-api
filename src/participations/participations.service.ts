@@ -142,4 +142,7 @@ export class ParticipationsService {
 
     console.log(body);
   }
+  async payrollRequest() {
+    return 'desde la funcion de payrollRequest';
+  }
 }
