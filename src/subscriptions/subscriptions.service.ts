@@ -1235,7 +1235,7 @@ export class SubscriptionsService {
       );
     }
   }
-
+  /* Esta funcion sera para franquicias manuales que ya no estan, franquicias de producto, y franquicias digitales*/
   async onPaymentMembership(
     id_user: string,
     type:
@@ -1361,12 +1361,14 @@ export class SubscriptionsService {
 
     if (type != '49-pack') {
       try {
-        /*  await this.bondService.execUserDirectBond(
+        await this.bondService.execUserDirectBond(
           id_user,
           pack_price,
           isNew,
           false,
-        ); */
+          false,
+          type,
+        );
         console.log('esta pendiente bono directo');
       } catch (err) {
         console.error(err);

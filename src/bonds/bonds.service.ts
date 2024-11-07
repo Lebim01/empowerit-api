@@ -35,6 +35,7 @@ export class BondsService {
     is_new: boolean,
     isParticipation = false,
     registerFranchiseIsAutomatic = false,
+    type = '',
   ) {
     console.log('execUserDirectBond', { registerUserId }, { membership_price });
     const user = await admin.collection('users').doc(registerUserId).get();
@@ -53,8 +54,18 @@ export class BondsService {
       '2000-pack',
       '3000-pack',
     ].includes(sponsor.membership);
+    const product_pack = ['FP200', 'FP300', 'FP500'].includes(type);
+    const digital_pack = ['FD200', 'FD300', 'FD500'].includes(type);
     console.log(sponsor.membership, { is_new_pack });
-    if (isParticipation || registerFranchiseIsAutomatic) {
+    if (!isParticipation && !registerFranchiseIsAutomatic && type) {
+      /* Aca entraran todas las franquicias digitales, de producto y todo el pedo */
+      if (product_pack) {
+        percent = 20 / 100;
+      }
+      if (digital_pack) {
+        percent = 40 / 100;
+      }
+    } else if (isParticipation || registerFranchiseIsAutomatic) {
       percent = 5 / 100;
     } else {
       if (is_new_pack) {
