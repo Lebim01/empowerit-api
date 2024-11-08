@@ -814,7 +814,10 @@ export class SubscriptionsService {
       : false;
   }
 
-  async assingMembershipWithoutCredits(id_user: string, type: Franchises) {
+  async assingMembershipWithoutCredits(
+    id_user: string,
+    type: Franchises | Memberships,
+  ) {
     // Obtener fechas
     /*const startAt: Date = await this.calculateStartDate(id_user);
     const expiresAt: Date = await this.calculateExpirationDate(

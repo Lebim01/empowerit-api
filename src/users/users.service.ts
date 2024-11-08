@@ -35,6 +35,12 @@ export class UsersService {
       '500-pack',
       '1000-pack',
       '2000-pack',
+      'FD200',
+      'FD300',
+      'FD500',
+      'FP200',
+      'FP300',
+      'FP500',
     ].includes(user.get('membership'));
 
     console.log(user.get('membership'));
