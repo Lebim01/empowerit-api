@@ -11,9 +11,9 @@ import { MEMBERSHIPS_PRICES } from 'src/constants';
 @Injectable()
 export class CoinpaymentsService {
   private readonly API_KEY_PUBLIC =
-    '1ea731c26f2d930eddc92209c10a6584be41390ad8fc9b13d7fdbdc6c4b5072d';
+    'd5c938f2195e4c14b0572ec588b877211f1c0236fb7ff1f7aca0db0f79868cb3';
   private readonly API_KEY_PRIVATE =
-    'e13706eD69f45Fd0cBD8032b5DB4c86684826Ea6693d5390A1A6e3502fe3d4ac';
+    '1C6c1c29666c85aA127ca84D66c59780e986589d65A56171772781aD8c4C4516';
   private readonly URL_COINPAYMENTS = 'https://www.coinpayments.net/api.php';
   async createTransaction(data: CreateTransactionDto) {
     const amountBase = MEMBERSHIPS_PRICES[data.type];
@@ -39,6 +39,7 @@ export class CoinpaymentsService {
       );
       const response = _response.data.result;
       const expires_at = await this.expiresAt(response.timeout);
+      console.log("el type es", data.type)
       await this.updateFirebase(
         { ...response, uid: data.uid, expires_at: expires_at },
         data.type,
@@ -65,10 +66,13 @@ export class CoinpaymentsService {
     try {
       await docRef.update({
         payment_link: {
-          ...data,
-          membership: type,
-          status: 'pending',
-          updated_at: new Date(),
+          [type]: {
+            ...data,
+            membership: type,
+            status: 'pending',
+            updated_at: new Date(),
+
+          }
         },
       });
     } catch (error) {
