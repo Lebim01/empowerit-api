@@ -7,6 +7,7 @@ import * as crypto from 'crypto';
 import axios from 'axios';
 import { db } from 'src/firebase/admin';
 import { MEMBERSHIPS_PRICES } from 'src/constants';
+import { FRANCHISES_AUTOMATIC_PRICES, MEMBERSHIP_PRICES_MONTHLY } from 'src/subscriptions/subscriptions.service';
 
 @Injectable()
 export class CoinpaymentsService {
@@ -64,17 +65,35 @@ export class CoinpaymentsService {
   async updateFirebase(data: FirebaseObject, type: string) {
     const docRef = db.collection('users').doc(data.uid);
     try {
-      await docRef.update({
-        payment_link: {
-          [type]: {
-            ...data,
-            membership: type,
-            status: 'pending',
-            updated_at: new Date(),
+      if (type in FRANCHISES_AUTOMATIC_PRICES) {
+        console.log("se limpio el normal")
+        await docRef.update({
+          payment_link_automatic_franchises: {
+            [type]: {
+              ...data,
+              membership: type,
+              status: 'pending',
+              updated_at: new Date(),
 
-          }
-        },
-      });
+            }
+          },
+          payment_link: null
+        });
+      } else if (type in MEMBERSHIP_PRICES_MONTHLY) {
+        console.log("se limpio el automatic")
+        await docRef.update({
+          payment_link: {
+            [type]: {
+              ...data,
+              membership: type,
+              status: 'pending',
+              updated_at: new Date(),
+
+            }
+          },
+          payment_link_automatic_franchises: null
+        });
+      }
     } catch (error) {
       console.log('el error es', error);
       return error;

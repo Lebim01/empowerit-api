@@ -44,9 +44,9 @@ export const PARTICIPATIONS_PRINCIPAL_CAP_LIMIT: Record<
 };
 
 export const PARTICIPATIONS_BINARY_POINTS: Record<PackParticipations, number> =
-  {
-    '3000-participation': 300,
-  };
+{
+  '3000-participation': 300,
+};
 
 export const MEMBERSHIP_PRICES_MONTHLY: Record<
   Memberships | MembershipsProductsNames,
@@ -88,14 +88,14 @@ export const FRANCHISES_AUTOMATIC_CAPITALS: Record<
 };
 
 export const FRANCHISES_AUTOMATIC_PRICES: Record<AutomaticFranchises, number> =
-  {
-    FA500: 599,
-    FA1000: 1099,
-    FA2000: 2199,
-    FA5000: 5199,
-    FA10000: 10299,
-    FA20000: 20299,
-  };
+{
+  FA500: 599,
+  FA1000: 1099,
+  FA2000: 2199,
+  FA5000: 5199,
+  FA10000: 10299,
+  FA20000: 20299,
+};
 
 export const AUTOMATIC_FRANCHISES_CAP_LIMITS: Record<
   AutomaticFranchises,
@@ -236,7 +236,7 @@ export class SubscriptionsService {
     private readonly googleTaskService: GoogletaskService,
     private readonly shopifyService: ShopifyService,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   async createPaymentAddressForCredits(
     id_user: string,
@@ -810,8 +810,8 @@ export class SubscriptionsService {
     return is_admin
       ? true
       : expires_at
-      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-      : false;
+        ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+        : false;
   }
 
   async assingMembershipWithoutCredits(
@@ -893,6 +893,7 @@ export class SubscriptionsService {
     id_user: string,
     type: Franchises | MembershipsProductsNames | DigitalFranchises,
   ) {
+
     // Obtener fechas
     /*const startAt: Date = await this.calculateStartDate(id_user);
     const expiresAt: Date = await this.calculateExpirationDate(
@@ -904,29 +905,33 @@ export class SubscriptionsService {
     /* Aqui va la parte para ver cuantos creditos le tocan dependiendo la membresia */
 
     // Registrar cambios
-    await admin
-      .collection('users')
-      .doc(id_user)
-      .update({
-        count_direct_people_this_cycle: 0,
-        count_scholarship_people: 0,
-        membership: type,
-        membership_started_at: new Date(),
-        membership_status: 'paid',
-        //membership_expires_at: expiresAt,
-        payment_link: {},
-        is_new: false,
-        credits: firestore.FieldValue.increment(MEMBERSHIP_CREDITS[type]),
-        membership_cap_limit: MEMBERSHIP_CAP[type],
-        membership_cap_current: 0,
-      });
+    try {
+      await admin
+        .collection('users')
+        .doc(id_user)
+        .update({
+          count_direct_people_this_cycle: 0,
+          count_scholarship_people: 0,
+          membership: type,
+          membership_started_at: new Date(),
+          membership_status: 'paid',
+          //membership_expires_at: expiresAt,
+          payment_link: {},
+          is_new: false,
+          credits: firestore.FieldValue.increment(MEMBERSHIP_CREDITS[type]),
+          membership_cap_limit: MEMBERSHIP_CAP[type],
+          membership_cap_current: 0,
+        });
 
-    /* Ya no seran ciclos quitar o dejarlo */
-    await admin.collection('users').doc(id_user).collection('cycles').add({
-      type,
-      created_at: new Date(),
-      //expires_at: expiresAt,
-    });
+      /* Ya no seran ciclos quitar o dejarlo */
+      await admin.collection('users').doc(id_user).collection('cycles').add({
+        type,
+        created_at: new Date(),
+        //expires_at: expiresAt,
+      });
+    } catch (error) {
+      console.error("fallo al activar la membresia", error)
+    }
   }
 
   /**

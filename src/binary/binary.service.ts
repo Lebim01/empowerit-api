@@ -9,6 +9,7 @@ import {
   where,
   orderBy,
   increment,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
@@ -133,6 +134,7 @@ export class BinaryService {
     concept = 'Inscripción',
     cartId?: string,
   ) {
+    const userNew = (await getDoc(doc(db, 'users', registerUserId))).data()
     const batch = writeBatch(db);
 
     console.log('Repartir', points, 'puntos');
@@ -189,6 +191,7 @@ export class BinaryService {
           /**
            * add (left | right) points
            */
+
           batch.set(subCollectionRef, {
             points,
             user_id: registerUserId,
