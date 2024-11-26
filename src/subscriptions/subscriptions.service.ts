@@ -1311,6 +1311,8 @@ export class SubscriptionsService {
     await this.assingMembership(id_user, type);
     console.log('despues de asignar la membresia');
 
+    await this.addDigitalService(id_user, type)
+
     if (isNew) {
       await this.emailService.sendEmailNewUser(id_user);
     }
@@ -1419,6 +1421,30 @@ export class SubscriptionsService {
       currency: currency || null,
     });
     console.log('despues del a;adir a memberships-history');
+  }
+
+  async addDigitalService(id: string, type: Memberships) {
+    if (type === 'FD200' || type === 'FD300' || type === 'FD500') {
+      let newMrMoneyPowerDate: Date;
+      let newMrSportMoneyDate: Date;
+
+      if (type === 'FD200') {
+        newMrMoneyPowerDate = dayjs().add(30, 'day').toDate();
+        newMrSportMoneyDate = dayjs().add(30, 'day').toDate();
+      } else if (type === 'FD300') {
+        newMrMoneyPowerDate = dayjs().add(3, 'month').toDate();
+        newMrSportMoneyDate = dayjs().add(3, 'month').toDate();
+      } else if (type === 'FD500') {
+        newMrMoneyPowerDate = dayjs().add(6, 'month').toDate();
+        newMrSportMoneyDate = dayjs().add(6, 'month').toDate();
+      }
+
+      await admin.collection('users').doc(id).update({
+        mr_money_power_expires_at: newMrMoneyPowerDate,
+        mr_sport_money_expires_at: newMrSportMoneyDate,
+      });
+      console.log("se activaron los servicios por:", newMrMoneyPowerDate)
+    }
   }
 
   async addQueueBinaryPosition(body: PayloadAssignBinaryPosition) {
