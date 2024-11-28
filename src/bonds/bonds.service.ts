@@ -39,7 +39,7 @@ export class BondsService {
   ) {
     console.log('execUserDirectBond', { registerUserId }, { membership_price });
     const user = await admin.collection('users').doc(registerUserId).get();
-
+    console.log("el type es", type)
     const sponsor_id = user.get('sponsor_id');
     const sponsorRef = admin.collection('users').doc(sponsor_id);
     const sponsor = await sponsorRef.get().then((r) => r.data());
@@ -61,51 +61,64 @@ export class BondsService {
       /* Aca entraran todas las franquicias digitales, de producto y todo el pedo */
       if (product_pack) {
         percent = 20 / 100;
+        console.log("entro al else de 20 / 100")
       }
       if (digital_pack) {
         percent = 40 / 100;
+        console.log("entro al else de 40 / 100")
       }
     } else if (isParticipation || registerFranchiseIsAutomatic) {
       percent = 5 / 100;
+      console.log("entro al else de 5 / 100")
     } else {
       if (is_new_pack) {
         if (user.get('membership') == '3000-pack') {
           if (is_new) {
             percent = 10 / 100;
+            console.log("entro al else de 10 / 100 del is new")
           } else {
             percent = 5 / 100;
+            console.log("entro al else de 5 / 100 del is new")
           }
         } else {
           const sponsor_membership = sponsor.membership as Memberships;
           if (is_new) {
             percent =
               quick_start_percent_by_Franchise[sponsor_membership] / 100;
+              console.log("entro al else de by franchise / 100")
           } else {
             percent =
               quick_start_percent_by_Franchise[sponsor_membership] / 100 / 2;
+              console.log("entro al else de 100 / 2")
           }
         }
       } else if (!sponsor.membership && hasAutomaticFranchises) {
         if (registerFranchiseIsAutomatic) {
           percent = 5 / 100;
+          console.log("entro al else de 5 / 100")
         } else {
           percent = 10 / 100;
+          console.log("entro al else de 10 / 100")
         }
       } else {
+        console.log("entro al else de quick_start_percentage")
         const sponsor_rank = sponsor.rank as Ranks;
         percent = quick_start_percent[sponsor_rank] / 100;
       }
     }
+
+    console.log("el porcentaje es ", percent)
 
     // primer nivel
     if (sponsor) {
       const isProActive = await this.userService.isActiveUser(sponsor_id);
       const amount = Math.round(membership_price * percent * 100) / 100;
       let availableAmount = amount;
+
       if (is_new_pack) {
         availableAmount = await availableCap(sponsor_id, amount);
       }
-
+      console.log("el available amount es", availableAmount)
       /* Aqui */
       if (isProActive) {
         if (is_new_pack) {
