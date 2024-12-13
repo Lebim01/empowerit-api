@@ -524,46 +524,46 @@ export class SubscriptionsService {
         userData.payment_link_automatic_franchises[type].referenceId;
     } else {
       // Obtener un nuevo wallet para el pago
-      const newAddress = await this.cryptoapisService.createNewWalletAddress(
-        currency,
-      );
-      address = newAddress;
+      // const newAddress = await this.cryptoapisService.createNewWalletAddress(
+      //   currency,
+      // );
+      // address = newAddress;
 
-      console.log('address:', newAddress);
+      // console.log('address:', newAddress);
 
       // Crear primera confirmación de la transaccion
 
       if (currency == 'LTC') {
         try {
-          const resConfirmation =
-            await this.cryptoapisService.createFirstConfirmationTransaction(
-              id_user,
-              newAddress,
-              type,
-              currency,
-              'callbackPaymentForAutomaticFranchises',
-            );
-          referenceId = resConfirmation.data.item.referenceId;
+          // const resConfirmation =
+          //   await this.cryptoapisService.createFirstConfirmationTransaction(
+          //     id_user,
+          //     newAddress,
+          //     type,
+          //     currency,
+          //     'callbackPaymentForAutomaticFranchises',
+          //   );
+          // referenceId = resConfirmation.data.item.referenceId;
         } catch (err) {
           console.error(err);
         }
 
         try {
-          const resConfirmation2 =
-            await this.cryptoapisService.createCallbackConfirmation(
-              id_user,
-              newAddress,
-              type,
-              currency,
-              'callbackPaymentForAutomaticFranchises',
-            );
-          referenceId2 = resConfirmation2.data.item.referenceId;
+          // const resConfirmation2 =
+          //   await this.cryptoapisService.createCallbackConfirmation(
+          //     id_user,
+          //     newAddress,
+          //     type,
+          //     currency,
+          //     'callbackPaymentForAutomaticFranchises',
+          //   );
+          // referenceId2 = resConfirmation2.data.item.referenceId;
         } catch (err) {
           console.error(err);
         }
       } else if (currency == 'MXN') {
       }
-      const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+      // const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
     }
 
     const amount_type = FRANCHISES_AUTOMATIC_PRICES;
@@ -574,10 +574,10 @@ export class SubscriptionsService {
     let openpay = {};
 
     if (currency == 'LTC') {
-      amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
+      // amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
     }
     if (currency == 'MXN') {
-      exchange = await this.cryptoapisService.getUSDExchange();
+      // exchange = await this.cryptoapisService.getUSDExchange();
       amount = Number(Number(exchange * amount_type[type]).toFixed(2));
 
       const customer = {
@@ -612,7 +612,8 @@ export class SubscriptionsService {
       referenceId,
       referenceId2,
       address,
-      qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+      qr: '',
+      // qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
       status: 'pending',
       created_at: new Date(),
       amount,
@@ -666,46 +667,46 @@ export class SubscriptionsService {
       referenceId = userData.payment_link[type].referenceId;
     } else {
       // Obtener un nuevo wallet para el pago
-      const newAddress = await this.cryptoapisService.createNewWalletAddress(
-        currency,
-      );
-      address = newAddress;
+      // const newAddress = await this.cryptoapisService.createNewWalletAddress(
+      //   currency,
+      // );
+      // address = newAddress;
 
-      console.log('address:', newAddress);
+      // console.log('address:', newAddress);
 
       // Crear primera confirmación de la transaccion
 
       if (currency == 'LTC') {
         try {
-          const resConfirmation =
-            await this.cryptoapisService.createFirstConfirmationTransaction(
-              id_user,
-              newAddress,
-              type,
-              currency,
-              'callbackPayment',
-            );
-          referenceId = resConfirmation.data.item.referenceId;
+          // const resConfirmation =
+          //   await this.cryptoapisService.createFirstConfirmationTransaction(
+          //     id_user,
+          //     newAddress,
+          //     type,
+          //     currency,
+          //     'callbackPayment',
+          //   );
+          // referenceId = resConfirmation.data.item.referenceId;
         } catch (err) {
           console.error(err);
         }
 
         try {
-          const resConfirmation2 =
-            await this.cryptoapisService.createCallbackConfirmation(
-              id_user,
-              newAddress,
-              type,
-              currency,
-              'callbackPayment',
-            );
-          referenceId2 = resConfirmation2.data.item.referenceId;
+          // const resConfirmation2 =
+          //   await this.cryptoapisService.createCallbackConfirmation(
+          //     id_user,
+          //     newAddress,
+          //     type,
+          //     currency,
+          //     'callbackPayment',
+          //   );
+          // referenceId2 = resConfirmation2.data.item.referenceId;
         } catch (err) {
           console.error(err);
         }
       } else if (currency == 'MXN') {
       }
-      const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+      // const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
     }
 
     const amount_type =
@@ -717,10 +718,10 @@ export class SubscriptionsService {
     let openpay = {};
 
     if (currency == 'LTC') {
-      amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
+      // amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
     }
     if (currency == 'MXN') {
-      exchange = await this.cryptoapisService.getUSDExchange();
+      // exchange = await this.cryptoapisService.getUSDExchange();
       amount = Number(Number(exchange * amount_type[type]).toFixed(2));
 
       const customer = {
@@ -748,14 +749,15 @@ export class SubscriptionsService {
       openpay = res;
     }
 
-    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+    // const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
 
     // Estructurar el campo payment_link
     const payment_link = {
       referenceId,
       referenceId2,
       address,
-      qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+      qr: '',
+      // qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
       status: 'pending',
       created_at: new Date(),
       amount,
