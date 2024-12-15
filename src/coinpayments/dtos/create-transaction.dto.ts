@@ -31,7 +31,7 @@ export class FirebaseObject {
   amount: string;
   @IsString()
   uid: string;
-  expires_at: { seconds: number };
+  expires_at: any;
   @IsString()
   qrcode_url: string;
   @IsString()

@@ -260,48 +260,48 @@ export class SubscriptionsService {
       referenceId = userData.payment_link_credits[type].referenceId;
     } else {
       // Obtener un nuevo wallet para el pago
-      const newAddress = await this.cryptoapisService.createNewWalletAddress(
-        currency,
-      );
-      address = newAddress;
+      // const newAddress = await this.cryptoapisService.createNewWalletAddress(
+      //   currency,
+      // );
+      // address = newAddress;
 
       // Crear primera confirmación de la transaccion
       if (currency == 'LTC') {
         try {
-          const resConfirmation =
-            await this.cryptoapisService.createFirstConfirmationTransactionForCredits(
-              id_user,
-              newAddress,
-              type,
-              currency,
-            );
-          referenceId = resConfirmation.data.item.referenceId;
+          // const resConfirmation =
+          //   await this.cryptoapisService.createFirstConfirmationTransactionForCredits(
+          //     id_user,
+          //     newAddress,
+          //     type,
+          //     currency,
+          //   );
+          // referenceId = resConfirmation.data.item.referenceId;
         } catch (err) {
           console.error(err);
         }
 
         try {
-          const resConfirmation2 =
-            await this.cryptoapisService.createCallbackConfirmationForCredits(
-              id_user,
-              newAddress,
-              type,
-              currency,
-            );
-          referenceId2 = resConfirmation2.data.item.referenceId;
+          // const resConfirmation2 =
+          //   await this.cryptoapisService.createCallbackConfirmationForCredits(
+          //     id_user,
+          //     newAddress,
+          //     type,
+          //     currency,
+          //   );
+          // referenceId2 = resConfirmation2.data.item.referenceId;
         } catch (err) {
           console.error(err);
         }
       }
     }
-    let exchange = 0;
+    let exchange = 20;
     let amount = 0;
     let redirect_url = '';
     let openpay = {};
     if (currency == 'LTC') {
-      amount = await this.cryptoapisService.getLTCExchange(
-        CREDITS_PACKS_PRICE[type],
-      );
+      // amount = await this.cryptoapisService.getLTCExchange(
+      //   CREDITS_PACKS_PRICE[type],
+      // );
     }
     if (currency == 'MXN') {
       exchange = await this.cryptoapisService.getUSDExchange();
@@ -331,13 +331,14 @@ export class SubscriptionsService {
       redirect_url = res.payment_method.url;
       openpay = res;
     }
-    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+    // const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
     // Estructurar el campo payment_link
     const payment_link_credits = {
       referenceId,
       referenceId2,
       address,
-      qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+      qr: '',
+      // qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
       status: 'pending',
       created_at: new Date(),
       amount,
@@ -569,7 +570,7 @@ export class SubscriptionsService {
     const amount_type = FRANCHISES_AUTOMATIC_PRICES;
 
     let amount = 0;
-    let exchange = 0;
+    let exchange = 20;
     let redirect_url = '';
     let openpay = {};
 
@@ -713,7 +714,7 @@ export class SubscriptionsService {
       period == 'yearly' ? MEMBERSHIP_PRICES_YEARLY : MEMBERSHIP_PRICES_MONTHLY;
 
     let amount = 0;
-    let exchange = 0;
+    let exchange = 20;
     let redirect_url = '';
     let openpay = {};
 
