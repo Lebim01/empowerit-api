@@ -12,9 +12,9 @@ import { FRANCHISES_AUTOMATIC_PRICES, MEMBERSHIP_PRICES_MONTHLY } from 'src/subs
 @Injectable()
 export class CoinpaymentsService {
   private readonly API_KEY_PUBLIC =
-    'd5c938f2195e4c14b0572ec588b877211f1c0236fb7ff1f7aca0db0f79868cb3';
+    'd8703d70ec2abaeafe78c194b431180cee734d78ab1d8078daaca64788640df7';
   private readonly API_KEY_PRIVATE =
-    '1C6c1c29666c85aA127ca84D66c59780e986589d65A56171772781aD8c4C4516';
+    '7DDa1f4fba796f4ce5Ab5394aF9b58B38212ba10C9893a134eda634Fc6729552';
   private readonly URL_COINPAYMENTS = 'https://www.coinpayments.net/api.php';
   async createTransaction(data: CreateTransactionDto) {
     const amountBase = MEMBERSHIPS_PRICES[data.type];
@@ -33,6 +33,7 @@ export class CoinpaymentsService {
     };
     const headers = this.generateHeaders(payload);
     try {
+   
       const _response = await axios.post(
         this.URL_COINPAYMENTS,
         new URLSearchParams(payload),
@@ -40,7 +41,8 @@ export class CoinpaymentsService {
       );
       const response = _response.data.result;
       const expires_at = await this.expiresAt(response.timeout);
-      console.log("el type es", data.type)
+      console.log("payload", payload)
+      console.log("el header", headers)
       await this.updateFirebase(
         { ...response, uid: data.uid, expires_at: expires_at },
         data.type,
