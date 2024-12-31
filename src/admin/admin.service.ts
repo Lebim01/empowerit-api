@@ -19,6 +19,7 @@ export const ADMIN_USERS = [
   'sVarUBihvSZ7ahMUMgwaAbXcRs03',
   'vzzvaofd1GXAdgH890pGswl5A5x1',
   '9CXMbcJt2sNWG40zqWwQSxH8iki2',
+  'sVarUBihvSZ7ahMUMgwaAbXcRs03'
 ];
 export const INFINITE_POINTS = [
   'eN7hWGlS2mVC1O9YnXU3U5xEknz1',
@@ -31,7 +32,7 @@ export class AdminService {
   constructor(
     private readonly cryptoapisService: CryptoapisService,
     private readonly binaryService: BinaryService,
-  ) {}
+  ) { }
 
   async getPayroll(blockchain: Blockchains) {
     const users = await db.collection('users').get();
@@ -44,8 +45,8 @@ export class AdminService {
         const binary_side = hasInfinitePoints
           ? 'right'
           : docData.left_points > docData.right_points
-          ? 'right'
-          : 'left';
+            ? 'right'
+            : 'left';
         const binary_points = docData[`${binary_side}_points`];
 
         let binary_percent = 0;
@@ -291,11 +292,11 @@ export class AdminService {
           const amount =
             blockchain == 'bitcoin'
               ? await this.cryptoapisService.getBTCExchange(
-                  Number(doc.get('total')),
-                )
+                Number(doc.get('total')),
+              )
               : await this.cryptoapisService.getLTCExchange(
-                  Number(doc.get('total')),
-                );
+                Number(doc.get('total')),
+              );
           await doc.ref.update({
             [`total_${wallet}`]: amount || 0,
           });

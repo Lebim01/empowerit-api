@@ -26,4 +26,9 @@ export const MEMBERSHIPS_PRICES = {
   '1000-pack': 1000,
   '2000-pack': 2000,
   '3000-pack': 3000,
+  '30-credits': 30,
+  '50-credits': 50,
+  '100-credits': 100,
+  '500-credits': 500,
+  '1000-credits': 1000
 };

@@ -7,7 +7,7 @@ import * as crypto from 'crypto';
 import axios from 'axios';
 import { db } from 'src/firebase/admin';
 import { MEMBERSHIPS_PRICES } from 'src/constants';
-import { FRANCHISES_AUTOMATIC_PRICES, MEMBERSHIP_PRICES_MONTHLY } from 'src/subscriptions/subscriptions.service';
+import { CREDITS_PACKS_PRICE, FRANCHISES_AUTOMATIC_PRICES, MEMBERSHIP_PRICES_MONTHLY } from 'src/subscriptions/subscriptions.service';
 
 @Injectable()
 export class CoinpaymentsService {
@@ -33,7 +33,7 @@ export class CoinpaymentsService {
     };
     const headers = this.generateHeaders(payload);
     try {
-   
+
       const _response = await axios.post(
         this.URL_COINPAYMENTS,
         new URLSearchParams(payload),
@@ -43,6 +43,7 @@ export class CoinpaymentsService {
       const expires_at = await this.expiresAt(response.timeout);
       console.log("payload", payload)
       console.log("el header", headers)
+      console.log("el response", response)
       await this.updateFirebase(
         { ...response, uid: data.uid, expires_at: expires_at },
         data.type,
@@ -95,6 +96,16 @@ export class CoinpaymentsService {
           },
           payment_link_automatic_franchises: null
         });
+      } else if (type in CREDITS_PACKS_PRICE) {
+        await docRef.update({
+          payment_link_credits: {
+            [type]: {
+              ...data,
+              status: 'pending',
+
+            }
+          }
+        })
       }
     } catch (error) {
       console.log('el error es', error);
@@ -117,6 +128,7 @@ export class CoinpaymentsService {
       const isComplete = await this.confirmingPayment(
         payload.email,
         payload.status,
+        payload.txn_id
       );
       response.status(200).send('pago actualizado con exito');
       return { isComplete, payload };
@@ -124,34 +136,83 @@ export class CoinpaymentsService {
       response.status(400).send('pago no se pudo actualizar');
     }
   }
-  async confirmingPayment(email: string, status: number) {
+  async confirmingPayment(email: string, status: number, txn_id: string) {
     const userPayment = await this.getUser(email);
     const updateRef = db.collection('users').doc(userPayment.id);
 
     try {
-      if (status == -1) return false;
-      if (status == 100) {
-        await updateRef.update({
-          'payment_link.status': 'paid',
-        });
+      if (status === -1) return false;
+
+      const userData = (await updateRef.get()).data();
+      if (!userData) throw new Error('User data not found');
+      const paymentKeys = [
+        'payment_link',
+        'payment_link_credits',
+        'payment_link_automatic_franchises',
+      ];
+
+      let updated = false;
+      let creditsToAdd = 0; 
+
+      for (const key of paymentKeys) {
+        const paymentObject = userData[key];
+        if (paymentObject) {
+          for (const membership in paymentObject) {
+            if (paymentObject[membership]?.txn_id === txn_id) {
+              console.log("el object to update is", paymentObject[membership])
+              paymentObject[membership].status = this.getStatusFromCode(status);
+
+              if (key === 'payment_link_credits' && Number(status) === 100) {
+                creditsToAdd = CREDITS_PACKS_PRICE[membership] || 0;
+                console.log("Créditos a sumar", creditsToAdd);
+              }
+              updated = true;
+              break;
+            }
+          }
+          if (updated) break;
+        }
       }
-      if (status == 1) {
-        await updateRef.update({
-          'payment_link.status': 'confirming',
+
+      if (updated) {
+        const updatePayload: any = {};
+        paymentKeys.forEach(key => {
+          if (userData[key]) {
+            updatePayload[key] = userData[key];
+          }
         });
+
+        if (creditsToAdd > 0) {
+          const currentCredits = Number(userData.credits) || 0;
+          updatePayload.credits = currentCredits + creditsToAdd;
+        }
+
+        await updateRef.update(updatePayload);
+        return status === 100;
+      } else {
+        console.warn('Transaction ID not found');
+        return false;
       }
-      if (status == 0) {
-        await updateRef.update({
-          'payment_link.status': 'pending',
-        });
-      }
-      const statusReturn = status == 100;
-      return statusReturn;
     } catch (error) {
-      console.error('ocurrio un error al actualizar el pago', error);
+      console.error('Ocurrió un error al actualizar el pago', error);
       return false;
     }
   }
+
+  private getStatusFromCode(status: number): string {
+    const converted = Number(status)
+    switch (converted) {
+      case 100:
+        return 'paid';
+      case 1:
+        return 'confirming';
+      case 0:
+        return 'pending';
+      default:
+        return 'unknown';
+    }
+  }
+
   async getUser(email) {
     try {
       const user = await db
