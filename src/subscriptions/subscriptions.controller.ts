@@ -38,7 +38,7 @@ export class SubscriptionsController {
   async createPaymentAddress(@Body() body, @Param('type') type: Memberships) {
     try {
       if (body.coin == 'MXN') {
-        return await this.subscriptionService.createPaymentAddress(
+        return await this.subscriptionService.createOpenpayLink(
           body.userId,
           type,
           body.coin,

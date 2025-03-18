@@ -102,33 +102,14 @@ export class SubscriptionsService {
     };
   }
 
-  async createPaymentAddress(
-    id_user: string,
-    type: Memberships,
-    currency: Coins,
-  ) {
-    // Obtener datos del usuario
+  async createOpenpayLink(id_user: string, type: Memberships, currency: Coins) {
     const userRef = admin.collection('users').doc(id_user);
     const userData = await userRef.get().then((r) => r.data());
-    let address = '';
-    let referenceId = '';
-    const referenceId2 = '';
-
-    // Si no existe registro de la informacion de pago...
-    if (
-      userData.payment_link &&
-      userData.payment_link[type] &&
-      userData.payment_link[type].currency == currency
-    ) {
-      address = userData.payment_link[type].address;
-      referenceId = userData.payment_link[type].referenceId;
-    } else {
-    }
 
     const exchange = 20;
     let amount = 0;
     let redirect_url = '';
-    let openpay = {};
+    let openpay;
 
     if (currency == 'MXN') {
       amount = Number(Number(exchange * MEMBERSHIPS_PRICES[type]).toFixed(2));
@@ -160,11 +141,6 @@ export class SubscriptionsService {
 
     // Estructurar el campo payment_link
     const payment_link = {
-      referenceId,
-      referenceId2,
-      address,
-      qr: '',
-      // qr: https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount},
       status: 'pending',
       created_at: new Date(),
       amount,
@@ -173,22 +149,15 @@ export class SubscriptionsService {
       expires_at: dayjs().add(15, 'minutes').toDate(),
       redirect_url,
       openpay,
+      type: 'membership',
+      membership_type: type,
+      id_user,
     };
 
-    // Guardar payment_link
-    await userRef.collection('address-history').add({ ...payment_link, type });
+    const openpay_ref = await admin.collection('openpay').add(payment_link);
     await userRef.update({
-      payment_link: {
-        [type]: payment_link,
-      },
+      openpay_link: openpay_ref.id,
     });
-
-    return {
-      address: address,
-      amount: payment_link.amount,
-      currency: payment_link.currency,
-      qr: payment_link.qr,
-    };
   }
 
   createCharge(newCharge: any): Promise<any> {

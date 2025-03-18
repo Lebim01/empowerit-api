@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { delay } from '../constants';
 import { db } from 'src/firebase/admin';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 
@@ -9,16 +8,20 @@ export class OpenpayService {
 
   async newChange(body: ChangeSuccess) {
     const openpay = await db
-      .collection('openpay-transactions')
+      .collection('openpay')
       .doc(body.transaction.id)
       .get();
 
     const batch = db.batch();
 
+    await openpay.ref.collection('ipn').add({
+      ...body,
+      created_at: new Date(),
+    });
+
     if (body.type == 'payout.failed') {
-      const user_ref = db.collection('users').doc(openpay.get('id_user'));
-      batch.update(user_ref, {
-        [`payment_link.status`]: 'failed',
+      batch.update(openpay.ref, {
+        status: 'failed',
       });
 
       await batch.commit();
@@ -26,12 +29,8 @@ export class OpenpayService {
       return 'FAILED';
     }
     if (body.type == 'charge.succeeded') {
-      const user_ref = db.collection('users').doc(openpay.get('id_user'));
-
-      batch.create(user_ref.collection('openpay-transactions').doc(), body);
-
-      batch.update(user_ref, {
-        [`payment_link.status`]: 'success',
+      batch.update(openpay.ref, {
+        status: 'success',
       });
 
       if (openpay.get('type') == 'membership') {
