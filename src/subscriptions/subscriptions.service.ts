@@ -19,6 +19,8 @@ import { GoogletaskService } from 'src/googletask/googletask.service';
 import Openpay from 'openpay';
 import { EmailService } from 'src/email/email.service';
 import { MEMBERSHIPS_PRICES } from 'src/constants';
+import { binary_points } from 'src/binary/binary_packs';
+import { rank_points } from 'src/ranks/ranks_object';
 
 @Injectable()
 export class SubscriptionsService {
@@ -377,16 +379,20 @@ export class SubscriptionsService {
       });
     }
 
-    try {
-      await this.bondService.execUserDirectBond(id_user, type);
-    } catch (err) {
-      console.error(err);
+    if (volumen) {
+      try {
+        await this.bondService.execUserDirectBond(id_user, type);
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     await this.addQueueBinaryPosition({
       id_user,
       position: data.get('position'),
-      points: pack_price,
+      binaryPoints: binary_points[type],
+      rankPoints: rank_points[type],
+      volumen,
     });
   }
 
@@ -639,7 +645,11 @@ export class SubscriptionsService {
      */
     if (volumen) {
       try {
-        await this.binaryService.increaseBinaryPoints(user.id, payload.points);
+        await this.binaryService.increaseBinaryPoints(
+          user.id,
+          payload.binaryPoints,
+          payload.rankPoints,
+        );
       } catch (err) {
         console.error(err);
       }

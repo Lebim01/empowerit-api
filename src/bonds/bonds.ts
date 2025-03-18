@@ -1,5 +1,3 @@
-import { Ranks } from '../ranks/ranks_object';
-
 export enum Bonds {
   QUICK_START = 'bond_quick_start',
   MENTOR = 'bond_mentor',
@@ -19,4 +17,10 @@ export const messages: Record<Bonds, string> = {
   bond_direct_sale: 'Bono venta directa',
   bond_binary: 'Bono binario',
   bond_rank: 'Bono de rango',
+};
+
+export const automatic_percents: Record<AutomaticFranchises, number> = {
+  FA1000: 0.03,
+  FA2000: 0.035,
+  FA5000: 0.04,
 };

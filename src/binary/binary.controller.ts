@@ -10,14 +10,4 @@ export class BinaryController {
     await this.binaryService.matchBinaryPoints(body.userId);
     return { success: true, message: 'Points matched successfully.' };
   }
-
-  @Post('/pay')
-  async payBinary(@Body() body: { registerUserId: string; points: number }) {
-    if (!body.registerUserId) throw new Error('registerUserId required');
-    if (!body.points) throw new Error('points required');
-    return this.binaryService.increaseBinaryPoints(
-      body.registerUserId,
-      body.points,
-    );
-  }
 }

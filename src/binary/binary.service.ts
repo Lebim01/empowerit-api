@@ -127,36 +127,39 @@ export class BinaryService {
 
   async increaseBinaryPoints(
     registerUserId: string,
-    points: number,
+    binaryPoints: number,
+    rankPoins: number,
     concept = 'Inscripción',
-    cartId?: string,
+    txn_id?: string,
   ) {
-    const userNew = (await getDoc(doc(db, 'users', registerUserId))).data();
-    const batch = writeBatch(db);
+    const batch = admin.batch();
 
-    console.log('Repartir', points, 'puntos');
+    console.log(
+      'Repartir',
+      { binaryPoints, rankPoins },
+      'puntos',
+      concept,
+      txn_id,
+    );
 
     const registerUser = await admin
       .collection('users')
       .doc(registerUserId)
       .get();
-
-    const membership = registerUser.get('membership');
     let currentUser = registerUserId;
 
     do {
-      const users = await getDocs(
-        query(
-          collection(db, 'users'),
-          or(
-            where('left_binary_user_id', '==', currentUser),
-            where('right_binary_user_id', '==', currentUser),
+      const users = await admin
+        .collection('users')
+        .where(
+          firestore.Filter.or(
+            firestore.Filter.where('left_binary_user_id', '==', currentUser),
+            firestore.Filter.where('right_binary_user_id', '==', currentUser),
           ),
-        ),
-      );
-      console.log('pasa');
+        )
+        .get();
+
       if (users.size > 0) {
-        console.log('pasa');
         const user = users.docs[0];
         const userData = user.data();
         const position =
@@ -164,47 +167,40 @@ export class BinaryService {
 
         currentUser = user.id;
 
-        console.log('xd', user.id);
-
         // solo se suman puntos si el usuario esta activo
         const isActive = await this.userService.isActiveUser(user.id);
 
-        console.log(user.id, 'isActive', isActive);
-
-        if (isActive) {
-          console.log('es activo');
+        if (isActive && user.id != registerUser.get('parent_binary_user_id')) {
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
             position == 'left' ? 'left-points' : 'right-points';
 
-          const subCollectionRef = doc(
-            collection(db, `users/${user.id}/${positionCollection}`),
-          );
+          const subCollectionRef = admin
+            .collection('users')
+            .doc(user.id)
+            .collection(positionCollection);
 
-          const subCollectionPointsRef = doc(
-            collection(db, `users/${user.id}/points`),
-          );
+          const subCollectionPointsRef = admin
+            .collection('users')
+            .doc(user.id)
+            .collection('points');
 
           /**
            * add (left | right) points
+           * sirve para cobrar el binario
            */
-
-          batch.set(subCollectionRef, {
-            points,
+          batch.set(subCollectionRef.doc(), {
+            points: binaryPoints,
             user_id: registerUserId,
             name: registerUser.get('name') || '',
-            created_at: new Date(),
-            starts_at: new Date(),
-            user_sponsor_id: registerUser.get('sponsor_id') || null,
-            user_sponsor: registerUser.get('sponsor') || '',
-            user_email: registerUser.get('email') || 'noemail',
           });
 
           /**
            * (add points)
+           * sirve para saber cuantos puntos totales historicos
            */
-          batch.set(subCollectionPointsRef, {
-            points: MEMBERSHIPS_PRICES[membership],
+          batch.set(subCollectionPointsRef.doc(), {
+            points: rankPoins,
             side: position || 'right',
             user_id: registerUserId,
             user_email: registerUser.get('email') || 'noemail',
@@ -213,7 +209,7 @@ export class BinaryService {
             user_sponsor: registerUser.get('sponsor') || '',
             created_at: new Date(),
             concept,
-            cartId: cartId || '',
+            txn_id: txn_id || '',
           });
         }
       } else {

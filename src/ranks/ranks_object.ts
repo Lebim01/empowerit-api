@@ -150,3 +150,14 @@ export const ranks_object: Record<Ranks, RankDetail> = {
 export const getBinaryPercent = () => {
   return 0.1;
 };
+
+export const rank_points: Record<Memberships, number> = {
+  FA1000: 200,
+  FA2000: 400,
+  FA5000: 1000,
+  FB200: 200,
+  FB500: 500,
+  FB79: 79,
+  FT1499: 1499,
+  FT2499: 2499,
+};
