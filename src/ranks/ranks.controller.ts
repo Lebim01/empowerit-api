@@ -1,41 +1,48 @@
 import { Controller, Param, Post, Get, Query, Body } from '@nestjs/common';
 import { RanksService } from './ranks.service';
+import { ranks_object } from './ranks_object';
+import { GetUserRankDTO } from './dto/payload';
+
 @Controller('ranks')
 export class RanksController {
   constructor(private ranksService: RanksService) {}
 
-  @Post('updateRanks')
+  @Post('cutRanks')
   upateRanks() {
-    return this.ranksService.updateRank();
+    return this.ranksService.cutRanks();
   }
-  @Post('updateNewRanks')
-  updateNewRanks(){
-    return this.ranksService.updateNewRanks();
+
+  @Post('updateUserQueue/:id')
+  updateUserQueue(@Param('id') id_user: string) {
+    return this.ranksService.updateRankQueue(id_user);
+  }
+
+  @Post('cutUserQueue/:id')
+  upateRanksQueue(@Param('id') id_user: string) {
+    return this.ranksService.updateRankQueue(id_user);
   }
 
   @Post('updateUserRank/:id')
-  updateUserRank(@Param('id') id_user: string) {
-    return this.ranksService.updateUserRank(id_user);
+  updateUserRank(
+    @Param('id') id_user: string,
+    @Query('corte') is_corte: string,
+  ) {
+    return this.ranksService.updateUserRank(id_user, Boolean(is_corte));
   }
 
-  @Post('getRank/:idUser')
-  async getRank(@Param('idUser') idUser: string) {
-    const is_report = true;
-    return await this.ranksService.getRankUser(idUser);
+  @Get('list')
+  getlistranks() {
+    return ranks_object;
+  }
+
+  @Post('getUserRank')
+  async getRank(@Body() body: GetUserRankDTO) {
+    return this.ranksService.getRankUser(body.id_user);
   }
 
   @Post('getRankKey/:key')
   async getRankKey(@Body() body, @Param('key') key: string) {
     if (!body.id_user) throw new Error('id_user is required');
     return await this.ranksService.getRankKey(body.id_user, key);
-  }
-
-  @Get('report/new-ranks/:year/:week')
-  async reportNewRanks(
-    @Param('year') year: string,
-    @Param('week') week: string,
-    @Query('type') type: 'json' | 'csv' = 'json',
-  ) {
-    return await this.ranksService.newRanks(year, week, type);
   }
 }

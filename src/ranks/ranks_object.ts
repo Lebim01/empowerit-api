@@ -1,117 +1,152 @@
 export enum Ranks {
   NONE = 'none',
-  INITIAL_BUILD = 'initial_builder',
-  STAR_BUILD = 'star_builder',
-  ADVANCED_BUILDER = 'advanced_builder',
-  MASTER_1000 = 'master_1000',
-  MASTER_1500 = 'master_1500',
-  MASTER_2500 = 'master_2500',
-  REGIONAL_DIRECTOR = 'regional_director',
-  NATIONAL_DIRECTOR = 'national_director',
-  INTERNATIONAL_DIRECTOR = 'international_director',
-  TOP_DIAMOND = 'top_diamond',
-  TOP_1 = 'top_1',
-  TOP_LEGEND = 'top_legend',
+  CONSTRUCTOR = 'constructor',
+  ESTRELLA = 'estrella',
+  EMPRENDEDOR = 'emprendedor',
+  EMPRENDEDOR_PLATA = 'emprendedor_plata',
+  EMPRENDEDOR_ORO = 'emprendedor_oro',
+  EMPRENDEDOR_PLATINO = 'emprendedor_platino',
+  DIRECTOR_REGIONAL = 'director_regional',
+  DIRECTOR_NACIONAL = 'director_nacional',
+  DIRECTOR_INTERNACIONAL = 'director_internacional',
+  EMBAJADOR = 'embajador',
+  EMBAJADOR_CORONA = 'embajador_corona',
+  EMBAJADOR_ELITE = 'embajador_elite',
 }
 
 export const ranksPoints: Record<Ranks, number> = {
-  [Ranks.TOP_LEGEND]: 2_300_000,
-  [Ranks.TOP_1]: 600_000,
-  [Ranks.TOP_DIAMOND]: 180_000,
-  [Ranks.INTERNATIONAL_DIRECTOR]: 72_000,
-  [Ranks.NATIONAL_DIRECTOR]: 35_000,
-  [Ranks.REGIONAL_DIRECTOR]: 25_000,
-  [Ranks.MASTER_2500]: 15_000,
-  [Ranks.MASTER_1500]: 12_000,
-  [Ranks.MASTER_1000]: 8_000,
-  [Ranks.ADVANCED_BUILDER]: 6_000,
-  [Ranks.STAR_BUILD]: 1_500,
-  [Ranks.INITIAL_BUILD]: 500,
+  [Ranks.EMBAJADOR_ELITE]: 2_300_000,
+  [Ranks.EMBAJADOR_CORONA]: 600_000,
+  [Ranks.EMBAJADOR]: 180_000,
+  [Ranks.DIRECTOR_INTERNACIONAL]: 72_000,
+  [Ranks.DIRECTOR_NACIONAL]: 35_000,
+  [Ranks.DIRECTOR_REGIONAL]: 25_000,
+  [Ranks.EMPRENDEDOR_PLATINO]: 15_000,
+  [Ranks.EMPRENDEDOR_ORO]: 12_000,
+  [Ranks.EMPRENDEDOR_PLATA]: 8_000,
+  [Ranks.EMPRENDEDOR]: 6_000,
+  [Ranks.ESTRELLA]: 1_500,
+  [Ranks.CONSTRUCTOR]: 500,
   [Ranks.NONE]: 0,
 };
 
 export const ranksOrder = [
-  Ranks.INITIAL_BUILD,
-  Ranks.STAR_BUILD,
-  Ranks.ADVANCED_BUILDER,
-  Ranks.MASTER_1000,
-  Ranks.MASTER_1500,
-  Ranks.MASTER_2500,
-  Ranks.REGIONAL_DIRECTOR,
-  Ranks.NATIONAL_DIRECTOR,
-  Ranks.INTERNATIONAL_DIRECTOR,
-  Ranks.TOP_DIAMOND,
-  Ranks.TOP_1,
-  Ranks.TOP_LEGEND,
+  Ranks.CONSTRUCTOR,
+  Ranks.ESTRELLA,
+  Ranks.EMPRENDEDOR,
+  Ranks.EMPRENDEDOR_PLATA,
+  Ranks.EMPRENDEDOR_ORO,
+  Ranks.EMPRENDEDOR_PLATINO,
+  Ranks.DIRECTOR_REGIONAL,
+  Ranks.DIRECTOR_NACIONAL,
+  Ranks.DIRECTOR_INTERNACIONAL,
+  Ranks.EMBAJADOR,
+  Ranks.EMBAJADOR_CORONA,
+  Ranks.EMBAJADOR_ELITE,
 ];
 
-export const ranks_object: Record<
-  Ranks,
-  { display: string; key: Ranks; order: number }
-> = {
+export type RankDetail = {
+  display: string;
+  key: Ranks;
+  order: number;
+  ranks: Ranks[][];
+  bonus: number;
+};
+
+export const ranks_object: Record<Ranks, RankDetail> = {
   [Ranks.NONE]: {
     display: 'Ninguno',
     key: Ranks.NONE,
     order: -1,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.INITIAL_BUILD]: {
-    display: 'Initial Builder',
-    key: Ranks.INITIAL_BUILD,
+  [Ranks.CONSTRUCTOR]: {
+    display: 'Constructor',
+    key: Ranks.CONSTRUCTOR,
     order: 0,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.STAR_BUILD]: {
-    display: 'Star Builder',
-    key: Ranks.STAR_BUILD,
+  [Ranks.ESTRELLA]: {
+    display: 'Estrella',
+    key: Ranks.ESTRELLA,
     order: 1,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.ADVANCED_BUILDER]: {
-    display: 'Advanced Builder',
-    key: Ranks.ADVANCED_BUILDER,
+  [Ranks.EMPRENDEDOR]: {
+    display: 'Emprendedor',
+    key: Ranks.EMPRENDEDOR,
     order: 2,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.MASTER_1000]: {
-    display: 'Master 1000',
-    key: Ranks.MASTER_1000,
+  [Ranks.EMPRENDEDOR_PLATA]: {
+    display: 'Emprendedor Plata',
+    key: Ranks.EMPRENDEDOR_PLATA,
     order: 3,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.MASTER_1500]: {
-    display: 'Master 1500',
-    key: Ranks.MASTER_1500,
+  [Ranks.EMPRENDEDOR_ORO]: {
+    display: 'Emprendedor Oro',
+    key: Ranks.EMPRENDEDOR_ORO,
     order: 4,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.MASTER_2500]: {
-    display: 'Master 2500',
-    key: Ranks.MASTER_2500,
+  [Ranks.EMPRENDEDOR_PLATINO]: {
+    display: 'Emprendedor Platino',
+    key: Ranks.EMPRENDEDOR_PLATINO,
     order: 5,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.REGIONAL_DIRECTOR]: {
-    display: 'Regional Director',
-    key: Ranks.REGIONAL_DIRECTOR,
+  [Ranks.DIRECTOR_REGIONAL]: {
+    display: 'Director Regional',
+    key: Ranks.DIRECTOR_REGIONAL,
     order: 6,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.NATIONAL_DIRECTOR]: {
-    display: 'National Director',
-    key: Ranks.NATIONAL_DIRECTOR,
+  [Ranks.DIRECTOR_NACIONAL]: {
+    display: 'Director Nacional',
+    key: Ranks.DIRECTOR_NACIONAL,
     order: 7,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.INTERNATIONAL_DIRECTOR]: {
-    display: 'International Director',
-    key: Ranks.INTERNATIONAL_DIRECTOR,
+  [Ranks.DIRECTOR_INTERNACIONAL]: {
+    display: 'Director Internacional',
+    key: Ranks.DIRECTOR_INTERNACIONAL,
     order: 8,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.TOP_DIAMOND]: {
-    display: 'Top Diamond',
-    key: Ranks.TOP_DIAMOND,
+  [Ranks.EMBAJADOR]: {
+    display: 'Embajador',
+    key: Ranks.EMBAJADOR,
     order: 9,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.TOP_1]: {
-    display: 'Top 1%',
-    key: Ranks.TOP_1,
+  [Ranks.EMBAJADOR_CORONA]: {
+    display: 'Embajador Corona',
+    key: Ranks.EMBAJADOR_CORONA,
     order: 10,
+    ranks: [],
+    bonus: 0,
   },
-  [Ranks.TOP_LEGEND]: {
-    display: 'Top Legend',
-    key: Ranks.TOP_LEGEND,
+  [Ranks.EMBAJADOR_ELITE]: {
+    display: 'Embajador Elite',
+    key: Ranks.EMBAJADOR_ELITE,
     order: 11,
+    ranks: [],
+    bonus: 0,
   },
+};
+
+export const getBinaryPercent = () => {
+  return 0.1;
 };

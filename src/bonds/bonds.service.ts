@@ -2,153 +2,76 @@ import { Injectable } from '@nestjs/common';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from 'src/users/users.service';
 import { firestore } from 'firebase-admin';
-import {
-  BOND_CAR,
-  Bonds,
-  menthor_percent,
-  messages,
-  quick_start_percent,
-  quick_start_percent_by_Franchise,
-} from './bonds';
-import { Ranks } from 'src/ranks/ranks_object';
-
-export async function availableCap(registerUserId: string, cash: number) {
-  const user = await admin.collection('users').doc(registerUserId).get();
-  const membership_cap_current = user.get('membership_cap_current');
-  const membership_cap_limit = user.get('membership_cap_limit');
-  if (cash <= membership_cap_limit - membership_cap_current) {
-    return cash;
-  }
-  return membership_cap_limit - membership_cap_current;
-}
+import { Bonds, menthor_percent, messages } from './bonds';
+import { MEMBERSHIPS_PRICES } from 'src/constants';
+import { Ranks, ranks_object } from 'src/ranks/ranks_object';
 
 @Injectable()
 export class BondsService {
   constructor(private readonly userService: UsersService) {}
+
+  async addBond(
+    user_id: string, // usuario que recibe el bono
+    type: Bonds,
+    amount: number,
+    user_origin_bond?: string, // usuario que detonó el bono
+    add_to_balance = false,
+    extras?: Record<string, any>,
+  ) {
+    const user = await admin.collection('users').doc(user_id).get();
+    const isActive = this.userService.isActiveUserByDoc(user);
+
+    if (isActive) {
+      const update: any = {};
+
+      if (add_to_balance) {
+        update.balance = firestore.FieldValue.increment(amount);
+      }
+
+      await admin
+        .collection('users')
+        .doc(user_id)
+        .update({
+          [type]: firestore.FieldValue.increment(amount),
+          profits: firestore.FieldValue.increment(amount),
+          ...update,
+        });
+      await this.addProfitDetail(user_id, type, amount, user_origin_bond, {
+        ...extras,
+        benefited_user_name: user.get('name'),
+      });
+    } else {
+      await this.addLostProfit(user_id, type, amount, user_origin_bond);
+    }
+  }
 
   /**
    * solo se reparte este bono a los usuarios activos
    */
   async execUserDirectBond(
     registerUserId: string,
-    membership_price: number,
-    is_new: boolean,
-    isParticipation = false,
-    registerFranchiseIsAutomatic = false,
-    type = '',
+    membership_type: Memberships | PackParticipations,
   ) {
-    console.log('execUserDirectBond', { registerUserId }, { membership_price });
+    console.log('execUserDirectBond', { registerUserId }, { membership_type });
+    const membership_price = MEMBERSHIPS_PRICES[membership_type];
     const user = await admin.collection('users').doc(registerUserId).get();
-    console.log("el type es", type)
+
     const sponsor_id = user.get('sponsor_id');
-    const sponsorRef = admin.collection('users').doc(sponsor_id);
-    const sponsor = await sponsorRef.get().then((r) => r.data());
-    const hasAutomaticFranchises = sponsor?.has_automatic_franchises ?? false;
-    console.log(is_new ? 'El usuario es nuevo' : 'El usuario no es nuevo');
-    let percent = 0;
-    const is_new_pack = [
-      '100-pack',
-      '300-pack',
-      '500-pack',
-      '1000-pack',
-      '2000-pack',
-      '3000-pack',
-    ].includes(sponsor.membership);
-    const product_pack = ['FP200', 'FP300', 'FP500'].includes(type);
-    const digital_pack = ['FD200', 'FD300', 'FD500'].includes(type);
-    console.log(sponsor.membership, { is_new_pack });
-    if (!isParticipation && !registerFranchiseIsAutomatic && type) {
-      /* Aca entraran todas las franquicias digitales, de producto y todo el pedo */
-      if (product_pack) {
-        percent = 20 / 100;
-        console.log("entro al else de 20 / 100")
-      }
-      if (digital_pack) {
-        percent = 40 / 100;
-        console.log("entro al else de 40 / 100")
-      }
-    } else if (isParticipation || registerFranchiseIsAutomatic) {
-      percent = 5 / 100;
-      console.log("entro al else de 5 / 100")
-    } else {
-      if (is_new_pack) {
-        if (user.get('membership') == '3000-pack') {
-          if (is_new) {
-            percent = 10 / 100;
-            console.log("entro al else de 10 / 100 del is new")
-          } else {
-            percent = 5 / 100;
-            console.log("entro al else de 5 / 100 del is new")
-          }
-        } else {
-          const sponsor_membership = sponsor.membership as Memberships;
-          if (is_new) {
-            percent =
-              quick_start_percent_by_Franchise[sponsor_membership] / 100;
-              console.log("entro al else de by franchise / 100")
-          } else {
-            percent =
-              quick_start_percent_by_Franchise[sponsor_membership] / 100 / 2;
-              console.log("entro al else de 100 / 2")
-          }
-        }
-      } else if (!sponsor.membership && hasAutomaticFranchises) {
-        if (registerFranchiseIsAutomatic) {
-          percent = 5 / 100;
-          console.log("entro al else de 5 / 100")
-        } else {
-          percent = 10 / 100;
-          console.log("entro al else de 10 / 100")
-        }
-      } else {
-        console.log("entro al else de quick_start_percentage")
-        const sponsor_rank = sponsor.rank as Ranks;
-        percent = quick_start_percent[sponsor_rank] / 100;
-      }
-    }
 
-    console.log("el porcentaje es ", percent)
+    const percent = ['FP1200', 'FP2400'].includes(membership_type) ? 0.1 : 0.2;
+    const amount = membership_price * percent;
 
-    // primer nivel
-    if (sponsor) {
-      const isProActive = await this.userService.isActiveUser(sponsor_id);
-      const amount = Math.round(membership_price * percent * 100) / 100;
-      let availableAmount = amount;
-
-      if (is_new_pack) {
-        availableAmount = await availableCap(sponsor_id, amount);
-      }
-      console.log("el available amount es", availableAmount)
-      /* Aqui */
-      if (isProActive) {
-        if (is_new_pack) {
-          await sponsorRef.update({
-            [Bonds.QUICK_START]:
-              firestore.FieldValue.increment(availableAmount),
-            /* membership_cap_current:
-              firestore.FieldValue.increment(availableAmount), */
-          });
-        } else {
-          await sponsorRef.update({
-            [Bonds.QUICK_START]:
-              firestore.FieldValue.increment(availableAmount),
-          });
-        }
-        await this.addProfitDetail(
-          sponsorRef.id,
-          Bonds.QUICK_START,
-          availableAmount,
-          user.id,
-        );
-      } else {
-        await this.addLostProfit(
-          sponsorRef.id,
-          Bonds.QUICK_START,
-          amount,
-          user.id,
-        );
-      }
-    }
+    await this.addBond(
+      sponsor_id,
+      Bonds.DIRECT_SALE,
+      amount,
+      registerUserId,
+      true,
+      {
+        percent,
+        membership_type,
+      },
+    );
   }
 
   async execMentorBond(
@@ -157,170 +80,20 @@ export class BondsService {
     rank: string,
     binary_total: number,
   ) {
-    const percent = menthor_percent[rank];
-
-    const mentor_total = Number(
-      Number(binary_total * (percent / 100)).toFixed(2),
-    );
-    const availableAmount = await availableCap(sponsorId, mentor_total);
-
-    await admin
-      .collection('users')
-      .doc(sponsorId)
-      .update({
-        [Bonds.MENTOR]: firestore.FieldValue.increment(availableAmount),
-      });
-
-    await this.addProfitDetail(
-      sponsorId,
-      Bonds.MENTOR,
-      availableAmount,
-      directUserId,
-    );
+    //
   }
 
-  async execCarBond(userId: string) {
-    console.log('execCarBond', {
-      userId,
-    });
-    await admin
-      .collection('users')
-      .doc(userId)
-      .update({
-        [Bonds.CAR]: firestore.FieldValue.increment(BOND_CAR),
-      });
-
-    await this.addProfitDetail(userId, Bonds.CAR, BOND_CAR);
-  }
-
-  async execBondPresenter(
-    amount: number,
-    registerUserId: string,
-    presenter1: string,
-    presenter2?: string,
-  ) {
-    const percent = (presenter2 ? 1 : 2) / 100;
-    const total = Math.round(amount * percent * 100) / 100;
-
-    if (presenter1) {
-      const u_presenter_1 = await admin
-        .collection('users')
-        .doc(presenter1)
-        .get();
-
-      if (u_presenter_1.exists) {
-        const is_new_pack = [
-          '100-pack',
-          '300-pack',
-          '500-pack',
-          '1000-pack',
-          '2000-pack',
-        ].includes(u_presenter_1.get('membership'));
-        let availableAmount = total;
-        if (is_new_pack) {
-          availableAmount = await availableCap(u_presenter_1.id, total);
-        }
-
-        if (is_new_pack) {
-          await u_presenter_1.ref.update({
-            [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-            /* membership_cap_current:
-              firestore.FieldValue.increment(availableAmount), */
-          });
-        } else {
-          await u_presenter_1.ref.update({
-            [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-          });
-        }
-
-        await this.addProfitDetail(
-          u_presenter_1.id,
-          Bonds.PRESENTER,
-          availableAmount,
-          registerUserId,
-        );
-      }
-    }
-
-    if (presenter2) {
-      const u_presenter_2 = await admin
-        .collection('users')
-        .doc(presenter2)
-        .get();
-
-      if (u_presenter_2.exists) {
-        const is_new_pack = [
-          '100-pack',
-          '300-pack',
-          '500-pack',
-          '1000-pack',
-          '2000-pack',
-        ].includes(u_presenter_2.get('membership'));
-        let availableAmount = total;
-        if (is_new_pack) {
-          availableAmount = await availableCap(u_presenter_2.id, total);
-        }
-        if (is_new_pack) {
-          await u_presenter_2.ref.update({
-            [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-            /* membership_cap_current:
-              firestore.FieldValue.increment(availableAmount), */
-          });
-        } else {
-          await u_presenter_2.ref.update({
-            [Bonds.PRESENTER]: firestore.FieldValue.increment(availableAmount),
-          });
-        }
-
-        await this.addProfitDetail(
-          u_presenter_2.id,
-          Bonds.PRESENTER,
-          availableAmount,
-          registerUserId,
-        );
-      }
-    }
-  }
-
-  async execPresenterBonus(
-    registerUserId: string,
-    userId: string,
-    total: number,
-  ) {
-    const availableAmount = await availableCap(userId, total);
-    const userIdDoc = await admin.collection('users').doc(userId).get();
-    const is_new_pack = [
-      '100-pack',
-      '300-pack',
-      '500-pack',
-      '1000-pack',
-      '2000-pack',
-    ].includes(userIdDoc.get('membership'));
-
-    await this.addProfitDetail(
-      userId,
-      Bonds.PRESENTER,
-      availableAmount,
-      registerUserId,
+  async execRank(id_user: string, rank: Ranks) {
+    await this.addBond(
+      id_user,
+      Bonds.RANK,
+      ranks_object[rank].bonus,
+      null,
+      true,
+      {
+        rank,
+      },
     );
-    if (is_new_pack) {
-      await admin
-        .collection('users')
-        .doc(userId)
-        .update({
-          bond_presenter: firestore.FieldValue.increment(availableAmount),
-          /* membership_cap_current:
-            firestore.FieldValue.increment(availableAmount), */
-        });
-    } else {
-      await admin
-        .collection('users')
-        .doc(userId)
-        .update({
-          bond_presenter: firestore.FieldValue.increment(availableAmount),
-        });
-    }
-    return 'OK';
   }
 
   async addProfitDetail(
@@ -328,6 +101,7 @@ export class BondsService {
     type: Bonds,
     amount: number,
     registerUserId?: string,
+    extras?: Record<string, any>,
   ) {
     const profit: any = {
       description: messages[type],
@@ -347,7 +121,7 @@ export class BondsService {
       .collection('users')
       .doc(id_user)
       .collection('profits_details')
-      .add(profit);
+      .add({ ...profit, ...extras });
   }
 
   async addLostProfit(
@@ -355,6 +129,7 @@ export class BondsService {
     type: Bonds,
     amount: number,
     registerUserId: string,
+    extras?: Record<string, any>,
   ) {
     const userRef = await admin.collection('users').doc(registerUserId).get();
     const user_name = userRef.get('name');
@@ -369,6 +144,7 @@ export class BondsService {
         amount,
         created_at: new Date(),
         type,
+        ...extras,
       });
   }
 
@@ -390,5 +166,13 @@ export class BondsService {
       ref: sponsor.ref,
       data: sponsor,
     };
+  }
+
+  async execBinary(
+    id_user: string,
+    amount: number,
+    extras?: Record<string, any>,
+  ) {
+    await this.addBond(id_user, Bonds.BINARY, amount, null, true, extras);
   }
 }

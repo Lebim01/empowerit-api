@@ -11,11 +11,6 @@ export class AppController {
     return 'Hello world';
   }
 
-  @Get('cryptoapisverifydomain')
-  verifyDomain() {
-    return 'cryptoapis-cb-b42ec5c8146fa6d965deba29a8143c9dab912d94f74a8e4649777ccf9851cf91';
-  }
-
   @Get('test')
   testSentry() {
     throw new Error('ERROR');

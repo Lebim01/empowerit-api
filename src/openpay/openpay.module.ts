@@ -4,9 +4,7 @@ import { OpenpayService } from './openpay.service';
 import { SubscriptionsService } from 'src/subscriptions/subscriptions.service';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
-import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 import { GoogletaskService } from 'src/googletask/googletask.service';
-import { ShopifyService } from 'src/shopify/shopify.service';
 import { UsersService } from 'src/users/users.service';
 import { EmailService } from 'src/email/email.service';
 
@@ -17,9 +15,7 @@ import { EmailService } from 'src/email/email.service';
     SubscriptionsService,
     BinaryService,
     BondsService,
-    CryptoapisService,
     GoogletaskService,
-    ShopifyService,
     UsersService,
     EmailService,
   ],

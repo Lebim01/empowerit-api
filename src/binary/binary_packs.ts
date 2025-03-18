@@ -1,69 +1,17 @@
-import { ADMIN_BINARY_PERCENT } from '../admin/admin.service';
-import { ADMIN_USERS } from '../constants';
+import { Ranks } from 'src/ranks/ranks_object';
 
-/**
- * Puntos que ganas al inscribir un paquete
- */
-export const pack_points: Record<
-  Memberships | MembershipsProductsNames,
-  number
-> = {
-  'alive-pack': 65,
-  'freedom-pack': 240,
-  pro: 50,
-  supreme: 100,
-  'business-pack': 650,
-  'vip-pack': 115,
-  'elite-pack': 340,
-  'founder-pack': 0,
-  '49-pack': 0,
-  '100-pack': 50,
-  '300-pack': 150,
-  '500-pack': 250,
-  '1000-pack': 500,
-  '2000-pack': 1000,
-  '3000-pack': 300,
-  FP200: 100,
-  FP300: 150,
-  FP500: 250,
-  FD200: 100,
-  FD300: 150,
-  FD500: 250,
-};
-
-export const pack_points_yearly: Record<'pro' | 'supreme', number> = {
-  pro: 500,
-  supreme: 1000,
-};
-
-export const pack_binary: Record<Memberships, number> = {
-  'alive-pack': 10 / 100,
-  'freedom-pack': 15 / 100,
-  'business-pack': 15 / 100,
-  pro: 10 / 100,
-  supreme: 15 / 100,
-  'vip-pack': 15 / 100,
-  'elite-pack': 15 / 100,
-  '49-pack': 0 / 100,
-  '100-pack': 10 / 100,
-  '300-pack': 10 / 100,
-  '500-pack': 10 / 100,
-  '1000-pack': 15 / 100,
-  '2000-pack': 15 / 100,
-  'founder-pack': 0,
-  '3000-pack': 15 / 100,
-  FP200: 10 / 100,
-  FP300: 10 / 100,
-  FP500: 10 / 100,
-  FD200: 10 / 100,
-  FD300: 10 / 100,
-  FD500: 10 / 100,
-};
-
-export const getBinaryPercent = (user_id: string, membership: string) => {
-  const isAdmin = ADMIN_USERS.includes(user_id);
-  const binary_percent = isAdmin
-    ? ADMIN_BINARY_PERCENT
-    : pack_binary[membership];
-  return binary_percent;
+export const binary_percent: Record<Ranks, number> = {
+  none: 0.12,
+  constructor: 0.12,
+  estrella: 0.12,
+  emprendedor: 0.12,
+  emprendedor_plata: 0.1,
+  emprendedor_oro: 0.1,
+  emprendedor_platino: 0.1,
+  director_regional: 0.09,
+  director_internacional: 0.09,
+  director_nacional: 0.09,
+  embajador: 0.08,
+  embajador_corona: 0.08,
+  embajador_elite: 0.08,
 };

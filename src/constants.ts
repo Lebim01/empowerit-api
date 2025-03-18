@@ -6,29 +6,13 @@ export const delay = (ms: number) => {
   });
 };
 
-export const MEMBERSHIPS_PRICES = {
-  FA500: 599,
-  FA1000: 1099,
-  FA2000: 2199,
-  FA5000: 5199,
-  FA10000: 10299,
-  FA20000: 20299,
-  FP200: 200,
-  FP300: 300,
-  FP500: 500,
-  FD200: 200,
-  FD300: 300,
-  FD500: 500,
-  '49-pack': 49,
-  '100-pack': 100,
-  '300-pack': 300,
-  '500-pack': 500,
-  '1000-pack': 1000,
-  '2000-pack': 2000,
-  '3000-pack': 3000,
-  '30-credits': 30,
-  '50-credits': 50,
-  '100-credits': 100,
-  '500-credits': 500,
-  '1000-credits': 1000
+export const MEMBERSHIPS_PRICES: Record<Memberships, number> = {
+  FA1000: 1000,
+  FA2000: 2000,
+  FA5000: 5000,
+  FB200: 200,
+  FB500: 500,
+  FB79: 79,
+  FT1499: 1499,
+  FT2499: 2499,
 };

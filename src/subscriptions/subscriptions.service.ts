@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import {
   collection,
@@ -7,305 +7,43 @@ import {
   query,
   where,
   writeBatch,
-  collectionGroup,
-  setDoc,
 } from 'firebase/firestore';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
-import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 import { firestore } from 'firebase-admin';
-import {
-  PayloadAssignBinaryPosition,
-  PayloadAssignBinaryPositionForAutomaticFranchises,
-} from './types';
+import { PayloadAssignBinaryPosition } from './types';
 import { google } from '@google-cloud/tasks/build/protos/protos';
 import { GoogletaskService } from 'src/googletask/googletask.service';
-import { ShopifyService } from 'src/shopify/shopify.service';
-import { alivePack, businessPack, freedomPack } from './products_packs';
-import { pack_points, pack_points_yearly } from '../binary/binary_packs';
 import Openpay from 'openpay';
 import { EmailService } from 'src/email/email.service';
-
-export const PARTICIPATIONS_PRICES: Record<PackParticipations, number> = {
-  '3000-participation': 3000,
-};
-
-export const PARTICIPATIONS_CAP_LIMITS: Record<PackParticipations, number> = {
-  '3000-participation': 6000,
-};
-
-export const PARTICIPATIONS_PRINCIPAL_CAP_LIMIT: Record<
-  PackParticipations,
-  number
-> = {
-  '3000-participation': 15000,
-};
-
-export const PARTICIPATIONS_BINARY_POINTS: Record<PackParticipations, number> =
-{
-  '3000-participation': 300,
-};
-
-export const MEMBERSHIP_PRICES_MONTHLY: Record<
-  Memberships | MembershipsProductsNames,
-  number
-> = {
-  supreme: 199,
-  pro: 99,
-  'alive-pack': 129,
-  'freedom-pack': 479,
-  'business-pack': 1289,
-  'vip-pack': 228,
-  'elite-pack': 678,
-  'founder-pack': 3000,
-  '49-pack': 49,
-  '100-pack': 100,
-  '300-pack': 300,
-  '500-pack': 500,
-  '1000-pack': 1000,
-  '2000-pack': 2000,
-  '3000-pack': 3000,
-  FP200: 200,
-  FP300: 300,
-  FP500: 500,
-  FD200: 200,
-  FD300: 300,
-  FD500: 500,
-};
-
-export const FRANCHISES_AUTOMATIC_CAPITALS: Record<
-  AutomaticFranchises,
-  number
-> = {
-  FA500: 500,
-  FA1000: 1000,
-  FA2000: 2000,
-  FA5000: 5000,
-  FA10000: 10000,
-  FA20000: 20000,
-};
-
-export const FRANCHISES_AUTOMATIC_PRICES: Record<AutomaticFranchises, number> =
-{
-  FA500: 599,
-  FA1000: 1099,
-  FA2000: 2199,
-  FA5000: 5199,
-  FA10000: 10299,
-  FA20000: 20299,
-};
-
-export const AUTOMATIC_FRANCHISES_CAP_LIMITS: Record<
-  AutomaticFranchises,
-  number
-> = {
-  FA500: 1000,
-  FA1000: 2000,
-  FA2000: 4000,
-  FA5000: 10000,
-  FA10000: 20000,
-  FA20000: 40000,
-};
-
-export const AUTOMATIC_FRANCHISES_FIRMS: Record<AutomaticFranchises, number> = {
-  FA500: 5,
-  FA1000: 10,
-  FA2000: 20,
-  FA5000: 50,
-  FA10000: 100,
-  FA20000: 200,
-};
-
-export const MEMBERSHIP_CREDITS: Record<
-  Memberships | MembershipsProductsNames | DigitalFranchises,
-  number
-> = {
-  supreme: 199,
-  pro: 99,
-  'alive-pack': 129,
-  'freedom-pack': 479,
-  'business-pack': 1289,
-  'vip-pack': 228,
-  'elite-pack': 678,
-  'founder-pack': 3000,
-  '49-pack': 0,
-  '100-pack': 80,
-  '300-pack': 250,
-  '500-pack': 460,
-  '1000-pack': 1000,
-  '2000-pack': 2000,
-  '3000-pack': 0,
-  FP200: 0,
-  FP300: 0,
-  FP500: 0,
-  FD200: 0,
-  FD300: 0,
-  FD500: 0,
-};
-
-export const AUTOMATIC_FRANCHISES_BINARY_POINTS: Record<
-  AutomaticFranchises,
-  number
-> = {
-  FA500: 50,
-  FA1000: 100,
-  FA2000: 200,
-  FA5000: 500,
-  FA10000: 1000,
-  FA20000: 2000,
-};
-
-export const AUTOMATIC_FRANCHISES_RANGE_POINTS: Record<
-  AutomaticFranchises,
-  number
-> = {
-  FA500: 100,
-  FA1000: 200,
-  FA2000: 400,
-  FA5000: 1000,
-  FA10000: 2000,
-  FA20000: 4000,
-};
-
-export const MEMBERSHIP_CAP: Record<
-  Franchises | MembershipsProductsNames | DigitalFranchises,
-  number
-> = {
-  '49-pack': 0,
-  '100-pack': 300,
-  '300-pack': 1000,
-  '500-pack': 2000,
-  '1000-pack': 5000,
-  '2000-pack': 10000,
-  '3000-pack': 15000,
-  FP200: 500,
-  FP300: 1000,
-  FP500: 2000,
-  FD200: 600,
-  FD300: 1000,
-  FD500: 2000,
-};
-
-export const MEMBERSHIP_PRICES_YEARLY = {
-  supreme: 1999,
-  pro: 999,
-};
-
-export const FRANCHISE_FIRMS: Record<
-  Franchises | MembershipsProductsNames | DigitalFranchises,
-  number
-> = {
-  '49-pack': 1,
-  '100-pack': 1,
-  '300-pack': 3,
-  '500-pack': 5,
-  '1000-pack': 10,
-  '2000-pack': 20,
-  '3000-pack': 30,
-  FP200: 2,
-  FP300: 3,
-  FP500: 5,
-  FD200: 2,
-  FD300: 3,
-  FD500: 5,
-};
-
-export const CREDITS_PACKS_PRICE: Record<PackCredits, number> = {
-  '30-credits': 30,
-  '50-credits': 50,
-  '100-credits': 100,
-  '500-credits': 500,
-  '1000-credits': 1000,
-};
-
-const isExpired = (expires_at: { seconds: number } | null) => {
-  if (!expires_at) return true;
-  const date = dayjs(expires_at.seconds * 1000);
-  const is_active = date.isValid() && date.isAfter(dayjs());
-  return !is_active;
-};
+import { MEMBERSHIPS_PRICES } from 'src/constants';
 
 @Injectable()
 export class SubscriptionsService {
   constructor(
     private readonly binaryService: BinaryService,
     private readonly bondService: BondsService,
-    private readonly cryptoapisService: CryptoapisService,
     private readonly googleTaskService: GoogletaskService,
-    private readonly shopifyService: ShopifyService,
     private readonly emailService: EmailService,
-  ) { }
+  ) {}
 
   async createPaymentAddressForCredits(
     id_user: string,
-    type: PackCredits,
+    amount: number,
     currency: Coins,
   ) {
     // Obtener datos del usuario
     const userRef = admin.collection('users').doc(id_user);
     const userData = await userRef.get().then((r) => r.data());
-    let address = '';
-    let referenceId = '';
-    let referenceId2 = '';
 
-    // Si no existe registro de la informacion de pago...
-    if (
-      userData.payment_link_credits &&
-      userData.payment_link_credits[type] &&
-      userData.payment_link_credits[type].currency == currency
-    ) {
-      address = userData.payment_link_credits[type].address;
-      referenceId = userData.payment_link_credits[type].referenceId;
-    } else {
-      // Obtener un nuevo wallet para el pago
-      // const newAddress = await this.cryptoapisService.createNewWalletAddress(
-      //   currency,
-      // );
-      // address = newAddress;
-
-      // Crear primera confirmación de la transaccion
-      if (currency == 'LTC') {
-        try {
-          // const resConfirmation =
-          //   await this.cryptoapisService.createFirstConfirmationTransactionForCredits(
-          //     id_user,
-          //     newAddress,
-          //     type,
-          //     currency,
-          //   );
-          // referenceId = resConfirmation.data.item.referenceId;
-        } catch (err) {
-          console.error(err);
-        }
-
-        try {
-          // const resConfirmation2 =
-          //   await this.cryptoapisService.createCallbackConfirmationForCredits(
-          //     id_user,
-          //     newAddress,
-          //     type,
-          //     currency,
-          //   );
-          // referenceId2 = resConfirmation2.data.item.referenceId;
-        } catch (err) {
-          console.error(err);
-        }
-      }
-    }
-    let exchange = 20;
-    let amount = 0;
+    const exchange = 20.5;
     let redirect_url = '';
     let openpay = {};
-    if (currency == 'LTC') {
-      // amount = await this.cryptoapisService.getLTCExchange(
-      //   CREDITS_PACKS_PRICE[type],
-      // );
-    }
+
     if (currency == 'MXN') {
-      exchange = await this.cryptoapisService.getUSDExchange();
-      amount = Number(Number(exchange * CREDITS_PACKS_PRICE[type]).toFixed(2));
+      amount = Number(Number(exchange * amount).toFixed(2));
 
       const customer = {
         name: userData.name,
@@ -331,316 +69,36 @@ export class SubscriptionsService {
       redirect_url = res.payment_method.url;
       openpay = res;
     }
-    // const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
+
     // Estructurar el campo payment_link
     const payment_link_credits = {
-      referenceId,
-      referenceId2,
-      address,
       qr: '',
-      // qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+      // qr: https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount},
       status: 'pending',
       created_at: new Date(),
       amount,
       redirect_url,
       currency,
       openpay,
-      credits: CREDITS_PACKS_PRICE[type],
+      credits: amount,
       expires_at: dayjs().add(15, 'minutes').toDate(),
     };
+
     // Guardar payment_link
     await userRef
       .collection('address-history')
-      .add({ ...payment_link_credits, type });
+      .add({ ...payment_link_credits, type: 'payment_link_credits' });
+
     await userRef.update({
       payment_link_credits: {
-        [type]: payment_link_credits,
+        payment_link_credits: payment_link_credits,
       },
     });
+
     return {
-      address: address,
       amount: payment_link_credits.amount,
       currency: payment_link_credits.currency,
       qr: payment_link_credits.qr,
-    };
-  }
-
-  async createPaymentAddressForParticipations(
-    id_user: string,
-    type: PackParticipations,
-    currency: Coins,
-  ) {
-    const userRef = admin.collection('users').doc(id_user);
-    const userData = await userRef.get().then((r) => r.data());
-    let address = '';
-    let referenceId = '';
-    let referenceId2 = '';
-
-    if (
-      userData.payment_link_participations &&
-      userData.payment_link_participations[type] &&
-      userData.payment_link_participations[type].currency == currency
-    ) {
-      address = userData.payment_link_participations[type].address;
-      referenceId = userData.payment_link_participations[type].referenceId;
-    } else {
-      // Obtener un nuevo wallet para el pago
-      const newAddress = await this.cryptoapisService.createNewWalletAddress(
-        currency,
-      );
-      address = newAddress;
-
-      console.log('address:', newAddress);
-
-      // Crear primera confirmación de la transaccion
-
-      if (currency == 'LTC') {
-        try {
-          const resConfirmation =
-            await this.cryptoapisService.createFirstConfirmationTransaction(
-              id_user,
-              newAddress,
-              type,
-              currency,
-              'callbackPaymentForParticipations',
-            );
-          referenceId = resConfirmation.data.item.referenceId;
-        } catch (err) {
-          console.error(err);
-        }
-
-        try {
-          const resConfirmation2 =
-            await this.cryptoapisService.createCallbackConfirmation(
-              id_user,
-              newAddress,
-              type,
-              currency,
-              'callbackPaymentForParticipations',
-            );
-          referenceId2 = resConfirmation2.data.item.referenceId;
-        } catch (err) {
-          console.error(err);
-        }
-      } else if (currency == 'MXN') {
-      }
-      const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
-    }
-
-    const amount_type = PARTICIPATIONS_PRICES;
-
-    let amount = 0;
-    let exchange = 0;
-    let redirect_url = '';
-    let openpay = {};
-
-    if (currency == 'LTC') {
-      amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
-    }
-    if (currency == 'MXN') {
-      exchange = await this.cryptoapisService.getUSDExchange();
-      amount = Number(Number(exchange * amount_type[type]).toFixed(2));
-
-      const customer = {
-        name: userData.name,
-        last_name: '',
-        phone_number: userData.whatsapp,
-        email: userData.email,
-      };
-
-      const newCharge = {
-        method: 'card',
-        amount,
-        description: 'Compra de paquete',
-        customer: customer,
-        send_email: false,
-        confirm: false,
-        redirect_url:
-          'https://backoffice.empowerittop.com/subscriptions?transaction=pending',
-        use_3d_secure: true,
-      };
-
-      const res = await this.createCharge(newCharge);
-
-      redirect_url = res.payment_method.url;
-      openpay = res;
-    }
-
-    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
-
-    // Estructurar el campo payment_link
-    const payment_link = {
-      referenceId,
-      referenceId2,
-      address,
-      qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
-      status: 'pending',
-      created_at: new Date(),
-      amount,
-      currency,
-      exchange,
-      expires_at: dayjs().add(15, 'minutes').toDate(),
-      redirect_url,
-      openpay,
-    };
-
-    // Guardar payment_link
-    await userRef.collection('address-history').add({ ...payment_link, type });
-    await userRef.update({
-      payment_link_participations: {
-        [type]: payment_link,
-      },
-    });
-
-    return {
-      address: address,
-      amount: payment_link.amount,
-      currency: payment_link.currency,
-      qr: payment_link.qr,
-    };
-  }
-
-  async createPaymentAddressForAutomaticFranchises(
-    id_user: string,
-    type: AutomaticFranchises,
-    currency: Coins,
-    period: 'monthly' | 'yearly' = 'monthly',
-  ) {
-    console.log(id_user);
-    // Obtener datos del usuario
-    const userRef = admin.collection('users').doc(id_user);
-    const userData = await userRef.get().then((r) => r.data());
-    let address = '';
-    let referenceId = '';
-    let referenceId2 = '';
-
-    // Si no existe registro de la informacion de pago...
-    if (
-      userData.payment_link_automatic_franchises &&
-      userData.payment_link_automatic_franchises[type] &&
-      userData.payment_link_automatic_franchises[type].currency == currency
-    ) {
-      address = userData.payment_link_automatic_franchises[type].address;
-      referenceId =
-        userData.payment_link_automatic_franchises[type].referenceId;
-    } else {
-      // Obtener un nuevo wallet para el pago
-      // const newAddress = await this.cryptoapisService.createNewWalletAddress(
-      //   currency,
-      // );
-      // address = newAddress;
-
-      // console.log('address:', newAddress);
-
-      // Crear primera confirmación de la transaccion
-
-      if (currency == 'LTC') {
-        try {
-          // const resConfirmation =
-          //   await this.cryptoapisService.createFirstConfirmationTransaction(
-          //     id_user,
-          //     newAddress,
-          //     type,
-          //     currency,
-          //     'callbackPaymentForAutomaticFranchises',
-          //   );
-          // referenceId = resConfirmation.data.item.referenceId;
-        } catch (err) {
-          console.error(err);
-        }
-
-        try {
-          // const resConfirmation2 =
-          //   await this.cryptoapisService.createCallbackConfirmation(
-          //     id_user,
-          //     newAddress,
-          //     type,
-          //     currency,
-          //     'callbackPaymentForAutomaticFranchises',
-          //   );
-          // referenceId2 = resConfirmation2.data.item.referenceId;
-        } catch (err) {
-          console.error(err);
-        }
-      } else if (currency == 'MXN') {
-      }
-      // const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
-    }
-
-    const amount_type = FRANCHISES_AUTOMATIC_PRICES;
-
-    let amount = 0;
-    let exchange = 20;
-    let redirect_url = '';
-    let openpay = {};
-
-    if (currency == 'LTC') {
-      // amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
-    }
-    if (currency == 'MXN') {
-      // exchange = await this.cryptoapisService.getUSDExchange();
-      amount = Number(Number(exchange * amount_type[type]).toFixed(2));
-
-      const customer = {
-        name: userData.name,
-        last_name: '',
-        phone_number: userData.whatsapp,
-        email: userData.email,
-      };
-
-      const newCharge = {
-        method: 'card',
-        amount,
-        description: 'Compra de Franquicia Automatica',
-        customer: customer,
-        send_email: false,
-        confirm: false,
-        redirect_url:
-          'https://backoffice.empowerittop.com/subscriptions?transaction=pending',
-        use_3d_secure: true,
-      };
-
-      const res = await this.createCharge(newCharge);
-
-      redirect_url = res.payment_method.url;
-      openpay = res;
-    }
-
-    const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
-
-    // Estructurar el campo payment_link_automatic_franchises
-    const payment_link_automatic_franchises = {
-      referenceId,
-      referenceId2,
-      address,
-      qr: '',
-      // qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
-      status: 'pending',
-      created_at: new Date(),
-      amount,
-      currency,
-      exchange,
-      expires_at: dayjs().add(15, 'minutes').toDate(),
-      membership_period: period,
-      redirect_url,
-      openpay,
-    };
-
-    // Guardar payment_link_automatic_franchises
-    await userRef
-      .collection('address-history')
-      .add({ ...payment_link_automatic_franchises, type });
-    await userRef.update({
-      payment_link_automatic_franchises: {
-        [type]: payment_link_automatic_franchises,
-      },
-    });
-
-    return {
-      address: address,
-      amount: payment_link_automatic_franchises.amount,
-      currency: payment_link_automatic_franchises.currency,
-      qr: payment_link_automatic_franchises.qr,
     };
   }
 
@@ -648,15 +106,13 @@ export class SubscriptionsService {
     id_user: string,
     type: Memberships,
     currency: Coins,
-    period: 'monthly' | 'yearly' = 'monthly',
   ) {
-    console.log(id_user);
     // Obtener datos del usuario
     const userRef = admin.collection('users').doc(id_user);
     const userData = await userRef.get().then((r) => r.data());
     let address = '';
     let referenceId = '';
-    let referenceId2 = '';
+    const referenceId2 = '';
 
     // Si no existe registro de la informacion de pago...
     if (
@@ -667,63 +123,15 @@ export class SubscriptionsService {
       address = userData.payment_link[type].address;
       referenceId = userData.payment_link[type].referenceId;
     } else {
-      // Obtener un nuevo wallet para el pago
-      // const newAddress = await this.cryptoapisService.createNewWalletAddress(
-      //   currency,
-      // );
-      // address = newAddress;
-
-      // console.log('address:', newAddress);
-
-      // Crear primera confirmación de la transaccion
-
-      if (currency == 'LTC') {
-        try {
-          // const resConfirmation =
-          //   await this.cryptoapisService.createFirstConfirmationTransaction(
-          //     id_user,
-          //     newAddress,
-          //     type,
-          //     currency,
-          //     'callbackPayment',
-          //   );
-          // referenceId = resConfirmation.data.item.referenceId;
-        } catch (err) {
-          console.error(err);
-        }
-
-        try {
-          // const resConfirmation2 =
-          //   await this.cryptoapisService.createCallbackConfirmation(
-          //     id_user,
-          //     newAddress,
-          //     type,
-          //     currency,
-          //     'callbackPayment',
-          //   );
-          // referenceId2 = resConfirmation2.data.item.referenceId;
-        } catch (err) {
-          console.error(err);
-        }
-      } else if (currency == 'MXN') {
-      }
-      // const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
     }
 
-    const amount_type =
-      period == 'yearly' ? MEMBERSHIP_PRICES_YEARLY : MEMBERSHIP_PRICES_MONTHLY;
-
+    const exchange = 20;
     let amount = 0;
-    let exchange = 20;
     let redirect_url = '';
     let openpay = {};
 
-    if (currency == 'LTC') {
-      // amount = await this.cryptoapisService.getLTCExchange(amount_type[type]);
-    }
     if (currency == 'MXN') {
-      // exchange = await this.cryptoapisService.getUSDExchange();
-      amount = Number(Number(exchange * amount_type[type]).toFixed(2));
+      amount = Number(Number(exchange * MEMBERSHIPS_PRICES[type]).toFixed(2));
 
       const customer = {
         name: userData.name,
@@ -750,22 +158,19 @@ export class SubscriptionsService {
       openpay = res;
     }
 
-    // const qr_name = this.cryptoapisService.getQRNameFromCurrency(currency);
-
     // Estructurar el campo payment_link
     const payment_link = {
       referenceId,
       referenceId2,
       address,
       qr: '',
-      // qr: `https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount}`,
+      // qr: https://api.qrserver.com/v1/create-qr-code/?size=225x225&data=${qr_name}:${address}?amount=${amount},
       status: 'pending',
       created_at: new Date(),
       amount,
       currency,
       exchange,
       expires_at: dayjs().add(15, 'minutes').toDate(),
-      membership_period: period,
       redirect_url,
       openpay,
     };
@@ -813,127 +218,45 @@ export class SubscriptionsService {
     return is_admin
       ? true
       : expires_at
-        ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
-        : false;
+      ? dayjs(expires_at.seconds * 1000).isAfter(dayjs())
+      : false;
   }
 
-  async assingMembershipWithoutCredits(
-    id_user: string,
-    type: Franchises | Memberships,
-  ) {
-    // Obtener fechas
-    /*const startAt: Date = await this.calculateStartDate(id_user);
-    const expiresAt: Date = await this.calculateExpirationDate(
-      id_user,
-      type,
-      period,
-    );*/
-
-    /* Aqui va la parte para ver cuantos creditos le tocan dependiendo la membresia */
-
-    // Registrar cambios
+  async assingMembershipWithoutCredits(id_user: string, type: Memberships) {
     await admin.collection('users').doc(id_user).update({
       count_direct_people_this_cycle: 0,
-      count_scholarship_people: 0,
       membership: type,
       membership_started_at: new Date(),
       membership_status: 'paid',
-      //membership_expires_at: expiresAt,
       payment_link: {},
       is_new: false,
-      credits: 0,
-      membership_cap_limit: MEMBERSHIP_CAP[type],
-      membership_cap_current: 0,
     });
 
-    /* Ya no seran ciclos quitar o dejarlo */
     await admin.collection('users').doc(id_user).collection('cycles').add({
       type,
       start_at: new Date(),
-      //expires_at: expiresAt,
+      volumen: false,
     });
   }
 
-  async assingParticipation(id_user: string, type: PackParticipations) {
-    // Crear una nueva fecha
-    const currentDate = new Date();
-
-    // Pasar al siguiente mes
-    const nextMonthDate = new Date(currentDate);
-    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-    // Sumar otros dos meses
-    nextMonthDate.setMonth(nextMonthDate.getMonth() + 2);
-    // Ajustar el día al 1
-    nextMonthDate.setDate(1);
-
-    const userRef = await admin.collection('users').doc(id_user).get();
-    const email = userRef.get('email');
-    const userName = userRef.get('name');
-
-    await admin
-      .collection('users')
-      .doc(id_user)
-      .collection('participations')
-      .add({
-        participation_name: type,
-        starts_at: new Date(),
-        next_pay: nextMonthDate,
-        participation_cap_current: 0,
-        participation_cap_limit: PARTICIPATIONS_CAP_LIMITS[type],
-        pending_amount: 0,
-        created_at: new Date(),
-        email,
-        userName,
+  async assingMembership(id_user: string, type: Memberships) {
+    try {
+      await admin.collection('users').doc(id_user).update({
+        count_direct_people_this_cycle: 0,
+        membership: type,
+        membership_started_at: new Date(),
+        membership_status: 'paid',
+        payment_link: {},
+        is_new: false,
       });
 
-    await admin.collection('users').doc(id_user).update({
-      has_participations: true,
-      membership_cap_limit: PARTICIPATIONS_PRINCIPAL_CAP_LIMIT[type],
-    });
-  }
-
-  async assingMembership(
-    id_user: string,
-    type: Franchises | MembershipsProductsNames | DigitalFranchises,
-  ) {
-
-    // Obtener fechas
-    /*const startAt: Date = await this.calculateStartDate(id_user);
-    const expiresAt: Date = await this.calculateExpirationDate(
-      id_user,
-      type,
-      period,
-    );*/
-
-    /* Aqui va la parte para ver cuantos creditos le tocan dependiendo la membresia */
-
-    // Registrar cambios
-    try {
-      await admin
-        .collection('users')
-        .doc(id_user)
-        .update({
-          count_direct_people_this_cycle: 0,
-          count_scholarship_people: 0,
-          membership: type,
-          membership_started_at: new Date(),
-          membership_status: 'paid',
-          //membership_expires_at: expiresAt,
-          payment_link: {},
-          is_new: false,
-          credits: firestore.FieldValue.increment(MEMBERSHIP_CREDITS[type]),
-          membership_cap_limit: MEMBERSHIP_CAP[type],
-          membership_cap_current: 0,
-        });
-
-      /* Ya no seran ciclos quitar o dejarlo */
       await admin.collection('users').doc(id_user).collection('cycles').add({
         type,
         created_at: new Date(),
-        //expires_at: expiresAt,
+        volumen: true,
       });
     } catch (error) {
-      console.error("fallo al activar la membresia", error)
+      console.error('fallo al activar la membresia', error);
     }
   }
 
@@ -958,46 +281,6 @@ export class SubscriptionsService {
     return date.toDate();
   }
 
-  /**
-   * Obtener fecha de expiración.
-   * Fecha en la que finalizara la membresia del 'type' enviado.
-   */
-  async calculateExpirationDate(
-    id_user: string,
-    type: Memberships,
-    period: 'monthly' | 'yearly',
-  ): Promise<Date> {
-    let days = 0;
-
-    switch (type) {
-      case 'pro':
-      case 'supreme':
-        if (period == 'yearly') days = 365;
-        else days = 30;
-        break;
-      case 'business-pack':
-        days = 90;
-        break;
-      default:
-        days = 30;
-        break;
-    }
-
-    // Obtener la fecha de expiración
-    const date: Date = dayjs(await this.calculateStartDate(id_user))
-      .add(days, 'days')
-      .toDate();
-
-    console.log('Fecha de expiración: ', date.toISOString());
-    return date;
-  }
-
-  async isNewMember(id_user: string) {
-    const userRef = await admin.collection('users').doc(id_user).get();
-    const isNew = Boolean(userRef.get('is_new')) ?? false;
-    return isNew;
-  }
-
   async addCreditsManual(id_user: string, credits: number) {
     const userDocRef = await admin.collection('users').doc(id_user).get();
     const email = await userDocRef.get('email');
@@ -1012,23 +295,15 @@ export class SubscriptionsService {
     }
   }
 
-  async addCredits(id_user: string, pack_credits: PackCredits, currency: any) {
+  async addCredits(id_user: string, amount: number, currency: any) {
     const userDocRef = await admin.collection('users').doc(id_user).get();
     const email = await userDocRef.get('email');
     const name = await userDocRef.get('name');
     try {
       await userDocRef.ref.update({
-        credits: firestore.FieldValue.increment(
-          CREDITS_PACKS_PRICE[pack_credits],
-        ),
+        credits: firestore.FieldValue.increment(amount),
       });
-      await this.createAddCreditsDoc(
-        id_user,
-        pack_credits,
-        currency,
-        email,
-        name,
-      );
+      await this.createAddCreditsDoc(id_user, amount, currency, email, name);
     } catch (error) {
       console.log(error);
     }
@@ -1056,7 +331,7 @@ export class SubscriptionsService {
 
   async createAddCreditsDoc(
     id_user: string,
-    pack_credits: PackCredits,
+    amount: number,
     currency: any,
     email: string,
     name: string,
@@ -1069,264 +344,43 @@ export class SubscriptionsService {
         id_user,
         email,
         name,
-        total: CREDITS_PACKS_PRICE[pack_credits],
+        total: amount,
         created_at: new Date(),
-        concept: `Recarga de ${CREDITS_PACKS_PRICE[pack_credits]} créditos con ${currency}`,
+        concept: `Recarga de ${amount} créditos con ${currency}`,
       });
   }
-
-  async onPaymentParticipations(
-    id_user: string,
-    type: PackParticipations,
-    currency: string | null,
-    activation_type: string,
-  ) {
-    const userDocRef = admin.collection('users').doc(id_user);
-    const data = await userDocRef.get();
-
-    const pack_price = PARTICIPATIONS_PRICES[type];
-
-    /* 
-      Se activara la participacion
-     */
-    await this.assingParticipation(id_user, type);
-
-    /* Dar bir  */
-    try {
-      await this.bondService.execUserDirectBond(
-        id_user,
-        pack_price,
-        true,
-        true,
-      );
-    } catch (error) {
-      console.log('Error dando el bono Directo en participatciones', error);
-    }
-
-    /* Dar range points y binario */
-    try {
-      await this.binaryService.increaseBinaryPointsForParticipations(
-        id_user,
-        PARTICIPATIONS_BINARY_POINTS[type],
-        type,
-      );
-    } catch (error) {
-      console.log(
-        'Error incrementando los puntos de binario en participaciones',
-        error,
-      );
-    }
-
-    console.log('todo bienb');
-  }
-
-  async onPaymentAutomaticFranchises(
-    user_id: string,
-    type: AutomaticFranchises,
-    currency: string | null,
-    activation_type: string,
-  ) {
-    console.log('desde la funcion de onpaymenautomaticFranchises');
-    //Sacar la referencia del usuario
-    const userRef = await admin.collection('users').doc(user_id).get();
-    //Sacar si el usuario es nuevo
-    const isNew = await userRef.get('is_new');
-    const email = await userRef.get('email');
-    const startsAt = new Date();
-    /* 90 dias para que comience el rendimiento */
-    const availablePayDate = new Date(startsAt);
-    /* 30 dias para el rendimiento de capital y retiro rapido(creditos) */
-    const availablePayDateForCapital = new Date(startsAt);
-    /* 365 dias para el retiro de capital*/
-    const availablePayDateForCapitalPay = new Date(startsAt);
-
-    availablePayDate.setDate(availablePayDate.getDate() + 90);
-
-    availablePayDateForCapital.setDate(
-      availablePayDateForCapital.getDate() + 30,
-    );
-
-    availablePayDateForCapitalPay.setDate(
-      availablePayDateForCapitalPay.getDate() + 365,
-    );
-    //Activar la Franquicia automatica
-    try {
-      await userRef.ref.collection('automatic-franchises').add({
-        user_id,
-        type,
-        email,
-        starts_at: startsAt,
-        created_at: startsAt,
-        automatic_franchise_cap_current: 0,
-        automatic_franchise_cap_limit: AUTOMATIC_FRANCHISES_CAP_LIMITS[type],
-        available_pay_date_for_franchise_performance: availablePayDate,
-        available_pay_date_for_capital_performance: availablePayDateForCapital,
-        available_pay_date_for_capital_pay: availablePayDateForCapitalPay,
-        capital: FRANCHISES_AUTOMATIC_CAPITALS[type],
-      });
-    } catch (error) {
-      console.log(
-        'Error a la hora de de crear el documento dentro de automatic-franchises',
-        error,
-      );
-    }
-    try {
-      await userRef.ref.update({
-        has_automatic_franchises: true,
-      });
-    } catch (error) {
-      console.log(
-        'Error a la hora de hace un update en has_atomatic_franchises',
-        error,
-      );
-    }
-    //Si es nuevo que se mande el email
-    if (isNew) {
-      await this.emailService.sendEmailNewUser(user_id);
-    }
-    //Si es nuevo que se cree en la colecccion de sanguine_users
-    if (isNew) {
-      try {
-        await this.insertSanguineUsers(user_id);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    //Si es nuevo que aumente el contador de gente directa
-    //poner que user sea diferente a los dos que son admin
-    const sponsorRef = await admin
-      .collection('users')
-      .doc(userRef.get('sponsor_id'))
-      .get();
-    if (isNew) {
-      await sponsorRef.ref.update({
-        count_direct_people: firestore.FieldValue.increment(1),
-        count_direct_people_this_month: firestore.FieldValue.increment(
-          AUTOMATIC_FRANCHISES_FIRMS[type],
-        ),
-      });
-    }
-    //Dar bono de inicio rapido
-    try {
-      await this.bondService.execUserDirectBond(
-        user_id,
-        FRANCHISES_AUTOMATIC_CAPITALS[type],
-        isNew,
-        false,
-        true,
-      );
-    } catch (error) {
-      console.log(
-        'Error repartiendo binario en las franquicias automaticas',
-        error,
-      );
-    }
-    console.log({
-      id_user: user_id,
-      sponsor_id: userRef.get('sponsor_id'),
-      position: userRef.get('position'),
-      is_new: isNew,
-      binary_points: AUTOMATIC_FRANCHISES_BINARY_POINTS[type],
-      range_points: AUTOMATIC_FRANCHISES_RANGE_POINTS[type],
-    });
-    //Dar binario
-    try {
-      await this.addQueueBinaryPositionForAutomaticFranchises({
-        id_user: user_id,
-        sponsor_id: userRef.get('sponsor_id'),
-        position: userRef.get('position'),
-        is_new: isNew,
-        binary_points: AUTOMATIC_FRANCHISES_BINARY_POINTS[type],
-        range_points: AUTOMATIC_FRANCHISES_RANGE_POINTS[type],
-      });
-    } catch (error) {
-      console.log(
-        'Error dando binario en la funcion de onpaymentAutomaticFranchises',
-        error,
-      );
-    }
-  }
-  /* Esta funcion sera para franquicias manuales que ya no estan, franquicias de producto, y franquicias digitales*/
   async onPaymentMembership(
     id_user: string,
-    type:
-      | Franchises
-      | 'founder-pack'
-      | MembershipsProductsNames
-      | DigitalFranchises,
-    currency: string | null,
-    activation_type: string,
+    type: Memberships,
+    volumen = true,
   ) {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
-    const isNew = await this.isNewMember(id_user);
+    const isNew = data.get('is_new');
+    const pack_price = MEMBERSHIPS_PRICES[type];
 
-    const pack_price = MEMBERSHIP_PRICES_MONTHLY[type];
-
-    if (type == '3000-pack') {
-      const currentDate = new Date();
-      const nextYearDate = new Date(
-        currentDate.setFullYear(currentDate.getFullYear() + 1),
-      );
-
-      userDocRef.update({
-        academy_access_expires_at: nextYearDate,
-      });
-    }
-    console.log('despues de la comprobacion si no es un paquete 3000');
-
-    if (type == 'founder-pack') {
+    /*if (type == 'founder-pack') {
       await this.execFounderPack(id_user);
-      return;
-    }
-    console.log('despues de la comprobacion si no es un founder pack');
-
-    /**
-     * Reconsumo pagado antes de tiempo
-     * Agregar transaccion pendiente y repartir bonos despues
-     */
-    /*if (!isExpired(data.get('membership_expires_at'))) {
-      await userDocRef.update({
-        pending_activation: {
-          created_at: new Date(),
-          membership: type,
-          membership_period,
-        },
-      });
       return;
     }*/
 
-    /* if (isNew && type != '49-pack') {
-      await this.bondService.execBondPresenter(
-        pack_price,
-        id_user,
-        data.get('presenter_1'),
-        data.get('presenter_2'),
-      );
-    }
-    console.log(
-      'despues de la comprobacion si no es nueva y si no es una de type 49',
-    ); */
-
-    /**
-     * Se activa la membresia
-     */
     await this.assingMembership(id_user, type);
-    console.log('despues de asignar la membresia');
 
-    await this.addDigitalService(id_user, type)
+    await this.addDigitalService(id_user, type);
+
+    if (type == 'FT2499') {
+      await this.addMonthlyCredits(id_user);
+    }
 
     if (isNew) {
       await this.emailService.sendEmailNewUser(id_user);
     }
-    console.log('despues de mandar el email si es un usuario nuevo');
 
     if (isNew) {
       await userDocRef.update({
         first_cycle_started_at: new Date(),
       });
     }
-    console.log('despues del first cycle_started_At');
 
     /**
      * se crea un registro en la subcoleccion users/{id}/sanguine_users
@@ -1336,17 +390,8 @@ export class SubscriptionsService {
         await this.insertSanguineUsers(id_user);
       } catch (err) {
         console.error(err);
-        /*Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', id_user);
-          scope.setExtra(
-            'message',
-            'no se pudo insertar los usuarios sanguineos',
-          );
-          Sentry.captureException(err);
-        });*/
       }
     }
-    console.log('despues del insertsanguineusers');
 
     const sponsorRef = await admin
       .collection('users')
@@ -1359,95 +404,70 @@ export class SubscriptionsService {
     if (isNew) {
       await sponsorRef.ref.update({
         count_direct_people: firestore.FieldValue.increment(1),
-        count_direct_people_this_month: firestore.FieldValue.increment(
-          FRANCHISE_FIRMS[type],
-        ),
+        count_direct_people_this_month: firestore.FieldValue.increment(1),
       });
     }
 
-    console.log('despues del contador de gente directa');
-
-    /**
-     * aumentar puntos de bono directo 2 niveles
-     */
-    /* A partir de aqui modificare */
-
-    if (type != '49-pack') {
-      try {
-        await this.bondService.execUserDirectBond(
-          id_user,
-          pack_price,
-          isNew,
-          false,
-          false,
-          type,
-        );
-        console.log('esta pendiente bono directo');
-      } catch (err) {
-        console.error(err);
-        /*Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', id_user);
-          scope.setExtra('message', 'no se repartio el bono directo');
-          Sentry.captureException(err);
-          });*/
-      }
+    try {
+      await this.bondService.execUserDirectBond(id_user, type);
+    } catch (err) {
+      console.error(err);
     }
-
-    console.log('despues de ejecutar el bono directo');
 
     await this.addQueueBinaryPosition({
       id_user,
-      sponsor_id: data.get('sponsor_id'),
       position: data.get('position'),
-      is_new: isNew,
+      points: pack_price,
     });
-    console.log('despues de la funcion addQueueBinaryPosition');
+  }
 
-    const userRef = await admin.collection('users').doc(id_user).get();
-    const userEmail = await userRef.get('email');
-    const userName = await userRef.get('name');
-    const userPosition = await userRef.get('position');
-    const userUpline = await userRef.get('parent_binary_user_id');
-    const sponsorName = await userRef.get('sponsor');
+  async addMonthlyCredits(id_user: string) {
+    let today = dayjs();
+    const batch = admin.batch();
 
-    await admin.collection('memberships-history').add({
-      activated: activation_type,
-      created_at: new Date(),
-      date: new Date(),
-      email: userEmail,
-      membership: type,
-      name: userName,
-      position: userPosition,
-      sponsor: sponsorName,
-      upline: userUpline || '',
-      user_id: id_user,
-      currency: currency || null,
-    });
-    console.log('despues del a;adir a memberships-history');
+    for (let i = 1; i <= 12; i++) {
+      today = today.add(i, 'month');
+      batch.create(
+        admin
+          .collection('users')
+          .doc(id_user)
+          .collection('monthly-credits')
+          .doc(),
+        {
+          credits: 100,
+          reclaim_at: today.toDate(),
+        },
+      );
+    }
+
+    await batch.commit();
   }
 
   async addDigitalService(id: string, type: Memberships) {
-    if (type === 'FD200' || type === 'FD300' || type === 'FD500') {
-      let newMrMoneyPowerDate: Date;
-      let newMrSportMoneyDate: Date;
+    const newMrMoneyPowerDate = dayjs();
+    const newMrSportMoneyDate = dayjs();
 
-      if (type === 'FD200') {
-        newMrMoneyPowerDate = dayjs().add(30, 'day').toDate();
-        newMrSportMoneyDate = dayjs().add(30, 'day').toDate();
-      } else if (type === 'FD300') {
-        newMrMoneyPowerDate = dayjs().add(3, 'month').toDate();
-        newMrSportMoneyDate = dayjs().add(3, 'month').toDate();
-      } else if (type === 'FD500') {
-        newMrMoneyPowerDate = dayjs().add(6, 'month').toDate();
-        newMrSportMoneyDate = dayjs().add(6, 'month').toDate();
-      }
-
-      await admin.collection('users').doc(id).update({
-        mr_money_power_expires_at: newMrMoneyPowerDate,
-        mr_sport_money_expires_at: newMrSportMoneyDate,
-      });
-      console.log("se activaron los servicios por:", newMrMoneyPowerDate)
+    if (type == 'FB79') {
+      newMrMoneyPowerDate.add(1, 'month');
+      newMrSportMoneyDate.add(1, 'month');
+    } else if (type == 'FB200') {
+      newMrMoneyPowerDate.add(3, 'month');
+      newMrSportMoneyDate.add(3, 'month');
+    } else if (type == 'FB500') {
+      newMrMoneyPowerDate.add(6, 'month');
+      newMrSportMoneyDate.add(6, 'month');
+    } else if (type == 'FT1499') {
+      newMrMoneyPowerDate.add(12, 'month');
+      newMrSportMoneyDate.add(12, 'month');
+    } else if (type == 'FT2499') {
+      newMrMoneyPowerDate.add(12, 'month');
+      newMrSportMoneyDate.add(12, 'month');
     }
+
+    await admin.collection('users').doc(id).update({
+      mr_money_power_expires_at: newMrMoneyPowerDate.toDate(),
+      mr_sport_money_expires_at: newMrSportMoneyDate.toDate(),
+    });
   }
 
   async addQueueBinaryPosition(body: PayloadAssignBinaryPosition) {
@@ -1466,29 +486,6 @@ export class SubscriptionsService {
     await this.googleTaskService.addToQueue(
       task,
       this.googleTaskService.getPathQueue('assign-binary-position'),
-    );
-  }
-
-  async addQueueBinaryPositionForAutomaticFranchises(
-    body: PayloadAssignBinaryPositionForAutomaticFranchises,
-  ) {
-    type Method = 'POST';
-    const task: google.cloud.tasks.v2.ITask = {
-      httpRequest: {
-        httpMethod: 'POST' as Method,
-        url: `${process.env.API_URL}/subscriptions/assignBinaryPositionForAutomaticFranchises`,
-        body: Buffer.from(JSON.stringify(body)),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    };
-
-    await this.googleTaskService.addToQueue(
-      task,
-      this.googleTaskService.getPathQueue(
-        'assign-binary-position-for-automatic-franchises',
-      ),
     );
   }
 
@@ -1599,7 +596,7 @@ export class SubscriptionsService {
      * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
      */
     const hasBinaryPosition = !!user.get('parent_binary_user_id'); //false
-    console.log(hasBinaryPosition);
+
     if (!hasBinaryPosition) {
       const finish_position = user.get('position');
 
@@ -1657,11 +654,6 @@ export class SubscriptionsService {
           );
       } catch (err) {
         console.error(err);
-        /*Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', user.id);
-          scope.setExtra('message', 'no se pudo setear al hijo');
-          Sentry.captureException(err);
-        });*/
       }
 
       try {
@@ -1669,14 +661,6 @@ export class SubscriptionsService {
       } catch (err) {
         console.log('Error increaseUnderlinePeople');
         console.error(err);
-        /*Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', user.id);
-          scope.setExtra(
-            'message',
-            'no se pudo incrementar count_underline_people',
-          );
-          Sentry.captureException(err);
-        });*/
       }
       console.log('despues del segundo trychat');
     }
@@ -1686,248 +670,10 @@ export class SubscriptionsService {
      */
     if (volumen) {
       try {
-        /* Aqui */
-        const is_new_pack = [
-          '49-pack',
-          '100-pack',
-          '300-pack',
-          '500-pack',
-          '1000-pack',
-          '2000-pack',
-          '3000-pack',
-          'FP200',
-          'FP300',
-          'FP500',
-          'FD200',
-          'FD300',
-          'FD500',
-        ].includes(user.get('membership'));
-        let points = 0;
-        if (is_new_pack) {
-          if (payload.is_new) {
-            points = pack_points[user.get('membership')];
-          } else {
-            points = pack_points[user.get('membership')] / 2;
-          }
-          console.log('points =>', points);
-        } else {
-          const membership_period = user.get('membership_period');
-          points =
-            membership_period == 'yearly'
-              ? pack_points_yearly[user.get('membership')]
-              : pack_points[user.get('membership')];
-        }
-        console.log('increaseBinaryPoints', user.id, points);
-        if (user.get('membership') != '49-pack') {
-          await this.binaryService.increaseBinaryPoints(user.id, points);
-        }
-        console.log('todo bien');
-        return 'Puntos incrementados exitosamente';
-      } catch (err) {
-        console.log('Error increaseBinaryPoints');
-        console.error(err);
-        /*Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', user.id);
-          scope.setExtra('message', 'no se repartio el bono binario');
-          Sentry.captureException(err);
-        });*/
-      }
-    }
-  }
-
-  async assignBinaryPositionForAutomaticFranchises(
-    payload: PayloadAssignBinaryPositionForAutomaticFranchises,
-    volumen = true,
-  ) {
-    console.log(
-      'desde la funcion de assignBinaryPositionForAutomaticFranchises',
-    );
-    const user = await admin.collection('users').doc(payload.id_user).get();
-
-    /**
-     * Asignar posicion en el binario (SOLO USUARIOS NUEVOS)
-     */
-    const hasBinaryPosition = !!user.get('parent_binary_user_id'); //false
-    console.log(hasBinaryPosition);
-    if (!hasBinaryPosition) {
-      const finish_position = user.get('position');
-
-      /**
-       * Las dos primeras personas de cada ciclo van al lado del derrame
-       */
-      const sponsorRef = admin.collection('users').doc(user.get('sponsor_id'));
-
-      let binaryPosition = {
-        parent_id: null,
-      };
-
-      console.log('sponsor_id', user.get('sponsor_id'));
-
-      while (!binaryPosition?.parent_id) {
-        binaryPosition = await this.binaryService.calculatePositionOfBinary(
-          user.get('sponsor_id'),
-          finish_position,
-        );
-      }
-
-      /**
-       * se setea el valor del usuario padre en el usuario que se registro
-       */
-      if (!binaryPosition?.parent_id) {
-        throw new Error('Error al posicionar el binario');
-      }
-
-      try {
-        await user.ref.update({
-          parent_binary_user_id: binaryPosition.parent_id,
-        });
-      } catch (error) {
-        console.log(
-          'Error dentro de hacer un update en parent_binary_user_id',
-          error,
-        );
-      }
-
-      await sponsorRef.update({
-        count_direct_people_this_cycle: firestore.FieldValue.increment(1),
-      });
-
-      try {
-        /**
-         * se setea el valor del hijo al usuario ascendente en el binario
-         */
-        await admin
-          .collection('users')
-          .doc(binaryPosition.parent_id)
-          .update(
-            finish_position == 'left'
-              ? { left_binary_user_id: user.id }
-              : { right_binary_user_id: user.id },
-          );
+        await this.binaryService.increaseBinaryPoints(user.id, payload.points);
       } catch (err) {
         console.error(err);
-        /*Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', user.id);
-          scope.setExtra('message', 'no se pudo setear al hijo');
-          Sentry.captureException(err);
-        });*/
       }
-
-      try {
-        await this.binaryService.increaseUnderlinePeople(user.id);
-      } catch (err) {
-        console.log('Error increaseUnderlinePeople');
-        console.error(err);
-        /*Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', user.id);
-          scope.setExtra(
-            'message',
-            'no se pudo incrementar count_underline_people',
-          );
-          Sentry.captureException(err);
-        });*/
-      }
-      console.log('despues del segundo trychat');
-    }
-
-    /**
-     * aumenta los puntos del binario hacia arriba
-     */
-    if (volumen) {
-      try {
-        await this.binaryService.increaseBinaryPointsForAutomaticFranchises(
-          user.id,
-          payload.binary_points,
-          payload.range_points,
-        );
-
-        return 'Puntos incrementados exitosamente';
-      } catch (err) {
-        console.log('Error increaseBinaryPoints');
-        console.error(err);
-        /*Sentry.configureScope((scope) => {
-          scope.setExtra('id_user', user.id);
-          scope.setExtra('message', 'no se repartio el bono binario');
-          Sentry.captureException(err);
-        });*/
-      }
-    }
-  }
-
-  async createShopifyPack(
-    idUser: string,
-    pack: PhisicMembership | HibridMembership,
-  ) {
-    const user = await admin.collection('users').doc(idUser).get();
-    let shopify_id = user.get('shopify_id');
-
-    if (!shopify_id) {
-      const customer = await this.shopifyService.createCustomer({
-        email: user.get('email'),
-        firstName: user.get('name'),
-        lastName: '',
-        addresses: [
-          {
-            address1: user.get('address'),
-            address2: '',
-            city: user.get('city.value'),
-            company: 'Empowerit TOP',
-            country: user.get('country.label'),
-            countryCode: user.get('country.value'),
-            firstName: user.get('name'),
-            lastName: '',
-            phone: user.get('whatsapp').toString(),
-            province: user.get('state.label'),
-            provinceCode: user.get('state.value'),
-            zip: user.get('zip').toString(),
-          },
-        ],
-      });
-      shopify_id = customer.id;
-      await user.ref.update({
-        shopify_id,
-      });
-    }
-
-    if (pack == 'alive-pack' || pack == 'elite-pack') {
-      return this.shopifyService.createDraftOrder({
-        phone: user.get('phone'),
-        email: user.get('email'),
-        purchasingEntity: {
-          customerId: shopify_id,
-        },
-        lineItems: alivePack.map((item) => ({
-          quantity: item.quantity,
-          variantId: 'gid://shopify/ProductVariant/' + item.id,
-        })),
-        useCustomerDefaultAddress: true,
-      });
-    } else if (pack == 'freedom-pack' || pack == 'vip-pack') {
-      return this.shopifyService.createDraftOrder({
-        phone: user.get('phone'),
-        email: user.get('email'),
-        purchasingEntity: {
-          customerId: shopify_id,
-        },
-        lineItems: freedomPack.map((item) => ({
-          quantity: item.quantity,
-          variantId: item.id,
-        })),
-        useCustomerDefaultAddress: true,
-      });
-    } else if (pack == 'business-pack') {
-      return this.shopifyService.createDraftOrder({
-        phone: user.get('phone'),
-        email: user.get('email'),
-        purchasingEntity: {
-          customerId: shopify_id,
-        },
-        lineItems: businessPack.map((item) => ({
-          quantity: item.quantity,
-          variantId: item.id,
-        })),
-        useCustomerDefaultAddress: true,
-      });
     }
   }
 
@@ -1962,447 +708,5 @@ export class SubscriptionsService {
       .update({
         bond_founder: firestore.FieldValue.increment(bond),
       });
-  }
-  //Funcion para pagar el rendimiento diario
-  async payAutomaticFranchisePerformance() {
-    //Establecer el porcentaje global para el rendimiento general
-    const performancePercentage = 3;
-    const actualDate = new Date();
-    const daysInThisMonth = new Date(
-      actualDate.getFullYear(),
-      actualDate.getMonth() + 1,
-      0,
-    ).getDate();
-    //Verificar las personas que son available para su rendimiento diario available_pay_date_for_franchise_performance
-    const automaticFranchises = await admin
-      .collectionGroup('automatic-franchises')
-      .where('available_pay_date_for_franchise_performance', '<=', new Date())
-      .get();
-    if (!automaticFranchises.empty) {
-      for (const docu of automaticFranchises.docs) {
-        const user_id = docu.data().user_id;
-        const capital = docu.data().capital;
-        //Primero verificare cuanto es la ganancia que le toca dependiendo de la franquicia que tiene (costo_franquicia/percentaje) / daysinthismonth
-        const performance = Number(
-          ((capital * (performancePercentage / 100)) / daysInThisMonth).toFixed(
-            2,
-          ),
-        );
-        const current_cap = Number(docu.data().automatic_franchise_cap_current);
-        const cap_limit = Number(docu.data().automatic_franchise_cap_limit);
-
-        console.log(`a ${user_id} le toca que le paguen ${performance}`);
-        //Despues verificare cuanto es el cap limit y ver cuanto es el disponible
-        const result = await this.availableProfit(
-          performance,
-          current_cap,
-          cap_limit,
-        );
-        console.log('esto le tocaria a cada uno', result);
-        //Sacare la referencia de la subcollecion de automatic-franchises-pending-profits de cada uno
-        const pendingProfitsRef = admin
-          .collection('users')
-          .doc(docu.data().user_id)
-          .collection('automatic-franchises-performance-pending-profits');
-        //A cada uno le agregare un documento donde ahi le pondre el profit y las ganancias del resultado anterior
-        await pendingProfitsRef.add({
-          user_id,
-          daily_performance: result,
-          type: docu.data().type,
-          created_at: new Date(),
-          doc_id: docu.id,
-        });
-      }
-    }
-    return 'Funcion de payAutomaticFranchisePerformance ejecutada exitosamente';
-  }
-  //Funcion para pagar el rendimiendo de capital de 30 dias
-  async payAutomaticFranchiseCapitalPerformance() {
-    const performanceCapitalPercentage = 5;
-    const actualDate = new Date();
-    const daysInThisMonth = new Date(
-      actualDate.getFullYear(),
-      actualDate.getMonth() + 1,
-      0,
-    ).getDate();
-    try {
-      const automaticFranchises = await admin
-        .collectionGroup('automatic-franchises')
-        .where('available_pay_date_for_capital_performance', '<=', new Date())
-        .get();
-      if (automaticFranchises.empty)
-        return 'actualmente no hay franquicias aptas para el redimiento con capital';
-
-      for (const automaticFranchisesDocu of automaticFranchises.docs) {
-        const docuData = automaticFranchisesDocu.data();
-        const user_id = docuData.user_id;
-        const capital = docuData.capital;
-        const performance = Number(
-          (
-            (capital * (performanceCapitalPercentage / 100)) /
-            daysInThisMonth
-          ).toFixed(2),
-        );
-        const current_cap = Number(docuData.automatic_franchise_cap_current);
-        const cap_limit = Number(docuData.automatic_franchise_cap_limit);
-        const result = await this.availableProfit(
-          performance,
-          current_cap,
-          cap_limit,
-        );
-        const pendingCapitalProfitsRef = admin
-          .collection('users')
-          .doc(user_id)
-          .collection(
-            'automatic-franchises-capital-performance-pending-profits',
-          );
-        await pendingCapitalProfitsRef.add({
-          user_id,
-          daily_performance: result,
-          type: docuData.type,
-          created_at: new Date(),
-          doc_id: automaticFranchisesDocu.id,
-        });
-      }
-    } catch (error) {
-      console.log(error);
-    }
-    return 'rendimiento de capital repartido exitosamente';
-  }
-  async availableProfit(
-    profit: number,
-    current_cap: number,
-    cap_limit: number,
-  ) {
-    if (current_cap + profit > cap_limit) {
-      return cap_limit - current_cap;
-    } else {
-      return profit;
-    }
-  }
-  async quickPayForAutomaticFranchisePerformance(
-    doc_id: string,
-    user_id: string,
-    is_capital: boolean,
-  ) {
-    //Obtener todos los documentos dentro de automatic-franchises-performance-pending-profits el doc_id de el parametro doc_id
-    const batch = admin.batch();
-    if (is_capital) {
-      try {
-        const pendingProfits = await admin
-          .collectionGroup(
-            'automatic-franchises-capital-performance-pending-profits',
-          )
-          .where('doc_id', '==', doc_id)
-          .get();
-
-        let total = 0;
-        for (const pendingProfitsDocu of pendingProfits.docs) {
-          const profitData = pendingProfitsDocu.data();
-          const profit = pendingProfitsDocu.data().daily_performance;
-          total = total + Number(profit);
-
-          const paidProfitRef = await admin
-            .collection('users')
-            .doc(user_id)
-            .collection('paid-franchises-capital-performance-profits');
-
-          await paidProfitRef.add({
-            ...profitData,
-            created_at: new Date(),
-            paid_at: new Date(),
-          });
-
-          batch.delete(pendingProfitsDocu.ref);
-        }
-        Math.floor(total);
-        const userRef = await admin.collection('users').doc(user_id).get();
-        const email = userRef.get('email');
-
-        const automaticFranchiseRef = await admin
-          .collection('users')
-          .doc(user_id)
-          .collection('automatic-franchises')
-          .doc(doc_id)
-          .get();
-
-        const automaticFranchiseCapCurrent = automaticFranchiseRef.get(
-          'automatic_franchise_cap_current',
-        );
-        const automaticFranchiseCapLimit = automaticFranchiseRef.get(
-          'automatic_franchise_cap_limit',
-        );
-
-        const capital = await automaticFranchiseRef.get('capital');
-
-        const availableAmount = await this.availableAmountForCapital(
-          total,
-          automaticFranchiseCapCurrent,
-          automaticFranchiseCapLimit,
-          capital,
-        );
-
-        await userRef.ref.update({
-          credits: firestore.FieldValue.increment(availableAmount),
-        });
-
-        await automaticFranchiseRef.ref.update({
-          automatic_franchise_cap_current:
-            firestore.FieldValue.increment(availableAmount),
-          capital: firestore.FieldValue.increment(-availableAmount),
-        });
-
-        const payrollAutomaticFranchisesRef = admin
-          .collection('users')
-          .doc(user_id)
-          .collection('payroll-capital-automatic-franchises');
-
-        await payrollAutomaticFranchisesRef.add({
-          user_id,
-          email,
-          created_at: new Date(),
-          total: availableAmount,
-          type_payroll: 'Retiro Rapido',
-          doc_id,
-        });
-      } catch (error) {
-        console.log(
-          'Error en la en la parte de repartir el capital en el retiro rapido',
-          error,
-        );
-      }
-    } else {
-      try {
-        const pendingProfits = await admin
-          .collectionGroup('automatic-franchises-performance-pending-profits')
-          .where('doc_id', '==', doc_id)
-          .get();
-
-        let total = 0;
-        for (const pendingProfitsDocu of pendingProfits.docs) {
-          const profitData = pendingProfitsDocu.data();
-          const profit = pendingProfitsDocu.data().daily_performance;
-          total = total + Number(profit);
-
-          const paidProfitRef = await admin
-            .collection('users')
-            .doc(user_id)
-            .collection('paid-franchises-performance-profits');
-
-          await paidProfitRef.add({
-            ...profitData,
-            created_at: new Date(),
-            paid_at: new Date(),
-          });
-
-          batch.delete(pendingProfitsDocu.ref);
-        }
-        Math.floor(total);
-        const userRef = await admin.collection('users').doc(user_id).get();
-        const email = userRef.get('email');
-
-        const automaticFranchiseRef = await admin
-          .collection('users')
-          .doc(user_id)
-          .collection('automatic-franchises')
-          .doc(doc_id)
-          .get();
-
-        const automaticFranchiseCapCurrent = automaticFranchiseRef.get(
-          'automatic_franchise_cap_current',
-        );
-        const automaticFranchiseCapLimit = automaticFranchiseRef.get(
-          'automatic_franchise_cap_limit',
-        );
-
-        const availableAmount = await this.availableAmount(
-          total,
-          automaticFranchiseCapCurrent,
-          automaticFranchiseCapLimit,
-        );
-
-        await userRef.ref.update({
-          credits: firestore.FieldValue.increment(availableAmount),
-        });
-
-        await automaticFranchiseRef.ref.update({
-          automatic_franchise_cap_current:
-            firestore.FieldValue.increment(availableAmount),
-        });
-
-        const payrollAutomaticFranchisesRef = admin
-          .collection('users')
-          .doc(user_id)
-          .collection('payroll-automatic-franchises');
-
-        await payrollAutomaticFranchisesRef.add({
-          user_id,
-          email,
-          created_at: new Date(),
-          total: availableAmount,
-          type_payroll: 'Retiro Rapido',
-          doc_id,
-        });
-      } catch (error) {
-        console.log(
-          'Error a la hora de hacer el retiro rapido con el rendimiento por cobrar',
-          error,
-        );
-      }
-    }
-
-    await batch.commit();
-  }
-  async availableAmount(
-    amount: number,
-    cap_current: number,
-    cap_limit: number,
-  ) {
-    if (amount + cap_current > cap_limit) {
-      return Math.floor(cap_limit - cap_current);
-    } else {
-      return Math.floor(amount);
-    }
-  }
-  async availableAmountForCapital(
-    amount: number,
-    cap_current: number,
-    cap_limit: number,
-    capital: number,
-  ) {
-    const remainingCap = cap_limit - cap_current;
-    const cappedAmount = Math.min(amount, remainingCap);
-
-    return Math.floor(Math.min(capital, cappedAmount));
-  }
-  async normalPayForAutomaticFranchisePerformance(
-    doc_id: string,
-    user_id: string,
-    is_capital: boolean,
-  ) {
-    const pendingProfits = await admin
-      .collectionGroup('automatic-franchises-performance-pending-profits')
-      .where('doc_id', '==', doc_id)
-      .get();
-
-    const batch = admin.batch();
-    let total = 0;
-    for (const pendingProfitsDocu of pendingProfits.docs) {
-      const profitData = pendingProfitsDocu.data();
-      const profit = pendingProfitsDocu.data().daily_performance;
-      total = total + Number(profit);
-
-      const paidProfitRef = await admin
-        .collection('users')
-        .doc(user_id)
-        .collection('paid-franchises-performance-profits');
-
-      await paidProfitRef.add({
-        ...profitData,
-        created_at: new Date(),
-        paid_at: new Date(),
-      });
-
-      batch.delete(pendingProfitsDocu.ref);
-    }
-    const userRef = await admin.collection('users').doc(user_id).get();
-    const email = userRef.get('email');
-
-    const automaticFranchiseRef = await admin
-      .collection('users')
-      .doc(user_id)
-      .collection('automatic-franchises')
-      .doc(doc_id)
-      .get();
-
-    const automaticFranchiseCapCurrent = automaticFranchiseRef.get(
-      'automatic_franchise_cap_current',
-    );
-    const automaticFranchiseCapLimit = automaticFranchiseRef.get(
-      'automatic_franchise_cap_limit',
-    );
-
-    const availableAmount = await this.availableAmount(
-      total,
-      automaticFranchiseCapCurrent,
-      automaticFranchiseCapLimit,
-    );
-
-    await automaticFranchiseRef.ref.update({
-      automatic_franchise_cap_current:
-        firestore.FieldValue.increment(availableAmount),
-    });
-
-    const payrollAutomaticFranchisesRef = admin
-      .collection('users')
-      .doc(user_id)
-      .collection('payroll-automatic-franchises');
-
-    await payrollAutomaticFranchisesRef.add({
-      user_id,
-      email,
-      created_at: new Date(),
-      total: availableAmount,
-      type_payroll: 'Pago solicitado con Litecoin',
-      doc_id,
-    });
-
-    await batch.commit();
-    return 'conexion exitosa desde la funcion de normalPayForAutomaticFranchisePerformance';
-  }
-  async activateAutomaticFranchiseWithoutVolumenForFranchises(
-    email: string,
-    type: AutomaticFranchises,
-  ) {
-    try {
-      const usersRef = admin.collection('users');
-      const q = await usersRef.where('email', '==', email).get();
-
-      if (!q.empty) {
-        const user = q.docs[0];
-        const user_id = user.id;
-        try {
-          await user.ref.collection('automatic-franchises').add({
-            user_id,
-            type,
-            email,
-            starts_at: new Date(),
-            created_at: new Date(),
-            automatic_franchise_cap_current: 0,
-            automatic_franchise_cap_limit:
-              AUTOMATIC_FRANCHISES_CAP_LIMITS[type],
-            available_pay_date_for_franchise_performance: new Date(),
-            available_pay_date_for_capital_performance: new Date(),
-            available_pay_date_for_capital_pay: new Date(),
-            capital: FRANCHISES_AUTOMATIC_CAPITALS[type],
-            is_marketing_franchise: true,
-          });
-        } catch (error) {
-          console.log(
-            'Error a la hora de crear el documento dentro de automatic-franchises en la activacion sin volumen para las cuentas de marketing',
-            error,
-          );
-        }
-        try {
-          await user.ref.update({
-            has_automatic_franchises: true,
-          });
-        } catch (error) {
-          console.log(
-            'Error a la hora de hace un update en has_atomatic_franchises',
-            error,
-          );
-        }
-      } else {
-        throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
-      }
-      return 'activacion de cuenta de marketing activada exitosamente';
-    } catch (error) {
-      console.log(
-        'Error en la funcion activateAutomaticFranchiseWithoutVolumenForFranchises',
-        error,
-      );
-      throw error; // Lanza el error para que sea manejado en otro lugar si es necesario
-    }
   }
 }

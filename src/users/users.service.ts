@@ -13,7 +13,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { db as admin, auth } from '../firebase/admin';
-import * as Sentry from '@sentry/node';
 
 @Injectable()
 export class UsersService {
@@ -25,30 +24,16 @@ export class UsersService {
 
   async isActiveUser(id_user: string) {
     const user = await admin.collection('users').doc(id_user).get();
-    const is_admin =
-      Boolean(user.get('is_admin')) || user.get('type') == 'top-lider';
+    return this.isActiveUserByDoc(user);
+  }
+
+  isActiveUserByDoc(
+    user: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>,
+  ) {
+    const is_admin = user.get('is_admin') ?? false;
     if (is_admin) return true;
 
-    const is_new_pack = [
-      '100-pack',
-      '300-pack',
-      '500-pack',
-      '1000-pack',
-      '2000-pack',
-      'FD200',
-      'FD300',
-      'FD500',
-      'FP200',
-      'FP300',
-      'FP500',
-    ].includes(user.get('membership'));
-
-    console.log(user.get('membership'));
-    if (is_new_pack) {
-      const membership_cap_limit = user.get('membership_cap_limit');
-      const membership_cap_current = user.get('membership_cap_current');
-      return membership_cap_current < membership_cap_limit;
-    } else if (user.get('membership') == null) {
+    if (user.get('membership') == null) {
       return false;
     } else {
       const expires_at = user.get('membership_expires_at');
@@ -77,7 +62,7 @@ export class UsersService {
 
   async getUserByPaymentAddress(
     address: string,
-    type: Memberships | PackCredits | MembershipsProductsNames,
+    type: Memberships,
   ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
     try {
       const snap = await admin
@@ -95,12 +80,11 @@ export class UsersService {
   }
   async getUserByPaymentAddressForCredits(
     address: string,
-    type: PackCredits,
   ): Promise<null | FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>> {
     try {
       const snap = await admin
         .collection('users')
-        .where(`payment_link_credits.${type}.address`, '==', address)
+        .where(`payment_link_credits.address`, '==', address)
         .get();
 
       if (snap.empty) return null;

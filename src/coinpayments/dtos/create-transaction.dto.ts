@@ -1,29 +1,15 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateTransactionDto {
   @IsNotEmpty()
-  @IsString()
-  cmd: string;
+  @IsNumber()
+  amount: number;
+}
 
-  @IsNotEmpty()
+export class CreateTransactionMembershipDto {
+  @IsOptional()
   @IsString()
-  type: string;
-
-  @IsNotEmpty()
-  @IsString()
-  currency1: string;
-
-  @IsNotEmpty()
-  @IsString()
-  currency2: string;
-
-  @IsNotEmpty()
-  @IsEmail()
-  buyer_email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  uid: string;
+  membership_type: Memberships;
 }
 
 export class FirebaseObject {
@@ -31,7 +17,7 @@ export class FirebaseObject {
   amount: string;
   @IsString()
   uid: string;
-  expires_at: any;
+  expires_at: { seconds: number };
   @IsString()
   qrcode_url: string;
   @IsString()

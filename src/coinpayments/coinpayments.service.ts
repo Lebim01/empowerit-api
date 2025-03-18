@@ -1,117 +1,120 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable } from '@nestjs/common';
-import {
-  CreateTransactionDto,
-  FirebaseObject,
-} from './dtos/create-transaction.dto';
-import * as crypto from 'crypto';
 import axios from 'axios';
+import * as crypto from 'crypto';
 import { db } from 'src/firebase/admin';
-import { MEMBERSHIPS_PRICES } from 'src/constants';
-import { CREDITS_PACKS_PRICE, FRANCHISES_AUTOMATIC_PRICES, MEMBERSHIP_PRICES_MONTHLY } from 'src/subscriptions/subscriptions.service';
+import { CreateTransactionResponse } from './types';
+import { google } from '@google-cloud/tasks/build/protos/protos';
+import { GoogletaskService } from 'src/googletask/googletask.service';
+
+interface CreateDBTransaction extends CreateTransactionResponse {
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  type: 'credits' | 'membership';
+  membership_type: Memberships | null;
+  fake?: boolean;
+  is_upgrade: boolean;
+  total: string; // includes fee
+}
 
 @Injectable()
 export class CoinpaymentsService {
-  private readonly API_KEY_PUBLIC =
-    'd8703d70ec2abaeafe78c194b431180cee734d78ab1d8078daaca64788640df7';
-  private readonly API_KEY_PRIVATE =
-    '7DDa1f4fba796f4ce5Ab5394aF9b58B38212ba10C9893a134eda634Fc6729552';
-  private readonly URL_COINPAYMENTS = 'https://www.coinpayments.net/api.php';
-  async createTransaction(data: CreateTransactionDto) {
-    const amountBase = MEMBERSHIPS_PRICES[data.type];
-    if (
-      amountBase === undefined ||
-      !Object.keys(MEMBERSHIPS_PRICES).includes(data.type)
-    ) {
-      throw new Error(`Invalid membership type: ${data.type}`);
-    }
+  private readonly apiKey = process.env.COINPAYMENTS_PK;
+  private readonly apiSecret = process.env.COINPAYMENTS_SK;
+  private readonly baseUrl = 'https://www.coinpayments.net/api.php';
+
+  constructor(private readonly googleTaskService: GoogletaskService) {}
+
+  async createdbTransaction(data: CreateDBTransaction) {
+    const expires_at = this.expiresAt(data.timeout);
+    await db
+      .collection('coinpayments')
+      .doc(data.txn_id)
+      .set({
+        ...data,
+        expires_at: expires_at.toISOString(),
+        created_at: new Date(),
+        payment_status: 'pending',
+        process_status: 'pending',
+      });
+    return data.txn_id;
+  }
+
+  async createTransaction(
+    user_id: string,
+    type: 'credits' | 'membership',
+    data: {
+      amount: number;
+      membership_type?: Memberships;
+      is_upgrade?: boolean;
+    },
+  ) {
+    const user = await db.collection('users').doc(user_id).get();
+    const amount = data.amount?.toString();
+    const currency1 = 'USDT';
+    const currency2 = 'USDT.TRC20';
     const payload = {
-      ...data,
-      amount: amountBase,
-      key: this.API_KEY_PUBLIC,
+      amount,
+      cmd: 'create_transaction',
+      currency1,
+      currency2,
+      key: this.apiKey,
       version: '1',
       format: 'json',
+      buyer_email: user.get('email'),
     };
     const headers = this.generateHeaders(payload);
+    const _response = await axios.post(
+      this.baseUrl,
+      new URLSearchParams(payload),
+      { headers },
+    );
+    const response = _response.data.result as CreateTransactionResponse;
     try {
+      const txn_id = await this.createdbTransaction({
+        ...response,
+        total: amount,
+        amount: data.amount.toString(),
+        type,
+        membership_type: data.membership_type || null,
+        user_id,
+        user_name: user.get('name'),
+        user_email: user.get('email'),
+        is_upgrade: data.is_upgrade || false,
+      });
 
-      const _response = await axios.post(
-        this.URL_COINPAYMENTS,
-        new URLSearchParams(payload),
-        { headers },
-      );
-      const response = _response.data.result;
-      const expires_at = await this.expiresAt(response.timeout);
-      console.log("payload", payload)
-      console.log("el header", headers)
-      console.log("el response", response)
-      await this.updateFirebase(
-        { ...response, uid: data.uid, expires_at: expires_at },
-        data.type,
-      );
-      return response;
-    } catch (error) {
-      console.log('el error es', error);
-      return error;
-    }
-  }
-  private generateHeaders(payload: any) {
-    const hmac = crypto.createHmac('sha512', this.API_KEY_PRIVATE);
-    hmac.update(new URLSearchParams(payload).toString());
-    return { HMAC: hmac.digest('hex') };
-  }
-  async expiresAt(timeout: number) {
-    const actual_date = new Date();
-    const calculated = actual_date.getTime() + timeout * 1000;
-    const newTimeOut = new Date(calculated);
-    return newTimeOut;
-  }
-  async updateFirebase(data: FirebaseObject, type: string) {
-    const docRef = db.collection('users').doc(data.uid);
-    try {
-      if (type in FRANCHISES_AUTOMATIC_PRICES) {
-        console.log("se limpio el normal")
-        await docRef.update({
-          payment_link_automatic_franchises: {
-            [type]: {
-              ...data,
-              membership: type,
-              status: 'pending',
-              updated_at: new Date(),
-
-            }
-          },
-          payment_link: null
+      if (type == 'membership') {
+        await db.collection('users').doc(user_id).update({
+          membership_link_coinpayments: txn_id,
         });
-      } else if (type in MEMBERSHIP_PRICES_MONTHLY) {
-        console.log("se limpio el automatic")
-        await docRef.update({
-          payment_link: {
-            [type]: {
-              ...data,
-              membership: type,
-              status: 'pending',
-              updated_at: new Date(),
-
-            }
-          },
-          payment_link_automatic_franchises: null
+      }
+      if (type == 'credits') {
+        await db.collection('users').doc(user_id).update({
+          credits_link_coinpayments: txn_id,
         });
-      } else if (type in CREDITS_PACKS_PRICE) {
-        await docRef.update({
-          payment_link_credits: {
-            [type]: {
-              ...data,
-              status: 'pending',
-
-            }
-          }
-        })
       }
     } catch (error) {
       console.log('el error es', error);
       return error;
     }
+
+    return response;
   }
+
+  private generateHeaders(payload: any) {
+    const hmac = crypto.createHmac('sha512', this.apiSecret);
+    hmac.update(new URLSearchParams(payload).toString());
+    return { HMAC: hmac.digest('hex') };
+  }
+
+  expiresAt(timeout: number) {
+    const actual_date = new Date();
+    const calculated = actual_date.getTime() + timeout * 1000;
+    const newTimeOut = new Date(calculated);
+    return newTimeOut;
+  }
+
   async getNotificationIpn(request, response) {
     const payload = request.body;
     const secret = '12345';
@@ -122,111 +125,63 @@ export class CoinpaymentsService {
     // const calculatedHmac = hmac.digest('hex');
 
     // if (hmacHeader === calculatedHmac) {
+    if (Number(payload.status) == 0)
+      return { isComplete: false, payload, isPartial: false };
 
-    console.log('IPN recibido: ', payload);
-    try {
-      const isComplete = await this.confirmingPayment(
-        payload.email,
-        payload.status,
-        payload.txn_id
-      );
-      response.status(200).send('pago actualizado con exito');
-      return { isComplete, payload };
-    } catch (error) {
-      response.status(400).send('pago no se pudo actualizar');
-    }
-  }
-  async confirmingPayment(email: string, status: number, txn_id: string) {
-    const userPayment = await this.getUser(email);
-    const updateRef = db.collection('users').doc(userPayment.id);
+    if (Number(payload.status) == 1)
+      return { isPartial: true, payload, isComplete: false };
 
     try {
-      if (status === -1) return false;
-
-      const userData = (await updateRef.get()).data();
-      if (!userData) throw new Error('User data not found');
-      const paymentKeys = [
-        'payment_link',
-        'payment_link_credits',
-        'payment_link_automatic_franchises',
-      ];
-
-      let updated = false;
-      let creditsToAdd = 0; 
-
-      for (const key of paymentKeys) {
-        const paymentObject = userData[key];
-        if (paymentObject) {
-          for (const membership in paymentObject) {
-            if (paymentObject[membership]?.txn_id === txn_id) {
-              console.log("el object to update is", paymentObject[membership])
-              paymentObject[membership].status = this.getStatusFromCode(status);
-
-              if (key === 'payment_link_credits' && Number(status) === 100) {
-                creditsToAdd = CREDITS_PACKS_PRICE[membership] || 0;
-                console.log("Créditos a sumar", creditsToAdd);
-              }
-              updated = true;
-              break;
-            }
-          }
-          if (updated) break;
-        }
-      }
-
-      if (updated) {
-        const updatePayload: any = {};
-        paymentKeys.forEach(key => {
-          if (userData[key]) {
-            updatePayload[key] = userData[key];
-          }
-        });
-
-        if (creditsToAdd > 0) {
-          const currentCredits = Number(userData.credits) || 0;
-          updatePayload.credits = currentCredits + creditsToAdd;
-        }
-
-        await updateRef.update(updatePayload);
-        return status === 100;
-      } else {
-        console.warn('Transaction ID not found');
-        return false;
-      }
+      const isComplete = Number(payload.status) == 100;
+      return { isComplete, payload, isPartial: false };
     } catch (error) {
-      console.error('Ocurrió un error al actualizar el pago', error);
-      return false;
+      return { isComplete: false, payload };
     }
   }
 
-  private getStatusFromCode(status: number): string {
-    const converted = Number(status)
-    switch (converted) {
-      case 100:
-        return 'paid';
-      case 1:
-        return 'confirming';
-      case 0:
-        return 'pending';
-      default:
-        return 'unknown';
-    }
+  async sendActiveMembership(txn_id: string) {
+    type Method = 'POST';
+    const task: google.cloud.tasks.v2.ITask = {
+      httpRequest: {
+        httpMethod: 'POST' as Method,
+        url: `${process.env.API_URL}/subscriptions/ipn`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: Buffer.from(
+          JSON.stringify({
+            txn_id,
+          }),
+        ),
+      },
+    };
+
+    await this.googleTaskService.addToQueue(
+      task,
+      this.googleTaskService.getPathQueue('active-user-membership'),
+    );
   }
 
-  async getUser(email) {
-    try {
-      const user = await db
-        .collection('users')
-        .where('email', '==', email)
-        .get();
-      if (user.empty) return;
-      const userPayment = user.docs.map(
-        (d) => ({ ...d.data(), id: d.id } as any),
-      )[0];
-      return userPayment;
-    } catch (error) {
-      console.error('fallo al obtener el usuario', error);
-      return null;
-    }
+  async sendActiveCredits(txn_id: string) {
+    type Method = 'POST';
+    const task: google.cloud.tasks.v2.ITask = {
+      httpRequest: {
+        httpMethod: 'POST' as Method,
+        url: `${process.env.API_URL}/credits/ipn`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: Buffer.from(
+          JSON.stringify({
+            txn_id,
+          }),
+        ),
+      },
+    };
+
+    await this.googleTaskService.addToQueue(
+      task,
+      this.googleTaskService.getPathQueue('active-user-credits'),
+    );
   }
 }

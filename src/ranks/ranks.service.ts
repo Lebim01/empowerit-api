@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { db as admin } from '../firebase/admin';
-import dayjs, { Dayjs } from 'dayjs';
-import { Ranks, ranksOrder, ranksPoints, ranks_object } from './ranks_object';
+import { db as admin, db } from '../firebase/admin';
+import dayjs from 'dayjs';
+import {
+  getBinaryPercent,
+  Ranks,
+  ranksOrder,
+  ranksPoints,
+  ranks_object,
+  RankDetail,
+} from './ranks_object';
 import { GoogletaskService } from '../googletask/googletask.service';
 import { google } from '@google-cloud/tasks/build/protos/protos';
-import { getBinaryPercent } from '../binary/binary_packs';
-import { getMentorPercent } from '../bonds/bonds';
+import { BondsService } from 'src/bonds/bonds.service';
 
 type UserRank = {
   rank?: Ranks;
@@ -14,268 +20,12 @@ type UserRank = {
 
 @Injectable()
 export class RanksService {
-  constructor(private readonly googleTaskService: GoogletaskService) {}
+  constructor(
+    private readonly googleTaskService: GoogletaskService,
+    private readonly bondsService: BondsService,
+  ) {}
 
-  async updateNewRanks() {
-    try {
-      const users = await admin
-        .collection('users')
-        .orderBy('created_at', 'desc')
-        .get();
-
-      const promises = users.docs.map(async (doc) => {
-        const userRef = await admin.collection('users').doc(doc.id);
-        const volumen = await this.getShortLeg(doc.id);
-        console.log(doc.id)
-        if (Number(volumen) >= 2300000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'top_1',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'top_1',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'top-legend',
-            });
-          }
-        } else if (Number(volumen) >= 600000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'top_diamond',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'top_diamond',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'top_1',
-            });
-          }
-        } else if (Number(volumen) >= 180000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'international_director',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'international_director',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'top_diamond',
-            });
-          }
-        } else if (Number(volumen) >= 72000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'national_director',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'national_director',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'international_director',
-            });
-          }
-        } else if (Number(volumen) >= 35000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'regional_director',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'regional_director',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'national_director',
-            });
-          }
-        } else if (Number(volumen) >= 25000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'master_3500',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'master_3500',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'regional_director',
-            });
-          }
-        } else if (Number(volumen) >= 16000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'master_2500',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'master_2500',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'master_3500',
-            });
-          }
-        } else if (Number(volumen) >= 1200) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'master_2000',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'master_2000',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'master_2500',
-            });
-          }
-        } else if (Number(volumen) >= 8000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'advance_builder',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'advance_builder',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'master_2000',
-            });
-          }
-        } else if (Number(volumen) >= 6000) {
-          const left_side = await this.getHasRankBySide(
-            doc.id,
-            'left',
-            'star_builder',
-          );
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'star_builder',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'advance_builder',
-            });
-          }
-        } else if (Number(volumen) >= 1500) {
-          const left_side = await this.getHasRankBySide(doc.id, 'left', 'none');
-          const right_side = await this.getHasRankBySide(
-            doc.id,
-            'right',
-            'none',
-          );
-          if (left_side && right_side) {
-            userRef.update({
-              rank: 'star_builder',
-            });
-          }
-        } else if (Number(volumen) >= 500) {
-          userRef.update({
-            rank: 'initial_builder',
-          });
-        } else {
-          userRef.update({
-            rank: 'none',
-          });
-        }
-      });
-
-      await Promise.all(promises);
-
-      return 'exito en la funcion de updateNewRanks';
-    } catch (error) {
-      console.log('Error en updateNewRanks: ', error);
-      return 'error en la funcion de updateNewRanks';
-    }
-  }
-
-  async getHasRankBySide(user_id: string, side: string, range: string) {
-    const sidesRef = await admin
-      .collection('users')
-      .doc(user_id)
-      .collection(`${side}-people`)
-      .get();
-
-    for (const doc of sidesRef.docs) {
-      const sidesRefUserId = doc.get('user_id');
-      const userRef = await admin.collection('users').doc(sidesRefUserId).get();
-      const userRank = userRef.get('rank');
-      if (userRank == range) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  async getShortLeg(user_id: string) {
-    const pointsRef = await admin
-      .collection('users')
-      .doc(user_id)
-      .collection('points');
-
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    let leftPoints = 0;
-    let rightPoints = 0;
-
-    try {
-      const volumen = pointsRef
-        .where('created_at', '>=', firstDayOfMonth)
-        .get()
-        .then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            if (data.side == 'left') {
-              leftPoints += data.points;
-            }
-            if (data.side == 'right') {
-              rightPoints += data.points;
-            }
-          });
-          return rightPoints >= leftPoints ? leftPoints : rightPoints;
-        })
-        .catch((error) => {
-          console.log('Error getting documents: ', error);
-        });
-      return volumen;
-    } catch (error) {
-      console.log('Error en sacando los puntos de rango', error);
-      return null;
-    }
-  }
-
-  async updateRank() {
+  async cutRanks() {
     /* Obtener todos los usuraios */
     const users = await admin
       .collection('users')
@@ -288,7 +38,7 @@ export class RanksService {
         const task: google.cloud.tasks.v2.ITask = {
           httpRequest: {
             httpMethod: 'POST' as Method,
-            url: `${process.env.API_URL}/ranks/updateUserRank/${user.id}`,
+            url: `${process.env.API_URL}/ranks/cutUserQueue/${user.id}`,
             headers: {
               'Content-Type': 'application/json',
             },
@@ -303,6 +53,27 @@ export class RanksService {
     );
 
     console.log(users.size, 'usuarios');
+
+    return 'OK';
+  }
+
+  async updateRankQueue(id_user: string) {
+    type Method = 'POST';
+
+    const task: google.cloud.tasks.v2.ITask = {
+      httpRequest: {
+        httpMethod: 'POST' as Method,
+        url: `${process.env.API_URL}/ranks/updateUserRank/${id_user}?is_corte=1`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    };
+
+    await this.googleTaskService.addToQueue(
+      task,
+      this.googleTaskService.getPathQueue('user-rank'),
+    );
 
     return 'OK';
   }
@@ -344,260 +115,251 @@ export class RanksService {
         .collection('rank-promotion')
         .add({
           created_at: new Date(),
-          rank: rank.rank || Ranks.INITIAL_BUILD,
+          rank: rank.rank || Ranks.NONE,
         });
       await admin.collection('rank-promotion').add({
         id_user: userId,
         name: user.get('name') || '',
         created_at: new Date(),
-        rank: rank.rank || Ranks.INITIAL_BUILD,
+        rank: rank.rank || Ranks.NONE,
       });
     }
   }
 
-  async updateUserRank(id_user: string) {
+  async updateUserRank(id_user: string, is_corte: boolean) {
     const user = await admin.collection('users').doc(id_user).get();
     const rankData = await this.getRankUser(id_user);
 
-    const start = dayjs().add(-1, 'day').utcOffset(-6).startOf('month');
-    const end = dayjs().add(-1, 'day').utcOffset(-6).endOf('month');
-
-    const points = await this.getPoints(id_user, start, end);
-
-    await this.registerHistoryUserRank(
-      start.year(),
-      start.month(),
-      id_user,
-      rankData,
-    );
-
-    await this.insertRank(
-      id_user,
-      rankData.rank,
-      start.year(),
-      start.month(),
-      points.left,
-      points.right,
-    );
-
     /**
-     * Guardar rango corte
+     * Guardar rango corte (previsualizar)
      */
     await admin.collection('users').doc(id_user).update({
       rank: rankData.rank,
     });
 
     /**
-     * Guardar maximo rango
+     * Guardar historial de rangos
      */
-    if (!user.get('max_rank')) {
-      await admin.collection('users').doc(id_user).update({
-        max_rank: rankData.rank,
-      });
-    } else {
-      const orderPastMaxRank = ranksOrder.findIndex(
-        (r) => r == user.get('max_rank'),
+    if (is_corte) {
+      const start = dayjs();
+
+      /**
+       * Modificar estructura de rango
+       */
+      await this.updateUserNewRank(id_user, rankData.rank);
+
+      /**
+       * Registrar rank promotion
+       */
+      await this.registerHistoryUserRank(
+        start.year(),
+        start.month(),
+        id_user,
+        rankData,
       );
-      const orderNewRank = ranksOrder.findIndex((r) => r == rankData.rank);
-      if (orderNewRank > orderPastMaxRank) {
+
+      /**
+       * Registrar rank history (user collection)
+       */
+      await this.insertRank(
+        id_user,
+        rankData.rank,
+        start.year(),
+        start.month(),
+        rankData.points,
+      );
+
+      /**
+       * Pagar bono
+       */
+      if (rankData.rank != 'none') {
+        await this.bondsService.execRank(id_user, rankData.rank);
+      }
+
+      /**
+       * Guardar maximo rango
+       */
+      if (!user.get('max_rank')) {
         await admin.collection('users').doc(id_user).update({
           max_rank: rankData.rank,
         });
+      } else {
+        const orderPastMaxRank = ranksOrder.findIndex(
+          (r) => r == user.get('max_rank'),
+        );
+        const orderNewRank = ranksOrder.findIndex((r) => r == rankData.rank);
+        if (orderNewRank > orderPastMaxRank) {
+          await admin.collection('users').doc(id_user).update({
+            max_rank: rankData.rank,
+          });
+        }
       }
     }
 
     return rankData;
   }
 
+  async updateUserNewRank(id_user: string, rank: Ranks) {
+    const left_people = await db
+      .collectionGroup('left-people')
+      .where('user_id', '==', id_user)
+      .get();
+    const right_people = await db
+      .collectionGroup('right-people')
+      .where('user_id', '==', id_user)
+      .get();
+    const batch = db.batch();
+
+    for (const d of left_people.docs) {
+      batch.update(d.ref, {
+        rank,
+      });
+    }
+    for (const d of right_people.docs) {
+      batch.update(d.ref, {
+        rank,
+      });
+    }
+    await batch.commit();
+  }
+
   async getRankUser(userId: string): Promise<any> {
-    const start = dayjs().add(-1, 'day').utcOffset(-6).startOf('month');
-    const end = dayjs().add(-1, 'day').utcOffset(-6).endOf('month');
-
-    /* Obtener la suma de puntos del ultimo mes */
-    const points = await this.getPoints(userId, start, end);
-
-    /* Crear subcoleccion para el historial de rangos */
-    const smaller_leg = points.right > points.left ? 'left' : 'right';
-    const points_smaller_leg = points[smaller_leg];
-    const rank = await this.getRank(userId, points_smaller_leg);
+    const points = await this.getPoints(userId);
+    const rank = await this.getRank(userId, points);
 
     return {
       order: rank.order,
       rank: rank.rank,
-      left_points: points.left,
-      right_points: points.right,
+      points,
     };
   }
 
   async getPoints(
     userId: string,
-    start: Dayjs,
-    end: Dayjs,
-  ): Promise<{ left: number; right: number }> {
-    const points = await admin
+  ): Promise<{ left: number; right: number; smaller: 'left' | 'right' }> {
+    const user_points = await admin
       .collection('users')
       .doc(userId)
       .collection('points')
-      .where('created_at', '>=', start.toDate())
-      .where('created_at', '<=', end.toDate())
-      .get()
-      .then((r) => r.docs.map((d) => d.data()));
+      .where('created_at', '>=', dayjs().startOf('month').toDate())
+      .where('created_at', '<=', dayjs().endOf('month').toDate())
+      .get();
 
-    const sumSidePoints =
-      (side: 'left' | 'right') =>
-      (a: number, b: { side: 'left' | 'right'; points: number }): number => {
-        return a + (b.side == side ? b.points : 0);
-      };
-
-    const left_points = points.reduce(sumSidePoints('left'), 0);
-    const right_points = points.reduce(sumSidePoints('right'), 0);
+    const left = user_points.docs.reduce(
+      (a, b) => a + (b.get('side') == 'left' ? Number(b.get('points')) : 0),
+      0,
+    );
+    const right = user_points.docs.reduce(
+      (a, b) => a + (b.get('side') == 'right' ? Number(b.get('points')) : 0),
+      0,
+    );
 
     return {
-      left: left_points,
-      right: right_points,
+      left,
+      right,
+      smaller: left < right ? 'left' : 'right',
     };
   }
 
   async getRank(
     userId: string,
-    points_smaller_leg: number,
+    points: { left: number; right: number; smaller: 'left' | 'right' },
   ): Promise<{
-    rank: Ranks;
-    missing_points: number;
-    points_smaller_leg: number;
+    rank: RankDetail;
     next_rank: Ranks;
     order: number;
+    points: { left: number; right: number; smaller: 'left' | 'right' };
+    missing_points: number;
+    binary_is_active: boolean;
   }> {
-    let rank: Ranks = Ranks.NONE;
+    const points_smaller_leg = points[points.smaller];
+
+    let rank: RankDetail = ranks_object.none;
     let next_rank: Ranks = Ranks.NONE;
     let missing_points = 0;
 
-    const hasRankBothSides = async (rank: Ranks): Promise<boolean> => {
-      return (
-        (await this.getUserRankBySide(userId, rank, 'left')) &&
-        (await this.getUserRankBySide(userId, rank, 'right'))
-      );
-    };
+    const user = await admin.collection('users').doc(userId).get();
 
-    if (
-      points_smaller_leg >= ranksPoints[Ranks.TOP_LEGEND] &&
-      (await hasRankBothSides(Ranks.TOP_1))
-    ) {
-      rank = Ranks.TOP_LEGEND;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.TOP_1] &&
-      (await hasRankBothSides(Ranks.TOP_DIAMOND))
-    ) {
-      rank = Ranks.TOP_1;
-      missing_points = ranksPoints[Ranks.TOP_LEGEND] - points_smaller_leg;
-      next_rank = Ranks.TOP_LEGEND;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.TOP_DIAMOND] &&
-      (await hasRankBothSides(Ranks.INTERNATIONAL_DIRECTOR))
-    ) {
-      rank = Ranks.TOP_DIAMOND;
-      next_rank = Ranks.TOP_1;
-      missing_points = ranksPoints[Ranks.TOP_1] - points_smaller_leg;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.INTERNATIONAL_DIRECTOR] &&
-      (await hasRankBothSides(Ranks.NATIONAL_DIRECTOR))
-    ) {
-      rank = Ranks.INTERNATIONAL_DIRECTOR;
-      missing_points = ranksPoints[Ranks.TOP_DIAMOND] - points_smaller_leg;
-      next_rank = Ranks.TOP_DIAMOND;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.NATIONAL_DIRECTOR] &&
-      (await hasRankBothSides(Ranks.REGIONAL_DIRECTOR))
-    ) {
-      rank = Ranks.NATIONAL_DIRECTOR;
-      missing_points =
-        ranksPoints[Ranks.INTERNATIONAL_DIRECTOR] - points_smaller_leg;
-      next_rank = Ranks.INTERNATIONAL_DIRECTOR;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.REGIONAL_DIRECTOR] &&
-      (await hasRankBothSides(Ranks.MASTER_2500))
-    ) {
-      rank = Ranks.REGIONAL_DIRECTOR;
-      missing_points =
-        ranksPoints[Ranks.NATIONAL_DIRECTOR] - points_smaller_leg;
-      next_rank = Ranks.NATIONAL_DIRECTOR;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.MASTER_2500] &&
-      (await hasRankBothSides(Ranks.MASTER_1500))
-    ) {
-      rank = Ranks.MASTER_2500;
-      missing_points =
-        ranksPoints[Ranks.REGIONAL_DIRECTOR] - points_smaller_leg;
-      next_rank = Ranks.REGIONAL_DIRECTOR;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.MASTER_1500] &&
-      (await hasRankBothSides(Ranks.MASTER_1000))
-    ) {
-      rank = Ranks.MASTER_1500;
-      missing_points = ranksPoints[Ranks.MASTER_2500] - points_smaller_leg;
-      next_rank = Ranks.MASTER_2500;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.MASTER_1000] &&
-      (await hasRankBothSides(Ranks.ADVANCED_BUILDER))
-    ) {
-      rank = Ranks.MASTER_1000;
-      missing_points = ranksPoints[Ranks.MASTER_2500] - points_smaller_leg;
-      next_rank = Ranks.MASTER_2500;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.ADVANCED_BUILDER] &&
-      (await hasRankBothSides(Ranks.STAR_BUILD))
-    ) {
-      rank = Ranks.ADVANCED_BUILDER;
-      missing_points = ranksPoints[Ranks.MASTER_1000] - points_smaller_leg;
-      next_rank = Ranks.MASTER_1000;
-    } else if (
-      points_smaller_leg >= ranksPoints[Ranks.STAR_BUILD] &&
-      (await hasRankBothSides(Ranks.INITIAL_BUILD))
-    ) {
-      rank = Ranks.STAR_BUILD;
-      missing_points = ranksPoints[Ranks.ADVANCED_BUILDER] - points_smaller_leg;
-      next_rank = Ranks.ADVANCED_BUILDER;
-    } else if (points_smaller_leg >= ranksPoints[Ranks.INITIAL_BUILD]) {
-      rank = Ranks.INITIAL_BUILD;
-      missing_points = ranksPoints[Ranks.STAR_BUILD] - points_smaller_leg;
-      next_rank = Ranks.STAR_BUILD;
-    } else {
-      rank = Ranks.NONE;
-      missing_points = ranksPoints[Ranks.INITIAL_BUILD] - points_smaller_leg;
-      next_rank = Ranks.INITIAL_BUILD;
+    const left_people = await user.ref.collection('left-people').get();
+    const right_people = await user.ref.collection('right-people').get();
+
+    const binary_is_active =
+      left_people.docs.some((r) => r.get('membership_status') == 'paid') &&
+      right_people.docs.some((r) => r.get('membership_status') == 'paid');
+
+    const ranks_left = left_people.docs
+      .map((r) => r.get('rank'))
+      .sort(
+        (a, b) =>
+          ranksOrder.findIndex((value) => value == a) -
+          ranksOrder.findIndex((value) => value == b),
+      );
+    const ranks_right = right_people.docs
+      .map((r) => r.get('rank'))
+      .sort(
+        (a, b) =>
+          ranksOrder.findIndex((value) => value == a) -
+          ranksOrder.findIndex((value) => value == b),
+      );
+
+    const reverse_ranks = [...ranksOrder].reverse();
+    for (let i = 0; i < ranksOrder.length; i++) {
+      const rankKey = reverse_ranks[i];
+      const currentRank = ranks_object[rankKey];
+
+      // la pierna mas corta tiene los puntos necesarios
+      const hasPoints = points_smaller_leg >= ranksPoints[rankKey];
+
+      /**
+       * Cumple con la estructura de rangos
+       */
+      let hasRanks = true;
+      if (currentRank.ranks.length > 0) {
+        const checkRanksBySide = (
+          ranksNeed: Ranks[], // estructura de rangos
+          ranksUsersSide: string[], // listado de rangos de los usuarios ordenados del mayor al menor
+        ) => {
+          return ranksNeed.every(
+            (rank, index) =>
+              ranksOrder[ranksUsersSide[index]] >= ranksOrder[rank],
+          );
+        };
+
+        const hasRanksLeftRight =
+          checkRanksBySide(currentRank.ranks[0], ranks_left) &&
+          checkRanksBySide(currentRank.ranks[1], ranks_right);
+
+        const hasRanksRightLeft =
+          checkRanksBySide(currentRank.ranks[0], ranks_right) &&
+          checkRanksBySide(currentRank.ranks[1], ranks_left);
+
+        hasRanks = hasRanksLeftRight || hasRanksRightLeft;
+      }
+
+      /**
+       * Si cumple con puntos y estructura de rangos
+       */
+      if (hasPoints && hasRanks) {
+        rank = currentRank;
+        if (i < ranksOrder.length - 1) {
+          const nextRankKey = reverse_ranks[i + 1];
+          missing_points = ranksPoints[rankKey] - points_smaller_leg;
+          next_rank = nextRankKey;
+        }
+        break;
+      }
     }
 
-    const order = ranksOrder.findIndex((r) => r == rank);
+    const order = rank?.key ? ranks_object[rank.key]?.order ?? -1 : -1;
 
     return {
       rank,
       missing_points,
-      points_smaller_leg,
       next_rank,
-      order: order ?? -1,
+      order,
+      points,
+      binary_is_active,
     };
-  }
-
-  async getUserRankBySide(
-    userId: string,
-    rankNeeded: string,
-    side: 'left' | 'right',
-  ) {
-    const users_points = await admin
-      .collection('users')
-      .doc(userId)
-      .collection(`${side}-people`)
-      .orderBy('created_at', 'desc')
-      .get();
-
-    for (const doc of users_points.docs) {
-      const rank = await this.getRankUser(doc.id);
-      if (rankNeeded == rank.rank) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   async insertRank(
@@ -605,8 +367,7 @@ export class RanksService {
     rank: string,
     year: number,
     month: number,
-    left_points: number,
-    right_points: number,
+    points: { left: number; right: number },
   ) {
     try {
       await admin
@@ -616,8 +377,7 @@ export class RanksService {
         .doc(`${year}-${month}`)
         .set({
           rank,
-          left_points,
-          right_points,
+          points,
         });
     } catch (error) {
       console.error('Error al agregar documento:', error);
@@ -625,80 +385,12 @@ export class RanksService {
   }
 
   async getRankKey(id_user: string, rank_key: string) {
-    const user = await admin.collection('users').doc(id_user).get();
     const current = ranks_object[rank_key];
     const next_rank = ranks_object[ranksOrder[current.order + 1]];
     return {
       ...current,
       next_rank,
-      binary_percent: getBinaryPercent(user.id, user.get('membership')),
-      mentor_percent: getMentorPercent(user.id, user.get('membership')),
+      binary_percent: getBinaryPercent(),
     };
-  }
-
-  async newRanks(
-    year: string,
-    week: string,
-    returnType: 'csv' | 'json' = 'json',
-  ) {
-    const prevWeek = (Number(week) - 1).toString();
-
-    const usersPrev = await admin
-      .collection('ranks')
-      .doc(`${year}-${prevWeek}`)
-      .collection('users')
-      .get();
-
-    const usersNew = await admin
-      .collection('ranks')
-      .doc(`${year}-${week}`)
-      .collection('users')
-      .get();
-
-    const response = [];
-
-    for (const newRank of usersNew.docs) {
-      if (
-        !['vanguard', 'scholarship'].includes(newRank.get('new_max_rank.key'))
-      ) {
-        const pastRank = usersPrev.docs.find((r) => r.id == newRank.id);
-
-        if (
-          pastRank.get('new_max_rank.key') != newRank.get('new_max_rank.key')
-        ) {
-          const user = await admin.collection('users').doc(newRank.id).get();
-          const sponsor = await admin
-            .collection('users')
-            .doc(user.get('sponsor_id'))
-            .get();
-          response.push({
-            past_rank: pastRank.get('new_max_rank.display'),
-            new_rank: newRank.get('new_max_rank.display'),
-            name: user.get('name'),
-            email: user.get('email'),
-            id: user.id,
-            sponsor: sponsor.get('name'),
-            sponsor_email: sponsor.get('email'),
-          });
-        }
-      }
-    }
-
-    return returnType == 'json'
-      ? response
-      : [
-          'ID,NOMBRE,EMAIL,PATROCINADOR,PATROCINADOR EMAIL,RANGO PASADO,NUEVO RANGO',
-          ...response.map((r) =>
-            [
-              r.id,
-              r.name,
-              r.email,
-              r.sponsor,
-              r.sponsor_email,
-              r.past_rank,
-              r.new_rank,
-            ].join(','),
-          ),
-        ].join('\n');
   }
 }

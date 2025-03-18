@@ -7,41 +7,38 @@ import {
   writeBatch,
   or,
   where,
-  orderBy,
-  increment,
   getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
 import { UsersService } from '../users/users.service';
 import { firestore } from 'firebase-admin';
-
-export const FRANCHISE_RANGE_POINTS: Record<
-  Franchises | MembershipsProductsNames | DigitalFranchises,
-  number
-> = {
-  '49-pack': 0,
-  '100-pack': 100,
-  '300-pack': 300,
-  '500-pack': 500,
-  '1000-pack': 1000,
-  '2000-pack': 2000,
-  '3000-pack': 1000,
-  FP200: 200,
-  FP300: 300,
-  FP500: 500,
-  FD200: 200,
-  FD300: 300,
-  FD500: 500,
-};
+import { BondsService } from 'src/bonds/bonds.service';
+import { Bonds } from 'src/bonds/bonds';
+import { MEMBERSHIPS_PRICES } from 'src/constants';
 
 export const PARTICIPATION_RANGE_POINTS: Record<PackParticipations, number> = {
   '3000-participation': 1000,
 };
 
+class Node {
+  data: any;
+  left: any;
+  right: any;
+
+  constructor(data: any) {
+    this.data = data;
+    this.left = null;
+    this.right = null;
+  }
+}
+
 @Injectable()
 export class BinaryService {
-  constructor(private readonly userService: UsersService) {}
+  constructor(
+    private readonly userService: UsersService,
+    private readonly bondsService: BondsService,
+  ) {}
 
   async calculatePositionOfBinary(
     sponsor_id: string,
@@ -134,7 +131,7 @@ export class BinaryService {
     concept = 'Inscripción',
     cartId?: string,
   ) {
-    const userNew = (await getDoc(doc(db, 'users', registerUserId))).data()
+    const userNew = (await getDoc(doc(db, 'users', registerUserId))).data();
     const batch = writeBatch(db);
 
     console.log('Repartir', points, 'puntos');
@@ -207,7 +204,7 @@ export class BinaryService {
            * (add points)
            */
           batch.set(subCollectionPointsRef, {
-            points: FRANCHISE_RANGE_POINTS[membership],
+            points: MEMBERSHIPS_PRICES[membership],
             side: position || 'right',
             user_id: registerUserId,
             user_email: registerUser.get('email') || 'noemail',
@@ -447,18 +444,23 @@ export class BinaryService {
 
   async matchBinaryPoints(userId: string) {
     const user = await admin.collection('users').doc(userId).get();
-    const leftPointsRef = collection(db, `users/${userId}/left-points`);
-    const rightPointsRef = collection(db, `users/${userId}/right-points`);
 
-    const leftDocs = await getDocs(query(leftPointsRef, orderBy('starts_at'))); // Asumiendo que tienes un campo 'date'
-    const rightDocs = await getDocs(
-      query(rightPointsRef, orderBy('starts_at')),
-    );
+    const leftPointsRef = admin
+      .collection('users')
+      .doc(userId)
+      .collection('left-points');
+    const rightPointsRef = admin
+      .collection('users')
+      .doc(userId)
+      .collection('right-points');
+
+    const leftDocs = await leftPointsRef.orderBy('starts_at').get();
+    const rightDocs = await rightPointsRef.orderBy('starts_at').get();
 
     const leftPointsDocs = leftDocs.docs;
     const rightPointsDocs = rightDocs.docs;
 
-    const batch = writeBatch(db);
+    const batch = admin.batch();
     const points_to_pay =
       user.get('left_points') > user.get('right_points')
         ? user.get('right_points')
@@ -472,7 +474,7 @@ export class BinaryService {
         batch.delete(oldestDoc.ref);
       } else {
         batch.update(oldestDoc.ref, {
-          points: increment(remaining_left_points * -1),
+          points: firestore.FieldValue.increment(remaining_left_points * -1),
         });
         remaining_left_points = 0;
       }
@@ -486,7 +488,7 @@ export class BinaryService {
         batch.delete(oldestDoc.ref);
       } else {
         batch.update(oldestDoc.ref, {
-          points: increment(remaining_right_points * -1),
+          points: firestore.FieldValue.increment(remaining_right_points * -1),
         });
         remaining_right_points = 0;
       }
@@ -494,132 +496,79 @@ export class BinaryService {
 
     // Ejecutar la operación batch
     await batch.commit();
+
+    const user_binary_percent = 0;
+
+    const amount = points_to_pay * user_binary_percent;
+    if (user.get('is_binary_active')) {
+      await this.bondsService.execBinary(userId, amount, {
+        left_points: user.get('left_points'),
+        right_points: user.get('right_points'),
+      });
+    } else {
+      await this.bondsService.addLostProfit(userId, Bonds.BINARY, amount, null);
+    }
   }
 
-  async checkBinary() {
-    const users = await admin
-      .collection('users')
-      .where('presenter_1', '!=', null)
-      .where('membership_status', '==', 'paid')
-      .get();
+  async getBinaryUsers(
+    session_user_id: string,
+    start_user_id: string,
+    max_levels: number,
+    current_level: number,
+    current_user: any,
+  ) {
+    if (current_level > max_levels) return current_user;
 
-    const notFound = [];
-
-    for (const u of users.docs) {
-      const dd = await admin
-        .collection('users')
-        .doc('9CXMbcJt2sNWG40zqWwQSxH8iki2')
-        .collection('points')
-        .where('user_id', '==', u.id)
+    if (session_user_id != start_user_id && current_level == 1) {
+      const session_user = admin.collection('users').doc(session_user_id);
+      const is_left_people = await session_user
+        .collection('left-people')
+        .where('user_id', '==', start_user_id)
+        .get();
+      const is_right_people = await session_user
+        .collection('right-people')
+        .where('user_id', '==', start_user_id)
         .get();
 
-      if (dd.empty) {
-        notFound.push(u.id);
-      }
+      /**
+       * Verificamos si el usuario logeado tiene dentro de su red
+       * al usuario que quiere consultar
+       */
+      if (is_left_people.empty && is_right_people.empty) return null;
     }
 
-    return notFound;
-  }
+    const user = await admin.collection('users').doc(start_user_id).get();
 
-  async getPeopleTree(rootId: string, nodes: any = {}) {
-    if (!rootId) return [];
+    const node = new Node(user.data());
 
-    const rootDocId = rootId;
-    const queue = [rootDocId];
-    const people = [];
-    people.push(rootDocId);
-
-    while (queue.length > 0) {
-      const user_id = queue.shift();
-      const node = nodes[user_id];
-      if (!node) continue;
-      const leftDocId = node.left_binary_user_id;
-      const rightDocId = node.right_binary_user_id;
-
-      if (leftDocId && nodes[leftDocId]) {
-        people.push(nodes[leftDocId].id);
-        queue.push(nodes[leftDocId].id);
-      }
-      if (rightDocId && nodes[rightDocId]) {
-        people.push(nodes[rightDocId].id);
-        queue.push(nodes[rightDocId].id);
-      }
+    if (user.get('left_binary_user_id')) {
+      node.left = await this.getBinaryUsers(
+        session_user_id,
+        user.get('left_binary_user_id'),
+        max_levels,
+        current_level + 1,
+        {},
+      );
     }
-    return people;
-  }
-  async fixDirectPeople() {
-    const usersRef = admin
-      .collection('users')
-      .get()
-      .then((querySnapshot) => {
-        querySnapshot.forEach((doc) => {
-          admin
-            .collection('users')
-            .where('sponsor_id', '==', doc.id)
-            .get()
-            .then((querySnapshot) => {
-              const count = querySnapshot.size;
-              const userRef = admin.collection('users').doc(doc.id).update({
-                count_direct_people: querySnapshot.size,
-              });
-            });
-        });
-      })
-      .catch((error) => {
-        console.log('Error getting documents: ', error);
-      });
-    console.log('pasa por aca');
-    return 'listo';
-  }
-  async fixBinaryPoints() {
-    const users = await admin.collection('users').get();
-    for (const doc of users.docs) {
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      try {
-        const rangePointsSnapshot = await admin
-          .collection('users')
-          .doc(doc.id)
-          .collection('points')
-          .where('created_at', '>=', firstDayOfMonth)
-          .get();
-
-        for (const pointsDoc of rangePointsSnapshot.docs) {
-          const prevPoints = pointsDoc.data().points;
-          const pointsDocId = pointsDoc.id;
-
-          const pointsDocRef = admin
-            .collection('users')
-            .doc(doc.id)
-            .collection('points')
-            .doc(pointsDocId);
-
-          const userRef = await admin
-            .collection('users')
-            .doc(pointsDoc.data().user_id)
-            .get();
-
-          const validPoints = [100, 300, 500, 1000, 2000];
-          if (userRef.exists && userRef.data().membership) {
-            if (!validPoints.includes(prevPoints)) {
-              try {
-                await pointsDocRef.update({
-                  points: prevPoints * 2,
-                });
-                console.log(pointsDocId);
-                console.log('Este dio =>', prevPoints);
-                console.log('Debió de haber dado', prevPoints * 2);
-              } catch (updateError) {
-                console.log('Error updating document: ', updateError);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.log('Error getting documents: ', error);
-      }
+    if (user.get('right_binary_user_id')) {
+      node.right = await this.getBinaryUsers(
+        session_user_id,
+        user.get('right_binary_user_id'),
+        max_levels,
+        current_level + 1,
+        {},
+      );
     }
-    return 'desde la funcion fixBinaryPoints';
+
+    if (current_level == 1) {
+      return {
+        left_points: user.get('left_points') || 0,
+        right_points: user.get('right_points') || 0,
+        tree: node,
+      };
+    }
+
+    return node;
   }
 }

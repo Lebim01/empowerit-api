@@ -33,7 +33,6 @@
     "@nestjs/serve-static": "^4.0.0",
     "@sentry/node": "^7.64.0",
     "@sentry/tracing": "^7.64.0",
-    "@shopify/graphql-client": "^0.10.3",
     "@types/nodemailer": "^6.4.9",
     "axios": "^1.4.0",
     "class-validator": "^0.14.1",

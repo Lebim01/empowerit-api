@@ -5,9 +5,7 @@ import { CoinpaymentsService } from './coinpayments.service';
 import { BinaryService } from 'src/binary/binary.service';
 import { BondsService } from 'src/bonds/bonds.service';
 import { UsersService } from 'src/users/users.service';
-import { CryptoapisService } from 'src/cryptoapis/cryptoapis.service';
 import { GoogletaskService } from 'src/googletask/googletask.service';
-import { ShopifyService } from 'src/shopify/shopify.service';
 import { EmailService } from 'src/email/email.service';
 
 @Module({
@@ -16,9 +14,7 @@ import { EmailService } from 'src/email/email.service';
     BinaryService,
     BondsService,
     UsersService,
-    CryptoapisService,
     GoogletaskService,
-    ShopifyService,
     EmailService,
     CoinpaymentsService,
   ],
