@@ -442,6 +442,8 @@ export class SubscriptionsService {
     await admin.collection('users').doc(id).update({
       mr_money_power_expires_at: newMrMoneyPowerDate.toDate(),
       mr_sport_money_expires_at: newMrSportMoneyDate.toDate(),
+      is_mr_money_active: true,
+      is_mr_sport_active: true,
     });
   }
 
