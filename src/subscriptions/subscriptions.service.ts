@@ -214,10 +214,27 @@ export class SubscriptionsService {
     if (isAutomaticFranchise(type)) {
     } else {
       try {
+        let _expire = dayjs();
+        switch (type) {
+          case 'FB79':
+            _expire = _expire.add(1, 'months');
+            break;
+          case 'FB200':
+            _expire = _expire.add(3, 'months');
+            break;
+          case 'FB500':
+            _expire = _expire.add(6, 'months');
+            break;
+          case 'FT1499':
+          case 'FT2499':
+            _expire = _expire.add(12, 'months');
+            break;
+        }
         await admin.collection('users').doc(id_user).update({
           count_direct_people_this_cycle: 0,
           membership: type,
           membership_started_at: new Date(),
+          membership_expires_at: _expire.toDate(),
           membership_status: 'paid',
           payment_link: {},
           is_new: false,
