@@ -18,7 +18,7 @@ import { google } from '@google-cloud/tasks/build/protos/protos';
 import { GoogletaskService } from 'src/googletask/googletask.service';
 import Openpay from 'openpay';
 import { EmailService } from 'src/email/email.service';
-import { MEMBERSHIPS_PRICES } from 'src/constants';
+import { isAutomaticFranchise, MEMBERSHIPS_PRICES } from 'src/constants';
 import { binary_points } from 'src/binary/binary_packs';
 import { rank_points } from 'src/ranks/ranks_object';
 
@@ -211,23 +211,26 @@ export class SubscriptionsService {
   }
 
   async assingMembership(id_user: string, type: Memberships) {
-    try {
-      await admin.collection('users').doc(id_user).update({
-        count_direct_people_this_cycle: 0,
-        membership: type,
-        membership_started_at: new Date(),
-        membership_status: 'paid',
-        payment_link: {},
-        is_new: false,
-      });
+    if (isAutomaticFranchise(type)) {
+    } else {
+      try {
+        await admin.collection('users').doc(id_user).update({
+          count_direct_people_this_cycle: 0,
+          membership: type,
+          membership_started_at: new Date(),
+          membership_status: 'paid',
+          payment_link: {},
+          is_new: false,
+        });
 
-      await admin.collection('users').doc(id_user).collection('cycles').add({
-        type,
-        created_at: new Date(),
-        volumen: true,
-      });
-    } catch (error) {
-      console.error('fallo al activar la membresia', error);
+        await admin.collection('users').doc(id_user).collection('cycles').add({
+          type,
+          created_at: new Date(),
+          volumen: true,
+        });
+      } catch (error) {
+        console.error('fallo al activar la membresia', error);
+      }
     }
   }
 
@@ -328,7 +331,6 @@ export class SubscriptionsService {
     const userDocRef = admin.collection('users').doc(id_user);
     const data = await userDocRef.get();
     const isNew = data.get('is_new');
-    const pack_price = MEMBERSHIPS_PRICES[type];
 
     /*if (type == 'founder-pack') {
       await this.execFounderPack(id_user);

@@ -16,3 +16,7 @@ export const MEMBERSHIPS_PRICES: Record<Memberships, number> = {
   FT1499: 1499,
   FT2499: 2499,
 };
+
+export function isAutomaticFranchise(value: any): value is AutomaticFranchises {
+  return ['FA1000', 'FA2000', 'FA5000'].includes(value);
+}

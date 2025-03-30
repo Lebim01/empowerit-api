@@ -7,7 +7,6 @@ import {
   writeBatch,
   or,
   where,
-  getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { db as admin } from '../firebase/admin';
@@ -15,7 +14,6 @@ import { UsersService } from '../users/users.service';
 import { firestore } from 'firebase-admin';
 import { BondsService } from 'src/bonds/bonds.service';
 import { Bonds } from 'src/bonds/bonds';
-import { MEMBERSHIPS_PRICES } from 'src/constants';
 
 export const PARTICIPATION_RANGE_POINTS: Record<PackParticipations, number> = {
   '3000-participation': 1000,
@@ -78,6 +76,8 @@ export class BinaryService {
     let user = await admin.collection('users').doc(registerUserId).get();
 
     do {
+      if (!user.get('parent_binary_user_id')) break;
+
       user = await admin
         .collection('users')
         .doc(user.get('parent_binary_user_id'))
@@ -110,17 +110,11 @@ export class BinaryService {
             created_at: new Date(),
           },
         );
-        if (
-          currentUser === '9CXMbcJt2sNWG40zqWwQSxH8iki2' ||
-          currentUser === 'corpotop@gmail.com'
-        )
-          currentUser = null;
       } else {
         currentUser = null;
       }
     } while (currentUser);
 
-    console.log(3);
     // Commit the batch
     await batch.commit();
   }
@@ -170,7 +164,7 @@ export class BinaryService {
         // solo se suman puntos si el usuario esta activo
         const isActive = await this.userService.isActiveUser(user.id);
 
-        if (isActive && user.id != registerUser.get('parent_binary_user_id')) {
+        if (isActive) {
           //se determina a que subcoleccion que se va a enfocar
           const positionCollection =
             position == 'left' ? 'left-points' : 'right-points';
